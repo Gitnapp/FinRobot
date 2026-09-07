@@ -125,11 +125,13 @@ def extract_historical_metrics_from_api_data(financial_data: dict) -> pd.DataFra
             final_data_dict[year_label][metrics_idx['EPS']] = eps
         
         # Extract PE Ratio from ratios or key_metrics if available
+        # (FMP stable API renamed priceEarningsRatio -> priceToEarningsRatio)
         pe_ratio = None
         if ratios_df is not None and not ratios_df.empty:
             ratios_year_data = ratios_df[ratios_df['year'] == year_value]
             if not ratios_year_data.empty:
-                pe_ratio = (ratios_year_data.iloc[0].get('priceEarningsRatio') or 
+                pe_ratio = (ratios_year_data.iloc[0].get('priceToEarningsRatio') or 
+                           ratios_year_data.iloc[0].get('priceEarningsRatio') or
                            ratios_year_data.iloc[0].get('peRatio'))
         
         if pe_ratio is None and key_metrics_df is not None and not key_metrics_df.empty:

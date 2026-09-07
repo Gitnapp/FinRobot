@@ -71,6 +71,18 @@ def load_analysis_data(analysis_dir: str, ticker: str) -> Dict[str, Any]:
     ratios_csv_path = os.path.join(analysis_dir, "ratios_raw_data.csv")
     if os.path.exists(ratios_csv_path):
         data['ratios_df'] = pd.read_csv(ratios_csv_path)
+        # FMP stable API renamed calendarYear -> fiscalYear
+        if 'calendarYear' not in data['ratios_df'].columns and 'fiscalYear' in data['ratios_df'].columns:
+            data['ratios_df'] = data['ratios_df'].rename(columns={'fiscalYear': 'calendarYear'})
+        # ROE/ROA moved to key-metrics in the stable API; merge them into ratios
+        key_metrics_csv_path = os.path.join(analysis_dir, "key_metrics_raw_data.csv")
+        if os.path.exists(key_metrics_csv_path):
+            km_df = pd.read_csv(key_metrics_csv_path)
+            km_cols = [c for c in ('returnOnEquity', 'returnOnAssets') if c in km_df.columns]
+            if km_cols and 'date' in km_df.columns and 'date' in data['ratios_df'].columns:
+                data['ratios_df'] = data['ratios_df'].merge(
+                    km_df[['date'] + km_cols], on='date', how='left'
+                )
         print(f"✅ Loaded ratios data from {ratios_csv_path}")
     else:
         data['ratios_df'] = pd.DataFrame()
@@ -87,6 +99,9 @@ def load_analysis_data(analysis_dir: str, ticker: str) -> Dict[str, Any]:
     cashflow_csv_path = os.path.join(analysis_dir, "cash_flow_statement_raw_data.csv")
     if os.path.exists(cashflow_csv_path):
         data['cashflow_df'] = pd.read_csv(cashflow_csv_path)
+        # FMP stable API renamed calendarYear -> fiscalYear
+        if 'calendarYear' not in data['cashflow_df'].columns and 'fiscalYear' in data['cashflow_df'].columns:
+            data['cashflow_df'] = data['cashflow_df'].rename(columns={'fiscalYear': 'calendarYear'})
         print(f"✅ Loaded cash flow data from {cashflow_csv_path}")
     else:
         data['cashflow_df'] = pd.DataFrame()
@@ -217,14 +232,14 @@ def prepare_credit_metrics_df(ratios_df: pd.DataFrame) -> pd.DataFrame:
     if ratios_df is None or ratios_df.empty:
         return pd.DataFrame()
     
-    # 定义要提取的指标映射
+    # 定义要提取的指标映射（FMP stable API 字段名）
     metric_mapping = {
-        'debtEquityRatio': 'Debt/Equity',
-        'debtRatio': 'Debt/Assets',
-        'interestCoverage': 'Interest Coverage',
+        'debtToEquityRatio': 'Debt/Equity',
+        'debtToAssetsRatio': 'Debt/Assets',
+        'interestCoverageRatio': 'Interest Coverage',
         'netProfitMargin': 'Net Margin',
         'currentRatio': 'Current Ratio',
-        'cashFlowToDebtRatio': 'CF to Debt Ratio'
+        'operatingCashFlowRatio': 'CF to Debt Ratio'
     }
     
     if 'calendarYear' not in ratios_df.columns:
@@ -244,11 +259,11 @@ def prepare_credit_metrics_df(ratios_df: pd.DataFrame) -> pd.DataFrame:
         for csv_col, display_name in metric_mapping.items():
             if csv_col in year_data and pd.notna(year_data[csv_col]):
                 val = year_data[csv_col]
-                if csv_col == 'interestCoverage':
+                if csv_col == 'interestCoverageRatio':
                     values.append(f"{val:.1f}x")
                 elif csv_col == 'netProfitMargin':
                     values.append(f"{val*100:.1f}%")
-                elif csv_col in ['currentRatio', 'cashFlowToDebtRatio']:
+                elif csv_col in ['currentRatio', 'operatingCashFlowRatio']:
                     values.append(f"{val:.2f}")
                 else:
                     values.append(f"{val:.2f}")
@@ -339,7 +354,7 @@ def generate_all_charts(analysis_df: pd.DataFrame, peer_ev_ebitda_df: pd.DataFra
             'grossProfitMargin': 'Gross Margin',
             'netProfitMargin': 'Net Margin',
             'currentRatio': 'Current Ratio',
-            'debtEquityRatio': 'Debt/Equity'
+            'debtToEquityRatio': 'Debt/Equity'
         }
         
         for csv_col, display_name in ratio_mapping.items():
@@ -364,8 +379,8 @@ def generate_all_charts(analysis_df: pd.DataFrame, peer_ev_ebitda_df: pd.DataFra
             cf_data = {
                 'periods': cashflow_df['calendarYear'].tolist() if 'calendarYear' in cashflow_df.columns else [],
                 'Operating': cashflow_df['operatingCashFlow'].tolist() if 'operatingCashFlow' in cashflow_df.columns else [],
-                'Investing': cashflow_df['netCashUsedForInvestingActivites'].tolist() if 'netCashUsedForInvestingActivites' in cashflow_df.columns else [],
-                'Financing': cashflow_df['netCashUsedProvidedByFinancingActivities'].tolist() if 'netCashUsedProvidedByFinancingActivities' in cashflow_df.columns else []
+                'Investing': cashflow_df['netCashProvidedByInvestingActivities'].tolist() if 'netCashProvidedByInvestingActivities' in cashflow_df.columns else [],
+                'Financing': cashflow_df['netCashProvidedByFinancingActivities'].tolist() if 'netCashProvidedByFinancingActivities' in cashflow_df.columns else []
             }
             
             if cf_data['Operating']:
@@ -596,9 +611,9 @@ def main():
             'pb_ratio': f"{latest_ratios.get('priceToBookRatio', 0):.2f}x" if pd.notna(latest_ratios.get('priceToBookRatio')) else 'N/A',
             'roe': f"{latest_ratios.get('returnOnEquity', 0)*100:.1f}%" if pd.notna(latest_ratios.get('returnOnEquity')) else 'N/A',
             'dividend_yield': f"{latest_ratios.get('dividendYield', 0)*100:.2f}%" if pd.notna(latest_ratios.get('dividendYield')) else 'N/A',
-            'pe_ratio': f"{latest_ratios.get('priceEarningsRatio', 0):.1f}x" if pd.notna(latest_ratios.get('priceEarningsRatio')) else 'N/A',
+            'pe_ratio': f"{latest_ratios.get('priceToEarningsRatio', 0):.1f}x" if pd.notna(latest_ratios.get('priceToEarningsRatio')) else 'N/A',
             'net_margin': f"{latest_ratios.get('netProfitMargin', 0)*100:.1f}%" if pd.notna(latest_ratios.get('netProfitMargin')) else 'N/A',
-            'debt_equity': f"{latest_ratios.get('debtEquityRatio', 0):.2f}" if pd.notna(latest_ratios.get('debtEquityRatio')) else 'N/A',
+            'debt_equity': f"{latest_ratios.get('debtToEquityRatio', 0):.2f}" if pd.notna(latest_ratios.get('debtToEquityRatio')) else 'N/A',
         }
         print(f"✅ Extracted local metrics from ratios data")
     

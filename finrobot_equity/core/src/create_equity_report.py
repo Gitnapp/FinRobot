@@ -47,14 +47,19 @@ def load_credit_cashflow_metrics_from_csv(file_path: str) -> pd.DataFrame:
     try:
         df = pd.read_csv(file_path)
 
+        # FMP stable API renamed calendarYear -> fiscalYear
+        if 'calendarYear' not in df.columns and 'fiscalYear' in df.columns:
+            df = df.rename(columns={'fiscalYear': 'calendarYear'})
+
         # Define the mapping from CSV columns to the desired metric names
+        # (column names follow the FMP stable API schema)
         metric_mapping = {
-            'debtEquityRatio': 'Debt/Equity',
-            'debtRatio': 'Debt/Assets',
-            'interestCoverage': 'EBITDA/Int Exp',
+            'debtToEquityRatio': 'Debt/Equity',
+            'debtToAssetsRatio': 'Debt/Assets',
+            'interestCoverageRatio': 'EBITDA/Int Exp',
             'netProfitMargin': 'Net Margin',
             'currentRatio': 'Current Ratio',
-            'cashFlowToDebtRatio': 'Cash Flow to Debt Ratio'
+            'operatingCashFlowRatio': 'Cash Flow to Debt Ratio'
         }
 
         # Check if necessary columns exist
@@ -76,12 +81,12 @@ def load_credit_cashflow_metrics_from_csv(file_path: str) -> pd.DataFrame:
             year_data = df[df['calendarYear'] == year].iloc[0]
 
             # Populate the data for the year based on the mapping
-            credit_metrics_data[year_str].append(f"{year_data['debtEquityRatio']:.2f}" if pd.notna(year_data['debtEquityRatio']) else "N/A")
-            credit_metrics_data[year_str].append(f"{year_data['debtRatio']:.2f}" if pd.notna(year_data['debtRatio']) else "N/A")
-            credit_metrics_data[year_str].append(f"{year_data['interestCoverage']:.1f}x" if pd.notna(year_data['interestCoverage']) else "N/A")
+            credit_metrics_data[year_str].append(f"{year_data['debtToEquityRatio']:.2f}" if pd.notna(year_data['debtToEquityRatio']) else "N/A")
+            credit_metrics_data[year_str].append(f"{year_data['debtToAssetsRatio']:.2f}" if pd.notna(year_data['debtToAssetsRatio']) else "N/A")
+            credit_metrics_data[year_str].append(f"{year_data['interestCoverageRatio']:.1f}x" if pd.notna(year_data['interestCoverageRatio']) else "N/A")
             credit_metrics_data[year_str].append(f"{year_data['netProfitMargin']*100:.1f}%" if pd.notna(year_data['netProfitMargin']) else "N/A")
             credit_metrics_data[year_str].append(f"{year_data['currentRatio']:.1f}" if pd.notna(year_data['currentRatio']) else "N/A")
-            credit_metrics_data[year_str].append(f"{year_data['cashFlowToDebtRatio']:.2f}" if pd.notna(year_data['cashFlowToDebtRatio']) else "N/A")
+            credit_metrics_data[year_str].append(f"{year_data['operatingCashFlowRatio']:.2f}" if pd.notna(year_data['operatingCashFlowRatio']) else "N/A")
 
 
         return pd.DataFrame(credit_metrics_data)
@@ -721,13 +726,16 @@ def main():
             if os.path.exists(cashflow_csv_path):
                 try:
                     cashflow_df = pd.read_csv(cashflow_csv_path)
+                    # FMP stable API renamed calendarYear -> fiscalYear
+                    if 'calendarYear' not in cashflow_df.columns and 'fiscalYear' in cashflow_df.columns:
+                        cashflow_df = cashflow_df.rename(columns={'fiscalYear': 'calendarYear'})
                     if not cashflow_df.empty:
-                        # 提取现金流数据
+                        # 提取现金流数据（FMP stable API 字段名）
                         cf_data = {
                             'periods': cashflow_df['calendarYear'].tolist() if 'calendarYear' in cashflow_df.columns else [],
                             'Operating': cashflow_df['operatingCashFlow'].tolist() if 'operatingCashFlow' in cashflow_df.columns else [],
-                            'Investing': cashflow_df['netCashUsedForInvestingActivites'].tolist() if 'netCashUsedForInvestingActivites' in cashflow_df.columns else [],
-                            'Financing': cashflow_df['netCashUsedProvidedByFinancingActivities'].tolist() if 'netCashUsedProvidedByFinancingActivities' in cashflow_df.columns else []
+                            'Investing': cashflow_df['netCashProvidedByInvestingActivities'].tolist() if 'netCashProvidedByInvestingActivities' in cashflow_df.columns else [],
+                            'Financing': cashflow_df['netCashProvidedByFinancingActivities'].tolist() if 'netCashProvidedByFinancingActivities' in cashflow_df.columns else []
                         }
                         
                         if cf_data['Operating']:
