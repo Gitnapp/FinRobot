@@ -87,8 +87,11 @@ def main():
     try:
         config = load_config(args.config_file)
         fmp_api_key = get_api_key(config, section="API_KEYS", key="fmp_api_key")
-        adanos_api_key = config.get("API_KEYS", "adanos_api_key", fallback=adanos_api_key)
-        adanos_base_url = config.get("API_KEYS", "adanos_base_url", fallback=adanos_base_url)
+        # env/.env takes precedence; ignore placeholder values in config.ini
+        adanos_cfg = config.get("API_KEYS", "adanos_api_key", fallback=None)
+        if not adanos_api_key and adanos_cfg and not adanos_cfg.startswith("YOUR_"):
+            adanos_api_key = adanos_cfg
+        adanos_base_url = os.environ.get("ADANOS_BASE_URL") or config.get("API_KEYS", "adanos_base_url", fallback=adanos_base_url)
         if args.generate_text_sections:
             openai_api_key = get_api_key(config, section="API_KEYS", key="openai_api_key")
             # Try to get base_url for proxy services (like SiliconFlow)

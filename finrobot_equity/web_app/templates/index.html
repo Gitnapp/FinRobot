@@ -87,6 +87,34 @@
 {% raw %}
 <body class="bg-black text-white h-screen flex overflow-hidden" id="app">
 
+    <!-- Settings Modal -->
+    <div v-if="showSettings" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50" @click.self="showSettings = false">
+        <div class="bg-[#0a0a0a] border border-white/10 rounded-xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-white">Settings</h3>
+                <button @click="showSettings = false" class="text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">HTML Report Template</label>
+                    <p class="text-[11px] text-slate-500 mb-2">Choose which HTML layout opens when you click the HTML button on a report card.</p>
+                    <select v-model="reportTemplate" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:border-white/30 focus:outline-none">
+                        <option value="Professional" class="bg-[#0a0a0a]">Professional (investment-bank style)</option>
+                        <option value="Combined" class="bg-[#0a0a0a]">Combined (all sections, single page)</option>
+                    </select>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" @click="showSettings = false" class="flex-1 px-4 py-2.5 border border-white/10 rounded-lg text-slate-300 hover:bg-white/5 transition-colors text-sm">Cancel</button>
+                    <button @click="saveSettings" class="flex-1 px-4 py-2.5 bg-white text-black rounded-lg font-medium hover:bg-slate-200 transition-colors text-sm">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Change Password Modal -->
     <div v-if="showChangePassword" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50" @click.self="closePasswordModal">
         <div class="bg-[#0a0a0a] border border-white/10 rounded-xl w-full max-w-md p-6 shadow-2xl">
@@ -147,6 +175,10 @@
                         <button @click="switchAccount" class="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
                             Switch Account
+                        </button>
+                        <button @click="showSettings = true; showUserMenu = false" class="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            Settings
                         </button>
                         <div class="border-t border-slate-700 my-1"></div>
                         <button @click="logout" class="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-slate-700 flex items-center gap-2">
@@ -440,7 +472,7 @@
                             <h4 class="font-bold text-white mb-0.5 tracking-tight">{{ task.ticker }}</h4>
                             <p class="text-xs text-slate-400 mb-4 line-clamp-1 h-4">{{ task.company || task.company_name }}</p>
                             <div v-if="task.status === 'completed' && task.result" class="grid gap-2" :class="(task.result.pdf && task.result.pdf.length) || (task.result.html && task.result.html.length) ? 'grid-cols-3' : 'grid-cols-1'">
-                                <a v-if="task.result.html && task.result.html.length" :href="'/output/' + task.ticker + '/report/' + task.result.html[0]" target="_blank" class="flex items-center justify-center gap-1 py-1.5 rounded bg-white/5 hover:bg-blue-500/20 text-slate-300 hover:text-blue-400 text-[10px] font-bold transition-all border border-white/5 hover:border-blue-500/30">HTML</a>
+                                <a v-if="task.result.html && task.result.html.length" :href="pickHtml(task)" target="_blank" class="flex items-center justify-center gap-1 py-1.5 rounded bg-white/5 hover:bg-blue-500/20 text-slate-300 hover:text-blue-400 text-[10px] font-bold transition-all border border-white/5 hover:border-blue-500/30">HTML</a>
                                 <a v-if="task.result.pdf && task.result.pdf.length" :href="'/output/' + task.ticker + '/report/' + task.result.pdf[0]" target="_blank" class="flex items-center justify-center gap-1 py-1.5 rounded bg-white/5 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 text-[10px] font-bold transition-all border border-white/5 hover:border-emerald-500/30">PDF</a>
                                 <button @click="viewTaskLog(task)" class="flex items-center justify-center gap-1 py-1.5 rounded bg-white/5 hover:bg-amber-500/20 text-slate-300 hover:text-amber-400 text-[10px] font-bold transition-all border border-white/5 hover:border-amber-500/30">LOG</button>
                             </div>
@@ -481,6 +513,8 @@
                     userProvider: window.USER_DATA?.provider || '',
                     showUserMenu: false,
                     showChangePassword: false,
+                    showSettings: false,
+                    reportTemplate: localStorage.getItem('finrobot_report_template') || 'Professional',
                     passwordForm: { currentPassword: '', newPassword: '', confirmPassword: '' },
                     passwordError: '',
                     passwordSuccess: '',
@@ -672,6 +706,17 @@
                     catch (e) { console.error("Logout error", e); window.location.href = '/login'; }
                 },
                 switchAccount() { this.logout(); },
+                saveSettings() {
+                    localStorage.setItem('finrobot_report_template', this.reportTemplate);
+                    this.showSettings = false;
+                },
+                pickHtml(task) {
+                    const htmls = task.result?.html || [];
+                    if (!htmls.length) return '#';
+                    const preferred = htmls.find(f => f.includes(this.reportTemplate));
+                    const file = preferred || htmls[0];
+                    return '/output/' + task.ticker + '/report/' + file;
+                },
                 async changePassword() {
                     this.passwordError = '';
                     this.passwordSuccess = '';

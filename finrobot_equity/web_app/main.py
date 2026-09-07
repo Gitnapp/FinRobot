@@ -39,6 +39,22 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(LOGS_DIR, exist_ok=True)  # 新增：创建日志目录
 
+
+def _sort_html_reports(html_files):
+    """Order HTML reports: Professional first, then Combined, then the rest.
+
+    All variants are returned so the frontend can switch templates
+    based on the user's saved preference.
+    """
+    def rank(f):
+        if 'Professional' in f:
+            return 0
+        if 'Combined' in f:
+            return 1
+        return 2
+    return sorted(html_files, key=rank)
+
+
 app = FastAPI(title="FinRobot Equity Research", version="1.0.0")
 
 # Mount static files and templates
@@ -547,14 +563,13 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
     report_files = []
     if os.path.exists(report_output_dir):
         report_files = [f for f in os.listdir(report_output_dir) if f.endswith((".html", ".pdf"))]
-    
-    # Separate HTML and PDF files — only Professional reports
+
     html_files = [f for f in report_files if f.endswith('.html')]
     pdf_files = [f for f in report_files if f.endswith('.pdf')]
 
-    # Only Professional HTML; fallback to others only if no Professional exists
-    prof_htmls = [f for f in html_files if 'Professional' in f]
-    sorted_htmls = prof_htmls if prof_htmls else html_files
+    # Return all HTML variants (Professional, Combined, legacy pages) so the
+    # frontend can switch templates based on the user's saved preference
+    sorted_htmls = _sort_html_reports(html_files)
 
     # Only Professional/Equity Report PDFs (exclude chart PDFs like *_ebitda_margin.pdf)
     prof_pdfs = [f for f in pdf_files if 'Professional_Equity_Report' in f]
@@ -721,10 +736,8 @@ async def get_history(request: Request):
             pdf_files = []
             if os.path.exists(report_dir):
                 all_files = os.listdir(report_dir)
-                # 只要 Professional 报告，排除 Combined
-                prof_html = [f for f in all_files if f.endswith('.html') and 'Professional' in f]
-                other_html = [f for f in all_files if f.endswith('.html') and 'Professional' not in f] if not prof_html else []
-                html_files = prof_html + other_html
+                # 返回所有 HTML 变体（Professional/Combined/legacy），前端按用户偏好选择模板
+                html_files = _sort_html_reports([f for f in all_files if f.endswith('.html')])
                 # 只要 Professional PDF 报告，排除图表 PDF
                 prof_pdf = [f for f in all_files if f.endswith('.pdf') and 'Professional_Equity_Report' in f]
                 other_pdf = [f for f in all_files if f.endswith('.pdf') and 'Equity_Report' in f and f not in prof_pdf] if not prof_pdf else []

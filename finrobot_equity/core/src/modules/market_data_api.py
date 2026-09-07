@@ -28,6 +28,15 @@ def _get_finnhub_api_key() -> str | None:
     return None
 
 
+def _get_yf_info(ticker: str) -> dict:
+    """Fetches yfinance Ticker.info as a fallback source (no API key needed)."""
+    try:
+        return yf.Ticker(ticker).info or {}
+    except Exception as e:
+        print(f"Warning: yfinance info fetch failed for {ticker}: {e}")
+        return {}
+
+
 def fetch_finnhub_news(ticker: str, days_back: int = 5, limit: int = 50) -> list[dict] | None:
     """Fetches recent company news from Finnhub, mapped to the FMP stock_news schema.
 
@@ -334,6 +343,12 @@ def get_fmp_current_price(ticker: str, api_key: str) -> float | None:
             return None
     except requests.exceptions.RequestException as e:
         print(f"Error fetching FMP current price for {ticker}: {e}")
+        # Fall back to yfinance when FMP quota is exhausted (429) or unavailable
+        yf_info = _get_yf_info(ticker)
+        yf_price = yf_info.get("currentPrice") or yf_info.get("regularMarketPrice")
+        if yf_price:
+            print(f"Using yfinance fallback price for {ticker}: {yf_price}")
+            return float(yf_price)
         return None
     except (KeyError, ValueError, TypeError) as e:
         print(f"Error processing FMP current price data for {ticker}: {e}. Response: {data if 'data' in locals() else 'N/A'}")

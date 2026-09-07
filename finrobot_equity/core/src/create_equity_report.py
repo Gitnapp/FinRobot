@@ -353,6 +353,7 @@ def main():
     parser.add_argument("--roe", type=str, default=None, help="Return on Equity (will be auto-fetched if not provided).")
     parser.add_argument("--net-debt-to-equity", type=str, default=None, help="Net Debt to Equity ratio (will be auto-fetched if not provided).")
     parser.add_argument("--sector", type=str, default=None, help="Company sector (will be auto-fetched if not provided).")
+    parser.add_argument("--week-52-range", type=str, default=None, help="52-week price range, e.g. '$100.00 - $200.00' (will be auto-fetched if not provided).")
 
     # Configuration and paths
     parser.add_argument("--config-file", type=str, default=None, help="Path to config.ini file.")
@@ -450,7 +451,7 @@ def main():
     roe = get_value(args.roe, 'roe', "N/A", lambda x: f"{x:.1f}%" if isinstance(x, (int, float)) else str(x))
     net_debt_to_equity = get_value(args.net_debt_to_equity, 'net_debt_to_equity', "N/A", lambda x: f"{x:.2f}%" if isinstance(x, (int, float)) else str(x))
     sector = get_value(args.sector, 'sector', "Industrials")
-    week_52_range = get_value(None, '52w_range', 'N/A')
+    week_52_range = get_value(args.week_52_range, '52w_range', 'N/A')
 
     # Print summary of what was auto-fetched vs. provided
     print(f"\n📊 Market Data Summary for {args.company_ticker}:")
