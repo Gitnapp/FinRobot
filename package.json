@@ -1,0 +1,15 @@
+{
+  "name": "garage-research-desk",
+  "private": true,
+  "packageManager": "pnpm@11.12.0",
+  "scripts": {
+    "dev": "pnpm --filter @garage/research-desk dev",
+    "build": "pnpm --filter @garage/research-desk build",
+    "typecheck": "pnpm --filter @garage/research-desk typecheck",
+    "format": "biome format --write frontend/src frontend/vite.config.ts frontend/tsconfig.json frontend/package.json package.json",
+    "format:check": "biome format frontend/src frontend/vite.config.ts frontend/tsconfig.json frontend/package.json package.json"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.10"
+  }
+}

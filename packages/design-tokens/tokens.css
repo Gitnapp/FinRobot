@@ -1,0 +1,290 @@
+/*
+ * rational-ui 共享设计 token —— monochrome（ChatGPT 式黑白）。
+ * 语义真相源：根 design.md；本文件是它的跨 app CSS 面。
+ * 消费方式：在各 app 的 globals.css 里
+ *   @import "tailwindcss" source("../");
+ *   @import "@gitnapp/design-tokens";
+ * 仅含通用层（token + base + 系统偏好适配）；app 特有的 utility/布局留在各自 globals.css。
+ * 字体依赖各 app 用 next/font 注册 Geist / Geist Mono（family 名即 "Geist"）。
+ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-rail: var(--rail);
+  --color-rail-foreground: var(--rail-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --shadow-overlay: var(--overlay-shadow);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+}
+
+/* 字号字重精修：稳定字距，不做 viewport 相关缩放。 */
+@theme {
+  /* micro：最小元信息标度（替代散落的 text-[10px]/[11px]）。 */
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1rem;
+  --text-micro--letter-spacing: 0.01em;
+  /* reading：长文阅读态（15px / 2rem 行高）。 */
+  --text-reading: 0.9375rem;
+  --text-reading--line-height: 2rem;
+  --text-sm--letter-spacing: -0.003em;
+  --text-base--letter-spacing: -0.006em;
+  --text-lg--letter-spacing: -0.014em;
+  --text-xl--letter-spacing: -0.017em;
+  --text-2xl--letter-spacing: -0.019em;
+  --text-3xl--letter-spacing: -0.02em;
+  --text-4xl--letter-spacing: -0.02em;
+}
+
+:root {
+  color-scheme: light;
+  /* 浮层高度：大扩散低不透明，靠柔和衰减而不是深压边表达抬升（design.md 阴影克制）。 */
+  --overlay-shadow: 0 6px 24px -8px rgb(0 0 0 / 0.12), 0 1px 2px rgb(0 0 0 / 0.04);
+  /* Soft neutral page with white elevated surfaces so cards/composer pop. */
+  --background: oklch(0.971 0 0);
+  --foreground: oklch(0.16 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0 0);
+  --primary: oklch(0.19 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  /* 应用外壳轨（左栏 + 顶栏 tab 区）：浅色跟随页面底，暗色保持全站最深面。 */
+  --rail: oklch(0.971 0 0);
+  --rail-foreground: oklch(0.16 0 0);
+  --secondary: oklch(0.94 0 0);
+  --secondary-foreground: oklch(0.19 0 0);
+  --muted: oklch(0.94 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.94 0 0);
+  --accent-foreground: oklch(0.19 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.916 0 0);
+  --input: oklch(0.916 0 0);
+  --ring: oklch(0.708 0 0);
+  --radius: 0.5rem;
+  --gds-shell-inset: 0.5rem;
+  --gds-header-height: 3rem;
+  --gds-content-standard: 64rem;
+  --gds-content-wide: 73.75rem;
+  --gds-content-narrow: 42rem;
+  --gds-page-gutter-mobile: 1.25rem;
+  --gds-page-gutter-tablet: 1.5rem;
+  --gds-page-gutter-desktop: 2rem;
+  --gds-control-compact: 2rem;
+  --gds-control-comfortable: 2.25rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    /* 深色下 popover 与 card 同亮度，抬升只能由阴影承担，故比浅色更实。 */
+    --overlay-shadow: 0 8px 28px -8px rgb(0 0 0 / 0.55), 0 1px 2px rgb(0 0 0 / 0.35);
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    /* 深色轨保持全站最深面（比 background 0.145 更深）。 */
+    --rail: oklch(0.1 0 0);
+    --rail-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+  }
+}
+
+/* Apps with an explicit theme control use the same semantic palette instead
+   of duplicating dark values locally. The attribute also lets a deliberate
+   light choice override a dark OS preference. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  /* 深色下 popover 与 card 同亮度，抬升只能由阴影承担，故比浅色更实。 */
+  --overlay-shadow: 0 8px 28px -8px rgb(0 0 0 / 0.55), 0 1px 2px rgb(0 0 0 / 0.35);
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  /* 深色轨保持全站最深面（比 background 0.145 更深）。 */
+  --rail: oklch(0.1 0 0);
+  --rail-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--background);
+  font-family: var(--font-sans);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Apple-style coarse-pointer ergonomics: preserve compact desktop density,
+   but give touch users a 44px physical target without enlarging the icon.
+   Match only when the PRIMARY input is touch: `any-pointer: coarse` (or a bare
+   `hover: none`) also matches mouse-driven touchscreen Windows desktops and
+   would inflate every button there (design.md: 桌面密度不变). */
+@media (max-width: 47.999rem), ((hover: none) and (pointer: coarse)) {
+  button {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  [data-slot="button"][data-size^="icon"] {
+    min-width: 2.75rem;
+  }
+
+  /* iOS Safari 在聚焦 font-size < 16px 的表单控件时会自动放大视口（模态框 zoom-in）。
+     桌面保持紧凑密度不变；触屏/小屏下把文字类输入统一抬到 16px，从源头消除聚焦缩放，
+     不通过 `user-scalable=no` 牺牲 a11y。checkbox/radio 不受此规则影响。 */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 1rem;
+  }
+}
+
+@keyframes gds-accessible-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gds-accessible-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* a11y：尊重系统 reduced-motion，归零非必要动效。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Large overlays keep a gentle state cue without zooming or traversing the
+     viewport. Radix waits for the exit animation before unmounting. */
+  [data-slot="dialog-overlay"][data-state="open"],
+  [data-slot="dialog-content"][data-state="open"],
+  [data-slot="sheet-overlay"][data-state="open"],
+  [data-slot="sheet-content"][data-state="open"] {
+    animation: gds-accessible-fade-in 160ms ease-out !important;
+  }
+
+  [data-slot="dialog-overlay"][data-state="closed"],
+  [data-slot="dialog-content"][data-state="closed"],
+  [data-slot="sheet-overlay"][data-state="closed"],
+  [data-slot="sheet-content"][data-state="closed"] {
+    animation: gds-accessible-fade-out 140ms ease-out !important;
+  }
+}
+
+/* Safari exposes reduced-transparency independently from reduced-motion. */
+@media (prefers-reduced-transparency: reduce) {
+  [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  [class~="bg-background/60"],
+  [class~="bg-background/80"],
+  [class~="bg-background/85"],
+  [class~="bg-background/90"] {
+    background-color: var(--background) !important;
+  }
+
+  [class~="bg-card/95"] {
+    background-color: var(--card) !important;
+  }
+
+  [class~="bg-popover/95"] {
+    background-color: var(--popover) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border: color-mix(in oklab, var(--foreground) 45%, transparent);
+    --ring: var(--foreground);
+  }
+
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"] {
+    border-color: var(--foreground);
+  }
+}

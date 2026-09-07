@@ -1,0 +1,22 @@
+{
+  "name": "@gitnapp/design-tokens",
+  "version": "0.1.0",
+  "description": "rational-ui shared design tokens (monochrome, oklch, Tailwind v4 @theme). Pure CSS, no runtime deps. Source of truth: root design.md.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gitnapp/rational-ui",
+    "directory": "packages/design-tokens"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "style": "./tokens.css",
+  "main": "./tokens.css",
+  "exports": {
+    ".": "./tokens.css",
+    "./tokens.css": "./tokens.css"
+  },
+  "files": [
+    "tokens.css"
+  ]
+}

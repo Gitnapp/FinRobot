@@ -7,7 +7,6 @@ __pycache__/
 *.csv
 *.jpg
 *.png
-!finrobot_equity/web_app/static/*.png
 quant/
 coding/
 *.egg-info/
@@ -38,5 +37,10 @@ venv/
 # Runtime files
 .app.pid
 finrobot_equity/logs/
-finrobot_equity/web_app/data/*.db
 finrobot_equity/core/output/
+# Research Desk
+node_modules/
+frontend/dist/
+.desk/
+qa/
+.pytest_cache/

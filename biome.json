@@ -1,0 +1,6 @@
+{
+  "css": { "parser": { "tailwindDirectives": true } },
+  "formatter": { "indentStyle": "space", "indentWidth": 2 },
+  "files": { "includes": ["frontend/src/**", "frontend/vite.config.ts", "frontend/tsconfig.json", "frontend/package.json", "package.json"] },
+  "linter": { "enabled": false }
+}

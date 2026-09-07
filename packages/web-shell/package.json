@@ -1,0 +1,41 @@
+{
+  "name": "@gitnapp/web-shell",
+  "version": "0.2.0",
+  "description": "跨产品应用外壳（主题 rail + 顶栏功能 tab），语义真相源：根 design.md「应用外壳」",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gitnapp/rational-ui",
+    "directory": "packages/web-shell"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.tsx"
+  },
+  "files": [
+    "src",
+    "scripts/assert-tailwind-build.mjs"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test scripts/*.node-test.mjs && vitest run"
+  },
+  "dependencies": {
+    "@gitnapp/ui": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "typescript": "^5",
+    "vitest": "^3.2.6"
+  }
+}

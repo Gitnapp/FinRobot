@@ -1,0 +1,5 @@
+/*
+ * Anchor file for the shadcn CLI's Tailwind/theme detection only.
+ * Real consumers import "@gitnapp/design-tokens" directly — this file is not built or served.
+ */
+@import "@gitnapp/design-tokens";

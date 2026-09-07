@@ -1,3 +1,13 @@
+# Garage Research · FinRobot MVP
+
+本仓库当前产品入口为 Garage Research Desk：自选行情、Research 报告库、Coverage 持续跟踪与 20 行预测模型。
+
+启动与实现说明见 [RESEARCH_DESK.md](RESEARCH_DESK.md)。运行 `make setup && make build && make start`，访问 http://127.0.0.1:8001。
+
+---
+
+以下为原 FinRobot 项目与研究库说明，旧 Web 界面已替换。
+
 
 # FinRobot: An Open-Source AI Agent Platform for Financial Applications using Large Language Models
 [![Downloads](https://static.pepy.tech/badge/finrobot)](https://pepy.tech/project/finrobot)
@@ -152,8 +162,9 @@ chmod +x deploy.sh
 #if deploy.sh not working then
 python3 -m venv venv                                                                                                                                           
 source venv/bin/activate
-pip install -r requirements-equity.txt                                                                                                                         
-python run_web_app.py  
+make setup
+make build
+make start
 ```
 Access at `http://127.0.0.1:8001`
 

@@ -1,24 +1,19 @@
-FROM python:3.13-slim
-
+FROM node:24-slim AS web
+RUN corepack enable
 WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages ./packages
+COPY frontend ./frontend
+RUN pnpm install --frozen-lockfile && pnpm build
 
-# Install system dependencies
-# - build-essential: needed to compile numpy<2 from source on Python 3.13
-# - libfreetype6, libfontconfig1: matplotlib font rendering
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential libfreetype6 libfontconfig1 && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-COPY requirements-equity.txt .
-RUN pip install --no-cache-dir -r requirements-equity.txt && \
-    apt-get purge -y --auto-remove build-essential && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy source code
-COPY . .
-
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements-desk.lock ./
+RUN pip install --no-cache-dir -r requirements-desk.lock
+COPY finrobot_equity ./finrobot_equity
+COPY --from=web /app/frontend/dist ./frontend/dist
+ENV DESK_DATA_DIR=/data
+RUN useradd --create-home desk && mkdir /data && chown desk:desk /data
+USER desk
 EXPOSE 8001
-
-CMD ["uvicorn", "finrobot_equity.web_app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "finrobot_equity.research_desk.main:app", "--host", "0.0.0.0", "--port", "8001"]
