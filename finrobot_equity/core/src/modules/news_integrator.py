@@ -456,9 +456,9 @@ def get_enhanced_company_news(ticker: str, api_key: str, days_back: int = 5,
         to_date = end_date.strftime('%Y-%m-%d')
         
         # 获取新闻
-        url = "https://financialmodelingprep.com/api/v3/stock_news"
+        url = "https://financialmodelingprep.com/stable/news/stock"
         params = {
-            'tickers': ticker,
+            'symbols': ticker,
             'from': from_date,
             'to': to_date,
             'limit': limit,
@@ -466,9 +466,26 @@ def get_enhanced_company_news(ticker: str, api_key: str, days_back: int = 5,
         }
         
         logger.info(f"Fetching enhanced news for {ticker}...")
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        raw_news = response.json()
+        raw_news = None
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            raw_news = response.json()
+            if not isinstance(raw_news, list):
+                # e.g. plan-restriction error body from FMP
+                logger.warning(f"FMP news unavailable for {ticker}: {str(raw_news)[:120]}")
+                raw_news = None
+        except Exception as e:
+            logger.warning(f"FMP news request failed for {ticker}: {e}")
+            raw_news = None
+
+        if not raw_news:
+            # FMP stock news is restricted on some plans; fall back to Finnhub
+            try:
+                from .market_data_api import fetch_finnhub_news
+            except ImportError:
+                from modules.market_data_api import fetch_finnhub_news
+            raw_news = fetch_finnhub_news(ticker, days_back=days_back, limit=limit)
         
         if not raw_news:
             logger.warning(f"No news found for {ticker}")

@@ -7,6 +7,24 @@ import os
 
 DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "config", "config.ini")
 
+# Repo root: finrobot_equity/core/src/modules -> 4 levels up
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+
+
+def _load_dotenv():
+    """Load API keys from the repo-root .env file (and environment) if python-dotenv is available."""
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        return
+    # Load the repo-root .env first, then any .env discoverable from the CWD
+    load_dotenv(os.path.join(_REPO_ROOT, ".env"))
+    load_dotenv()
+
+
+_load_dotenv()
+
+
 def load_config(config_path=None):
     """Loads configuration from an INI file."""
     if config_path is None:
@@ -20,11 +38,23 @@ def load_config(config_path=None):
     return config
 
 def get_api_key(config, section="API_KEYS", key="fmp_api_key"):
-    """Retrieves a specific API key from the loaded configuration."""
+    """Retrieves a specific API key.
+
+    Precedence: environment variables / .env (e.g. fmp_api_key -> FMP_API_KEY)
+    first, then the config file, unless the config value is still a placeholder.
+    """
+    env_value = os.environ.get(key.upper())
+    if env_value:
+        return env_value
+
     try:
-        return config.get(section, key)
-    except (configparser.NoSectionError, configparser.NoOptionError) as e:
-        raise ValueError(f"Error retrieving API key 	'{key}' from section '{section}': {e}. Check your config file.")
+        value = config.get(section, key)
+    except (configparser.NoSectionError, configparser.NoOptionError):
+        value = None
+
+    if value is not None:
+        return value
+    raise ValueError(f"Error retrieving API key '{key}' from env var '{key.upper()}' or section '{section}'. Check your .env or config file.")
 
 # Example of how to add argument parsing setup if needed for common arguments,
 # but typically each script will define its own specific arguments.

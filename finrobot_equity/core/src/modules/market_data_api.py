@@ -10,6 +10,73 @@ import os
 # Assuming common_utils.py is in the same parent directory (src/modules)
 from .common_utils import get_api_key, load_config 
 
+FMP_STABLE_BASE_URL = "https://financialmodelingprep.com/stable"
+
+
+def _get_finnhub_api_key() -> str | None:
+    """Resolve Finnhub API key from env var or config.ini (optional fallback source)."""
+    key = os.environ.get("FINNHUB_API_KEY")
+    if key:
+        return key
+    try:
+        config = load_config()
+        key = config.get("API_KEYS", "finnhub_api_key", fallback=None)
+        if key and "YOUR_" not in key:
+            return key
+    except Exception:
+        pass
+    return None
+
+
+def fetch_finnhub_news(ticker: str, days_back: int = 5, limit: int = 50) -> list[dict] | None:
+    """Fetches recent company news from Finnhub, mapped to the FMP stock_news schema.
+
+    Used as a fallback because FMP's stock_news endpoint is not available
+    on all subscription plans.
+    """
+    api_key = _get_finnhub_api_key()
+    if not api_key:
+        return None
+    try:
+        from datetime import datetime, timedelta
+
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days_back)
+        response = requests.get(
+            "https://finnhub.io/api/v1/company-news",
+            params={
+                "symbol": ticker,
+                "from": start_date.strftime("%Y-%m-%d"),
+                "to": end_date.strftime("%Y-%m-%d"),
+                "token": api_key,
+            },
+            timeout=15,
+        )
+        response.raise_for_status()
+        data = response.json()
+        if not data or not isinstance(data, list):
+            return None
+
+        mapped_news = []
+        for article in data[:limit]:
+            published = article.get("datetime")
+            mapped_news.append({
+                "symbol": article.get("related") or ticker,
+                "title": article.get("headline"),
+                "publishedDate": (
+                    datetime.utcfromtimestamp(published).strftime("%Y-%m-%d %H:%M:%S")
+                    if published else None
+                ),
+                "text": article.get("summary"),
+                "site": article.get("source"),
+                "url": article.get("url"),
+            })
+        print(f"Fetched {len(mapped_news)} news articles for {ticker} from Finnhub")
+        return mapped_news
+    except Exception as e:
+        print(f"Error fetching Finnhub news for {ticker}: {e}")
+        return None
+
 def fetch_yfinance_volume(ticker: str, start_date: str, end_date: str) -> pd.DataFrame | None:
     """Fetches historical trading volume data using yfinance."""
     try:
@@ -27,7 +94,7 @@ def fetch_yfinance_volume(ticker: str, start_date: str, end_date: str) -> pd.Dat
 
 def fetch_fmp_enterprise_value(ticker: str, api_key: str, limit: int = 2000) -> pd.DataFrame | None:
     """Fetches historical enterprise value from Financial Modeling Prep API."""
-    url = f"https://financialmodelingprep.com/api/v3/enterprise-value/{ticker}?limit={limit}&apikey={api_key}"
+    url = f"{FMP_STABLE_BASE_URL}/enterprise-values?symbol={ticker}&limit={limit}&apikey={api_key}"
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -56,7 +123,7 @@ def get_fmp_ratios_and_key_metrics(ticker: str, api_key: str, period: str = "ann
     ratios_df, key_metrics_df = None, None
     try:
         # Ratios
-        ratios_url = f"https://financialmodelingprep.com/api/v3/ratios/{ticker}?period={period}&limit={limit}&apikey={api_key}"
+        ratios_url = f"{FMP_STABLE_BASE_URL}/ratios?symbol={ticker}&period={period}&limit={limit}&apikey={api_key}"
         response_ratios = requests.get(ratios_url)
         response_ratios.raise_for_status()
         ratios_data = response_ratios.json()
@@ -66,7 +133,7 @@ def get_fmp_ratios_and_key_metrics(ticker: str, api_key: str, period: str = "ann
             ratios_df["year"] = ratios_df["date"].dt.year
 
         # Key Metrics
-        key_metrics_url = f"https://financialmodelingprep.com/api/v3/key-metrics/{ticker}?period={period}&limit={limit}&apikey={api_key}"
+        key_metrics_url = f"{FMP_STABLE_BASE_URL}/key-metrics?symbol={ticker}&period={period}&limit={limit}&apikey={api_key}"
         response_key_metrics = requests.get(key_metrics_url)
         response_key_metrics.raise_for_status()
         key_metrics_data = response_key_metrics.json()
@@ -85,7 +152,7 @@ def get_fmp_ratios_and_key_metrics(ticker: str, api_key: str, period: str = "ann
 def get_fmp_income_statement(ticker: str, api_key: str, period: str = "annual", limit: int = 5) -> pd.DataFrame | None:
     """Fetches income statement data from FMP API."""
     try:
-        url = f"https://financialmodelingprep.com/api/v3/income-statement/{ticker}?period={period}&limit={limit}&apikey={api_key}"
+        url = f"{FMP_STABLE_BASE_URL}/income-statement?symbol={ticker}&period={period}&limit={limit}&apikey={api_key}"
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
@@ -106,7 +173,7 @@ def get_fmp_income_statement(ticker: str, api_key: str, period: str = "annual", 
 def get_fmp_balance_sheet(ticker: str, api_key: str, period: str = "annual", limit: int = 5) -> pd.DataFrame | None:
     """Fetches balance sheet data from FMP API."""
     try:
-        url = f"https://financialmodelingprep.com/api/v3/balance-sheet-statement/{ticker}?period={period}&limit={limit}&apikey={api_key}"
+        url = f"{FMP_STABLE_BASE_URL}/balance-sheet-statement?symbol={ticker}&period={period}&limit={limit}&apikey={api_key}"
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
@@ -127,7 +194,7 @@ def get_fmp_balance_sheet(ticker: str, api_key: str, period: str = "annual", lim
 def get_fmp_cash_flow_statement(ticker: str, api_key: str, period: str = "annual", limit: int = 5) -> pd.DataFrame | None:
     """Fetches cash flow statement data from FMP API."""
     try:
-        url = f"https://financialmodelingprep.com/api/v3/cash-flow-statement/{ticker}?period={period}&limit={limit}&apikey={api_key}"
+        url = f"{FMP_STABLE_BASE_URL}/cash-flow-statement?symbol={ticker}&period={period}&limit={limit}&apikey={api_key}"
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
@@ -182,7 +249,7 @@ def combine_peer_financial_data(tickers: list[str], api_key: str, years_limit: i
             for _, row in key_metrics_df.iterrows():
                 year = row["year"]
                 if year not in ticker_data: ticker_data[year] = {}
-                ticker_data[year]["EV/EBITDA"] = row.get("enterpriseValueOverEBITDA")
+                ticker_data[year]["EV/EBITDA"] = row.get("evToEBITDA")
         
         if ticker_data:
             all_peers_data[ticker] = ticker_data
@@ -239,7 +306,7 @@ def project_ebitda_for_peers(df_ebitda_historical: pd.DataFrame, num_projection_
 
 def get_fmp_current_price(ticker: str, api_key: str) -> float | None:
     """Fetches the latest stock price from Financial Modeling Prep API."""
-    url = f"https://financialmodelingprep.com/api/v3/quote-short/{ticker}?apikey={api_key}"
+    url = f"{FMP_STABLE_BASE_URL}/quote-short?symbol={ticker}&apikey={api_key}"
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -249,7 +316,7 @@ def get_fmp_current_price(ticker: str, api_key: str) -> float | None:
             if "price" in quote_data and quote_data["price"] is not None:
                 return float(quote_data["price"])
             else:
-                url_full_quote = f"https://financialmodelingprep.com/api/v3/quote/{ticker}?apikey={api_key}"
+                url_full_quote = f"{FMP_STABLE_BASE_URL}/quote?symbol={ticker}&apikey={api_key}"
                 response_full = requests.get(url_full_quote)
                 response_full.raise_for_status()
                 data_full = response_full.json()
@@ -305,33 +372,20 @@ def get_analyst_insights(ticker: str, api_key: str = None) -> tuple[str | None, 
     return rating, target_price
 
 def get_fmp_target_price(ticker: str, api_key: str) -> float | None:
-    """Fetches the latest analyst target price from Financial Modeling Prep API v4."""
-    url = f"https://financialmodelingprep.com/api/v4/price-target?symbol={ticker}&apikey={api_key}"
+    """Fetches the analyst consensus target price from FMP API (stable)."""
+    url = f"{FMP_STABLE_BASE_URL}/price-target-consensus?symbol={ticker}&apikey={api_key}"
     try:
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
         if data and isinstance(data, list) and len(data) > 0:
-            for item in data:
-                try:
-                    item['parsedDate'] = pd.to_datetime(item.get('publishedDate'))
-                except Exception as e:
-                    print(f"Warning: Could not parse publishedDate '{item.get('publishedDate')}' for {ticker}: {e}")
-                    item['parsedDate'] = None
-            
-            valid_data = [item for item in data if item['parsedDate'] is not None]
-            
-            if not valid_data:
-                print(f"No valid published dates found in FMP target price data for {ticker}.")
-                return None
-
-            latest_target_info = sorted(valid_data, key=lambda x: x['parsedDate'], reverse=True)[0]
-            
-            if "priceTarget" in latest_target_info and latest_target_info["priceTarget"] is not None:
-                return float(latest_target_info["priceTarget"])
-            else:
-                print(f"Price target not found in the latest FMP data for {ticker}. Data: {latest_target_info}")
-                return None
+            consensus = data[0]
+            for field in ("targetConsensus", "targetMedian", "targetHigh", "targetLow"):
+                value = consensus.get(field)
+                if value is not None:
+                    return float(value)
+            print(f"Price target not found in FMP consensus data for {ticker}. Data: {consensus}")
+            return None
         else:
             print(f"No target price data or unexpected format returned from FMP for {ticker}. Response: {data}")
             return None
@@ -343,8 +397,8 @@ def get_fmp_target_price(ticker: str, api_key: str) -> float | None:
         return None
 
 def get_fmp_analyst_rating(ticker: str, api_key: str) -> str | None:
-    """Fetches the latest analyst rating (e.g., Buy, Hold, Sell) from Financial Modeling Prep API v4."""
-    url = f"https://financialmodelingprep.com/api/v4/upgrades-downgrades?symbol={ticker}&apikey={api_key}"
+    """Fetches the latest analyst rating (e.g., Buy, Hold, Sell) from FMP grades API (stable)."""
+    url = f"{FMP_STABLE_BASE_URL}/grades?symbol={ticker}&apikey={api_key}"
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -352,15 +406,15 @@ def get_fmp_analyst_rating(ticker: str, api_key: str) -> str | None:
         if data and isinstance(data, list) and len(data) > 0:
             for item in data:
                 try:
-                    item['parsedDate'] = pd.to_datetime(item.get('publishedDate'))
+                    item['parsedDate'] = pd.to_datetime(item.get('date'))
                 except Exception as e:
-                    print(f"Warning: Could not parse publishedDate '{item.get('publishedDate')}' for {ticker}: {e}")
+                    print(f"Warning: Could not parse date '{item.get('date')}' for {ticker}: {e}")
                     item['parsedDate'] = None
             
             valid_data = [item for item in data if item['parsedDate'] is not None]
 
             if not valid_data:
-                print(f"No valid published dates found in FMP analyst rating data for {ticker}.")
+                print(f"No valid dates found in FMP analyst rating data for {ticker}.")
                 return None
 
             latest_rating_info = sorted(valid_data, key=lambda x: x['parsedDate'], reverse=True)[0]
@@ -385,7 +439,7 @@ def get_fmp_analyst_rating(ticker: str, api_key: str) -> str | None:
 
 def get_fmp_company_profile(ticker: str, api_key: str) -> dict | None:
     """Fetches comprehensive company profile data from FMP API."""
-    url = f"https://financialmodelingprep.com/api/v3/profile/{ticker}?apikey={api_key}"
+    url = f"{FMP_STABLE_BASE_URL}/profile?symbol={ticker}&apikey={api_key}"
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -404,7 +458,7 @@ def get_fmp_company_profile(ticker: str, api_key: str) -> dict | None:
 
 def get_fmp_market_cap(ticker: str, api_key: str) -> float | None:
     """Fetches current market capitalization from FMP API."""
-    url = f"https://financialmodelingprep.com/api/v3/market-capitalization/{ticker}?apikey={api_key}"
+    url = f"{FMP_STABLE_BASE_URL}/market-capitalization?symbol={ticker}&apikey={api_key}"
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -463,16 +517,16 @@ def get_comprehensive_company_metrics(ticker: str, api_key: str) -> dict:
     # 3. Get company profile data
     profile = get_fmp_company_profile(ticker, api_key)
     if profile:
-        metrics['market_cap'] = profile.get('mktCap', 0) / 1e9 if profile.get('mktCap') else None  # Convert to billions
-        metrics['volume'] = profile.get('volAvg', 0) / 1e6 if profile.get('volAvg') else None  # Convert to millions
+        metrics['market_cap'] = profile.get('marketCap', 0) / 1e9 if profile.get('marketCap') else None  # Convert to billions
+        metrics['volume'] = profile.get('averageVolume', 0) / 1e6 if profile.get('averageVolume') else None  # Convert to millions
         metrics['beta'] = profile.get('beta')
         metrics['sector'] = profile.get('sector', 'N/A')
         metrics['industry'] = profile.get('industry', 'N/A')
-        metrics['exchange'] = profile.get('exchangeShortName', 'N/A')
+        metrics['exchange'] = profile.get('exchange', 'N/A')
     
     # 4. Get detailed quote data (volume, 52w range, shares outstanding)
     try:
-        quote_url = f"https://financialmodelingprep.com/api/v3/quote/{ticker}?apikey={api_key}"
+        quote_url = f"{FMP_STABLE_BASE_URL}/quote?symbol={ticker}&apikey={api_key}"
         response = requests.get(quote_url)
         response.raise_for_status()
         quote_data = response.json()
@@ -488,8 +542,10 @@ def get_comprehensive_company_metrics(ticker: str, api_key: str) -> dict:
             year_low = quote.get('yearLow')
             if year_high is not None and year_low is not None:
                 metrics['52w_range'] = f"${year_low:.2f} - ${year_high:.2f}"
-            # Shares outstanding
+            # Shares outstanding (not in stable quote; derive from market cap / price)
             shares_out = quote.get('sharesOutstanding')
+            if not shares_out and quote.get('marketCap') and quote.get('price'):
+                shares_out = quote['marketCap'] / quote['price']
             if shares_out:
                 metrics['shares_outstanding'] = float(shares_out)
     except Exception as e:
@@ -502,28 +558,24 @@ def get_comprehensive_company_metrics(ticker: str, api_key: str) -> dict:
         if ratios_df is not None and not ratios_df.empty:
             latest_ratios = ratios_df.iloc[0]
             metrics['pb_ratio'] = latest_ratios.get('priceToBookRatio')
-            metrics['roe'] = latest_ratios.get('returnOnEquity')
-            if latest_ratios.get('returnOnEquity'):
-                metrics['roe'] = latest_ratios['returnOnEquity'] * 100  # Convert to percentage
-            metrics['net_debt_to_equity'] = latest_ratios.get('debtEquityRatio')
+            metrics['net_debt_to_equity'] = latest_ratios.get('debtToEquityRatio')
             # Try to get forward P/E from ratios
-            metrics['fwd_pe'] = latest_ratios.get('priceEarningsRatio')
+            metrics['fwd_pe'] = latest_ratios.get('priceToEarningsRatio')
         
         if key_metrics_df is not None and not key_metrics_df.empty:
             latest_key_metrics = key_metrics_df.iloc[0]
-            # Override with key metrics if available
-            if latest_key_metrics.get('peRatio'):
-                metrics['fwd_pe'] = latest_key_metrics['peRatio']
-            if latest_key_metrics.get('pbRatio'):
-                metrics['pb_ratio'] = latest_key_metrics['pbRatio']
+            # ROE lives in key-metrics on the stable API
+            roe = latest_key_metrics.get('returnOnEquity')
+            if roe:
+                metrics['roe'] = roe * 100  # Convert to percentage
     except Exception as e:
         print(f"Warning: Could not fetch financial ratios: {e}")
     
     # 6. Get dividend yield from profile or financial data
-    if profile and profile.get('lastDiv'):
-        if current_price and profile['lastDiv'] > 0:
+    if profile and profile.get('lastDividend'):
+        if current_price and profile['lastDividend'] > 0:
             # Calculate dividend yield: (annual dividend / current price) * 100
-            annual_dividend = profile['lastDiv']  # Assuming this is annual
+            annual_dividend = profile['lastDividend']  # Assuming this is annual
             metrics['dividend_yield'] = (annual_dividend / current_price) * 100
     
     # 7. Get shares outstanding for free float calculation (approximate)
@@ -559,10 +611,12 @@ def get_technical_indicators(ticker: str, api_key: str) -> dict:
     }
     try:
         import numpy as np
-        url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{ticker}?timeseries=250&apikey={api_key}"
+        url = f"{FMP_STABLE_BASE_URL}/historical-price-eod/full?symbol={ticker}&apikey={api_key}"
         resp = requests.get(url, timeout=15)
         data = resp.json()
-        prices = data.get('historical', [])
+        # stable API returns a bare list sorted newest-first
+        prices = data if isinstance(data, list) else data.get('historical', [])
+        prices = prices[:250]
         if len(prices) < 50:
             return result
 
@@ -685,10 +739,10 @@ def get_company_news(ticker: str, api_key: str, days_back: int = 5, limit: int =
         from_date = start_date.strftime('%Y-%m-%d')
         to_date = end_date.strftime('%Y-%m-%d')
         
-        # FMP Stock News API endpoint
-        url = f"https://financialmodelingprep.com/api/v3/stock_news"
+        # FMP Stock News API endpoint (stable; restricted on some plans -> Finnhub fallback)
+        url = f"{FMP_STABLE_BASE_URL}/news/stock"
         params = {
-            'tickers': ticker,
+            'symbols': ticker,
             'from': from_date,
             'to': to_date,
             'limit': limit,
@@ -696,9 +750,22 @@ def get_company_news(ticker: str, api_key: str, days_back: int = 5, limit: int =
         }
         
         print(f"Fetching news for {ticker} from {from_date} to {to_date}...")
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
+        data = None
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            if not isinstance(data, list):
+                # e.g. plan-restriction error body from FMP
+                print(f"FMP stock_news unavailable for {ticker}: {str(data)[:120]}")
+                data = None
+        except Exception as e:
+            print(f"FMP stock_news request failed for {ticker}: {e}")
+            data = None
+
+        if not data:
+            # FMP stock_news is restricted on some plans; fall back to Finnhub
+            return fetch_finnhub_news(ticker, days_back=days_back, limit=limit)
         
         if not data:
             print(f"No news data returned from FMP for {ticker}.")
