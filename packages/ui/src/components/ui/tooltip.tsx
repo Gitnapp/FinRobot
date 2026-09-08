@@ -58,6 +58,7 @@ function InfoHint({ children }: { children: React.ReactNode }) {
       <TooltipTrigger asChild>
         <button
           type="button"
+          data-slot="info-hint"
           aria-label="查看说明"
           className="relative inline-flex size-4 shrink-0 items-center justify-center align-middle border-0 bg-transparent p-0 text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring after:absolute after:-inset-1"
         >
@@ -75,13 +76,19 @@ function InfoLabel({
   className,
 }: {
   label: React.ReactNode;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-1 text-xs leading-4", className)}>
+    <span
+      data-slot="info-label"
+      className={cn(
+        "inline-flex items-center gap-1 align-middle text-[inherit] leading-[inherit]",
+        className,
+      )}
+    >
       <span>{label}</span>
-      <InfoHint>{children}</InfoHint>
+      {children && <InfoHint>{children}</InfoHint>}
     </span>
   );
 }

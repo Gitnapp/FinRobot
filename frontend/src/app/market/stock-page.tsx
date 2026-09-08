@@ -46,7 +46,6 @@ import {
   compact,
   Empty,
   ErrorState,
-  Hint,
   Loading,
   money,
   PageHeader,
@@ -203,9 +202,10 @@ export default function StockPage() {
       </PageHeader>
       <div className="stock-quote-bar">
         <div className="stock-price">
-          {money(quote.price)}
+          <InfoLabel label={money(quote.price)}>
+            {quote.mock ? "此报价为示例。" : null}
+          </InfoLabel>
           <Change value={quote.change_percent} />
-          {quote.mock && <Hint>此报价为示例。</Hint>}
         </div>
         <span className="stock-sector">{quote.sector}</span>
         {coverageMode && (
@@ -285,13 +285,17 @@ export default function StockPage() {
                     </div>
                     <div>
                       <dt>
-                        市盈率{data.metrics.mock && <Hint>此指标为示例。</Hint>}
+                        <InfoLabel label="市盈率">
+                          {data.metrics.mock ? "此指标为示例。" : null}
+                        </InfoLabel>
                       </dt>
                       <dd>{data.metrics.pe?.toFixed(1) || "—"}</dd>
                     </div>
                     <div>
                       <dt>
-                        Beta{data.metrics.mock && <Hint>此指标为示例。</Hint>}
+                        <InfoLabel label="Beta">
+                          {data.metrics.mock ? "此指标为示例。" : null}
+                        </InfoLabel>
                       </dt>
                       <dd>{data.metrics.beta?.toFixed(2) || "—"}</dd>
                     </div>

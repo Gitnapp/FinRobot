@@ -17,9 +17,9 @@ export function Source({
 }) {
   if (!mock) return note ? <Hint>{note}</Hint> : null;
   return (
-    <span className="source is-demo">
-      示例<Hint>{note || "本区为示例数据，不能视为真实经营或价格表现。"}</Hint>
-    </span>
+    <InfoLabel className="source is-demo" label="示例">
+      {note || "本区为示例数据，不能视为真实经营或价格表现。"}
+    </InfoLabel>
   );
 }
 

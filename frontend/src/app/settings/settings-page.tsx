@@ -1,3 +1,4 @@
+import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useState } from "react";
 import { Check, CircleDot, FlaskConical, KeyRound, Server } from "lucide-react";
 import { Label } from "@gitnapp/ui/components/ui/label";
@@ -8,7 +9,6 @@ import type { Settings } from "../../types";
 import {
   Button,
   ErrorState,
-  Hint,
   Input,
   Loading,
   PageHeader,
@@ -92,7 +92,9 @@ function SettingsForm({ initial }: { initial: Settings }) {
           <div className="settings-fields">
             <div>
               <Label htmlFor="api-key">
-                API Key <Hint>密钥仅用于请求对应服务，不会返回浏览器。</Hint>
+                <InfoLabel label="API Key">
+                  密钥仅用于请求对应服务，不会返回浏览器。
+                </InfoLabel>
               </Label>
               <Input
                 id="api-key"
@@ -106,11 +108,10 @@ function SettingsForm({ initial }: { initial: Settings }) {
             </div>
             <div>
               <Label htmlFor="base-url">
-                Base URL{" "}
-                <Hint>
+                <InfoLabel label="Base URL">
                   接口地址跟随后端的服务商配置；OpenAI Compatible 可通过
                   OPENAI_BASE_URL 设置。
-                </Hint>
+                </InfoLabel>
               </Label>
               <Input
                 id="base-url"
@@ -154,12 +155,11 @@ function SettingsForm({ initial }: { initial: Settings }) {
       <section className="data-settings">
         <div className="section-toolbar">
           <h2>
-            市场数据{" "}
-            <Hint>
+            <InfoLabel label="市场数据">
               优先使用已配置服务。限流、付费限制或缺失字段会使用明确标注的演示数据。Tavily
               / Exa 密钥已发现，本版研究使用 Finnhub
               新闻，尚未启用这两个搜索源。
-            </Hint>
+            </InfoLabel>
           </h2>
           <select
             aria-label="市场数据模式"

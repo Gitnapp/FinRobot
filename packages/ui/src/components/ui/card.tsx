@@ -53,14 +53,23 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-action"
-      className={cn("col-start-2 row-start-1 self-start justify-self-end", className)}
+      className={cn(
+        "col-start-2 row-start-1 self-center justify-self-end flex items-center",
+        className,
+      )}
       {...props}
     />
   );
 }
 
 function CardContent({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="card-content" className={cn("flex flex-col gap-3 px-5", className)} {...props} />;
+  return (
+    <div
+      data-slot="card-content"
+      className={cn("flex flex-col gap-3 px-5", className)}
+      {...props}
+    />
+  );
 }
 
 function CardFooter({ className, ...props }: React.ComponentProps<"div">) {

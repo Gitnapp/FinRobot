@@ -1,3 +1,4 @@
+import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, Pause, Play, Telescope, FileText } from "lucide-react";
@@ -10,7 +11,6 @@ import {
   compact,
   Empty,
   ErrorState,
-  Hint,
   Loading,
   money,
   PageHeader,
@@ -100,22 +100,20 @@ export default function CoveragePage() {
                 </span>
               </div>
               <div className="coverage-price">
-                <strong>{money(q.price)}</strong>
+                <InfoLabel label={<strong>{money(q.price)}</strong>}>
+                  {q.mock ? "此报价为示例。" : null}
+                </InfoLabel>
                 <Change value={q.change_percent} />
-                {q.mock && <Hint>此报价为示例。</Hint>}
               </div>
               <div className="coverage-chart">
                 <Sparkline history={d.history} />
                 <div>
                   <span>{d.history.mock ? "示例走势" : "价格走势"}</span>
-                  <span>
-                    {d.technical.trend}
-                    <Hint>
-                      近一年收益 {(d.technical.return_year * 100).toFixed(1)}
-                      %，年化波动 {(d.technical.volatility * 100).toFixed(1)}%。
-                      {d.history.mock ? "根据示例历史数据计算。" : ""}
-                    </Hint>
-                  </span>
+                  <InfoLabel label={d.technical.trend}>
+                    近一年收益 {(d.technical.return_year * 100).toFixed(1)}
+                    %，年化波动 {(d.technical.volatility * 100).toFixed(1)}%。
+                    {d.history.mock ? "根据示例历史数据计算。" : ""}
+                  </InfoLabel>
                 </div>
               </div>
               <dl className="coverage-metrics">
@@ -124,21 +122,28 @@ export default function CoveragePage() {
                   <dd>{compact(q.market_cap)}</dd>
                 </div>
                 <div>
-                  <dt>市盈率{d.metrics.mock && <Hint>此指标为示例。</Hint>}</dt>
+                  <dt>
+                    <InfoLabel label="市盈率">
+                      {d.metrics.mock ? "此指标为示例。" : null}
+                    </InfoLabel>
+                  </dt>
                   <dd>{d.metrics.pe?.toFixed(1) || "—"}</dd>
                 </div>
                 <div>
-                  <dt>Beta{d.metrics.mock && <Hint>此指标为示例。</Hint>}</dt>
+                  <dt>
+                    <InfoLabel label="Beta">
+                      {d.metrics.mock ? "此指标为示例。" : null}
+                    </InfoLabel>
+                  </dt>
                   <dd>{d.metrics.beta?.toFixed(2) || "—"}</dd>
                 </div>
               </dl>
               <div className="financial-caption">
-                {m?.mock ? "假设财务" : "财务摘要"}
-                {m?.mock && (
-                  <Hint>
-                    下方财务数据为示例基期；完整计算与假设可在详情中查看。
-                  </Hint>
-                )}
+                <InfoLabel label={m?.mock ? "假设财务" : "财务摘要"}>
+                  {m?.mock
+                    ? "下方财务数据为示例基期；完整计算与假设可在详情中查看。"
+                    : null}
+                </InfoLabel>
               </div>
               <dl className="coverage-metrics">
                 <div>
@@ -156,13 +161,12 @@ export default function CoveragePage() {
               </dl>
               <div className="coverage-thesis">
                 <span>研究观点</span>
-                <b>{m?.mock ? "待核实" : "持续观察"}</b>
-                <Hint>
+                <InfoLabel label={<b>{m?.mock ? "待核实" : "持续观察"}</b>}>
                   {researchBrief(
                     d.summary || "加入跟踪后会自动整理资料并生成研报。",
                   )}
                   {m?.mock ? "财务输入为示例，不能形成真实买卖评级。" : ""}
-                </Hint>
+                </InfoLabel>
               </div>
               <div className="coverage-card-footer">
                 <span>

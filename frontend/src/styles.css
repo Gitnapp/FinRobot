@@ -136,19 +136,6 @@ select {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.hint {
-  display: inline-flex;
-  vertical-align: middle;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted-foreground);
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-}
-.hint:hover {
-  background: var(--muted);
-}
 .source {
   display: inline-flex;
   align-items: center;
@@ -165,14 +152,6 @@ select {
 .source.is-demo {
   color: var(--warning);
   background: color-mix(in srgb, var(--warning) 8%, transparent);
-}
-.source .hint {
-  width: 14px;
-  height: 14px;
-  color: inherit;
-}
-.source .hint svg {
-  width: 12px;
 }
 .section-toolbar {
   display: flex;
@@ -412,32 +391,6 @@ select {
   color: var(--muted-foreground);
   font-size: 11px;
 }
-.watchlist-table th {
-  font-size: 11px;
-  color: var(--muted-foreground);
-  font-weight: 400;
-  height: 35px;
-  padding: 8px;
-}
-.watchlist-table th:nth-child(2) {
-  text-align: right;
-}
-.watchlist-table td {
-  padding: 15px 8px;
-  font-size: 12px;
-  border: 0;
-}
-.watchlist-table tr {
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
-}
-.watchlist-table .selected-row {
-  background: color-mix(in srgb, var(--muted) 42%, transparent);
-}
-.watchlist-table .symbol-cell {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 .symbol-avatar {
   width: 31px;
   height: 31px;
@@ -469,10 +422,6 @@ select {
   font-size: 11px;
   margin-top: 4px;
   white-space: nowrap;
-}
-.watchlist-table .numeric {
-  text-align: right;
-  font-size: 12px;
 }
 .quote-source {
   display: block;
@@ -1054,14 +1003,6 @@ select {
   align-items: center;
   gap: 6px;
 }
-.row-label .hint {
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.financial-table tr:hover .hint,
-.row-label .hint:focus-visible {
-  opacity: 1;
-}
 .model-footnote {
   display: flex;
   gap: 7px;
@@ -1499,9 +1440,6 @@ select {
   .market-side {
     padding-left: 36px;
   }
-  .watchlist-table td {
-    padding: 17px 10px;
-  }
   .symbol-cell small {
     max-width: 180px;
   }
@@ -1610,12 +1548,6 @@ select {
   .market-side {
     grid-template-columns: 1fr;
     padding-top: 24px;
-  }
-  .watchlist-table {
-    min-width: 450px;
-  }
-  .watchlist-table td {
-    padding: 13px 7px;
   }
   .symbol-cell small {
     max-width: 110px;
@@ -1787,28 +1719,10 @@ select {
   .symbol-cell small {
     max-width: 105px;
   }
-  .watchlist-table .symbol-cell {
-    gap: 7px;
-  }
-  .watchlist-table td {
-    padding: 14px 5px;
-  }
 }
 
 /* Keep status chips compact while their info icon retains an invisible touch target. */
-.source .hint {
-  min-width: 14px;
-  min-height: 14px;
-  position: relative;
-}
 @media (hover: none) and (pointer: coarse) {
-  .source .hint::after {
-    content: "";
-    position: absolute;
-    width: 44px;
-    height: 44px;
-    inset: -15px;
-  }
 }
 @media (max-width: 767px) {
   .financial-table td:nth-child(2),
@@ -1858,18 +1772,6 @@ select {
 }
 .page-heading h1 {
   letter-spacing: -0.025em;
-}
-.watchlist-table td {
-  font-size: 13px;
-}
-.watchlist-table th {
-  font-size: 12px;
-}
-.watchlist-table .numeric {
-  font-size: 13px;
-}
-.watchlist-table small {
-  font-size: 11px;
 }
 .symbol-cell strong {
   font-size: 14px;
@@ -2205,18 +2107,6 @@ select {
   .watchlist-toolbar > .actions {
     gap: 6px;
   }
-  .watchlist-table {
-    min-width: 0;
-  }
-  .watchlist-table th:nth-child(4),
-  .watchlist-table th:nth-child(5),
-  .watchlist-table td:nth-child(4),
-  .watchlist-table td:nth-child(5) {
-    display: none;
-  }
-  .watchlist-table .symbol-cell small {
-    max-width: 100px;
-  }
   .coverage-grid {
     grid-template-columns: 1fr;
   }
@@ -2251,14 +2141,6 @@ select {
   .segmented > button {
     font-size: 13px;
     min-height: 34px;
-  }
-  .hint {
-    min-height: 20px;
-    min-width: 20px;
-  }
-  .source .hint {
-    min-width: 14px;
-    min-height: 14px;
   }
   .coverage-detail-grid {
     gap: 20px;
@@ -2413,10 +2295,146 @@ select {
   color: var(--muted-foreground);
 }
 
+/* Watchlist: one geometry for headers, values and responsive columns. */
+.watchlist-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+.watchlist-table th,
+.watchlist-table td {
+  padding: 10px 12px;
+  text-align: right;
+  vertical-align: middle;
+}
+.watchlist-table th {
+  height: 36px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 400;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+.watchlist-table th:first-child,
+.watchlist-table td:first-child {
+  width: 38%;
+  text-align: left;
+  padding-left: 12px;
+}
+.watchlist-table th:nth-child(2) {
+  width: 19%;
+}
+.watchlist-table th:nth-child(3) {
+  width: 17%;
+}
+.watchlist-table th:nth-child(4) {
+  width: 16%;
+}
+.watchlist-table th:nth-child(5) {
+  width: 10%;
+}
+.watchlist-table td {
+  height: 60px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  border: 0;
+}
+.watchlist-table .numeric {
+  font-size: 13px;
+}
+.watchlist-table tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+.watchlist-table thead tr:hover {
+  background: transparent;
+}
 .watchlist-table tbody tr {
   cursor: default;
+}
+.watchlist-table tbody tr:hover {
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+}
+.watchlist-table .selected-row {
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
 }
 .watchlist-table tbody tr:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: -2px;
+}
+.watchlist-table .symbol-cell {
+  display: block;
+  min-width: 0;
+}
+.watchlist-table .symbol-cell a {
+  display: block;
+  min-width: 0;
+}
+.watchlist-table .symbol-cell strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+.watchlist-table .symbol-cell small {
+  max-width: none;
+  width: 100%;
+  font-size: 11px;
+  line-height: 16px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.watchlist-table .change {
+  justify-content: flex-end;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.watchlist-table .report-count {
+  justify-content: flex-end;
+  font-size: 12px;
+  white-space: nowrap;
+}
+@media (max-width: 767px) {
+  .watchlist-table th,
+  .watchlist-table td {
+    padding: 10px 8px;
+  }
+  .watchlist-table th:first-child,
+  .watchlist-table td:first-child {
+    width: 44%;
+    padding-left: 8px;
+  }
+  .watchlist-table th:nth-child(2) {
+    width: 28%;
+  }
+  .watchlist-table th:nth-child(3) {
+    width: 28%;
+  }
+  .watchlist-table th:nth-child(4),
+  .watchlist-table td:nth-child(4),
+  .watchlist-table th:nth-child(5),
+  .watchlist-table td:nth-child(5) {
+    display: none;
+  }
+}
+
+.watchlist-table .report-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 8px;
+  margin-right: -8px;
+  border-radius: 4px;
+  transition:
+    background-color 150ms,
+    color 150ms;
+}
+.watchlist-table .report-count:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+.watchlist-table .report-count:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }

@@ -1,3 +1,4 @@
+import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, SlidersHorizontal } from "lucide-react";
@@ -21,7 +22,7 @@ import { toast } from "sonner";
 import { api, write } from "../api/client";
 import { useRefresh } from "../hooks/queries";
 import type { Assumptions, FinancialModel } from "../types";
-import { Button, Input, Source, Hint, Loading, ErrorState } from "./ui";
+import { Button, Input, Source, Loading, ErrorState } from "./ui";
 
 export function modelValue(value: number | null, kind: string) {
   if (value === null) return "—";
@@ -77,7 +78,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
       <div className="section-toolbar model-toolbar">
         <div>
           <div className="section-title">
-            简单模型 <Hint>{model.notes.join(" ")}</Hint>
+            <InfoLabel label="简单模型">{model.notes.join(" ")}</InfoLabel>
           </div>
           <div className="model-meta">
             百万美元 <span>·</span>{" "}
@@ -173,10 +174,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
                 {String(i + 1).padStart(2, "0")}
               </TableCell>
               <TableCell>
-                <span className="row-label">
-                  {row.label}
-                  <Hint>{row.formula}</Hint>
-                </span>
+                <InfoLabel label={row.label}>{row.formula}</InfoLabel>
               </TableCell>
               {row.values.map((v, j) => (
                 <TableCell
@@ -191,7 +189,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
         </TableBody>
       </Table>
       <div className="model-footnote">
-        A 基期 · E 预测 <Hint>{model.notes.join(" ")}</Hint>
+        <InfoLabel label="A 基期 · E 预测">{model.notes.join(" ")}</InfoLabel>
         <span>EV 为预测末年未折现企业价值</span>
       </div>
       <Dialog open={edit} onOpenChange={setEdit}>

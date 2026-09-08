@@ -1,3 +1,4 @@
+import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router";
 import {
@@ -23,7 +24,6 @@ import {
   ErrorState,
   Loading,
   PageHeader,
-  Hint,
 } from "../../components/ui";
 const FIGURE_INDEX: Record<number, number> = {
   0: 0,
@@ -128,12 +128,9 @@ export default function ReportPage() {
           <div className="report-metadata">
             <span>研究日期 {dateText(data.completed_at)}</span>
             {p.has_mock_data && (
-              <span>
-                假设测算
-                <Hint>
-                  财务预测使用示例输入；价格、新闻和财务数据的口径分别列在附录。
-                </Hint>
-              </span>
+              <InfoLabel label="假设测算">
+                财务预测使用示例输入；价格、新闻和财务数据的口径分别列在附录。
+              </InfoLabel>
             )}
           </div>
           <div className="report-layout">

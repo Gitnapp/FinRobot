@@ -1,12 +1,16 @@
 """Native vector figures for screen, standalone HTML and PDF; no screenshots."""
 
 import base64
+from decimal import Decimal, ROUND_HALF_UP
 
 from reportlab.graphics import renderSVG
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.lineplots import LinePlot
-from reportlab.graphics.shapes import Drawing, Rect, String
+from reportlab.graphics.shapes import Drawing, Line, Rect, String
+from reportlab.graphics.widgets.markers import makeMarker
 from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 
 INK = colors.HexColor("#344942")
 GRAY = colors.HexColor("#96aaa1")
@@ -23,9 +27,9 @@ def frame(title):
 def bars(title, labels, series, names):
     d = frame(title)
     c = VerticalBarChart()
-    c.x = 48
+    c.x = 58
     c.y = 58
-    c.width = 394
+    c.width = 352
     c.height = 140
     c.data = series
     all_values = [value for group in series for value in group]
@@ -62,9 +66,9 @@ def bars(title, labels, series, names):
 def lines(title, labels, series, names):
     d = frame(title)
     c = LinePlot()
-    c.x = 48
+    c.x = 58
     c.y = 58
-    c.width = 394
+    c.width = 352
     c.height = 140
     c.data = [[(i, float(v)) for i, v in enumerate(s)] for s in series]
     c.joinedLines = True
@@ -82,6 +86,13 @@ def lines(title, labels, series, names):
     for i in range(len(series)):
         c.lines[i].strokeColor = [INK, GRAY, colors.HexColor("#b69a74")][i % 3]
         c.lines[i].strokeWidth = 1.4
+        if len(labels) <= 12:
+            c.lines[i].symbol = makeMarker(
+                "FilledCircle",
+                size=4,
+                fillColor=c.lines[i].strokeColor,
+                strokeColor=c.lines[i].strokeColor,
+            )
     d.add(c)
     for i, name in enumerate(names):
         d.add(
@@ -94,6 +105,38 @@ def lines(title, labels, series, names):
             )
         )
     return d
+
+
+def profitability_table(labels, series):
+    """Exact annual margin comparison; no interpolated trends between assumptions."""
+    font = "STSong-Light"
+    if font not in pdfmetrics.getRegisteredFontNames():
+        pdfmetrics.registerFont(UnicodeCIDFont(font))
+    drawing = Drawing(460, 202)
+    drawing.add(Rect(0, 0, 460, 202, fillColor=colors.white, strokeColor=None))
+
+    def text(x, y, value, size=12, color=INK, anchor="start"):
+        drawing.add(
+            String(x, y, value, fontName=font, fontSize=size, fillColor=color, textAnchor=anchor)
+        )
+
+    text(14, 179, "盈利能力", 15)
+    text(442, 180, "单位：%", 10, GRAY, "end")
+    drawing.add(Rect(181, 14, 65, 145, fillColor=colors.HexColor("#f1f4f2"), strokeColor=None))
+    right_edges = [235, 304, 373, 442]
+    text(14, 137, "指标", 10, GRAY)
+    for i, label in enumerate(labels):
+        text(right_edges[i], 143, label[:-1], 11, INK, "end")
+        text(right_edges[i], 128, "实际" if label.endswith("A") else "预测", 9, GRAY, "end")
+    names = ["毛利率", "EBITDA 利润率", "净利率"]
+    for y in [116, 82, 48, 14]:
+        drawing.add(Line(14, y, 446, y, strokeColor=GRID, strokeWidth=0.5))
+    for i, (name, values) in enumerate(zip(names, series)):
+        y = 94 - i * 34
+        text(14, y, name, 12)
+        for x, value in zip(right_edges, values):
+            text(x, y, str(Decimal(str(round(value, 8))).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)), 13, INK, "end")
+    return drawing
 
 
 def sensitivity(val):
@@ -171,15 +214,13 @@ def figures(data):
         (
             "margins",
             "盈利能力",
-            "毛利率、经营利润率与净利率的预测路径。",
-            lines(
-                "Profitability | %",
+            "毛利率、EBITDA 利润率与净利率；A 为实际基期，E 为假设预测。",
+            profitability_table(
                 years,
                 [
                     [v * 100 for v in rows[k]]
                     for k in ["gross_margin", "ebitda_margin", "net_margin"]
                 ],
-                ["Gross margin", "EBITDA margin", "Net margin"],
             ),
         ),
         (

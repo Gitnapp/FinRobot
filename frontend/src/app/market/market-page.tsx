@@ -1,3 +1,4 @@
+import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { usePriceHistory } from "../../hooks/queries";
 import { LoadingBoundary } from "@gitnapp/ui/components/ui/loading";
 import {
@@ -9,7 +10,7 @@ import {
 } from "@gitnapp/ui/components/ui/select";
 import { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router";
-import { Plus, Search, ArrowRight, FileText } from "lucide-react";
+import { Plus, Search, ArrowRight, Glasses } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -29,7 +30,6 @@ import {
   Loading,
   PageHeader,
   Empty,
-  Hint,
 } from "../../components/ui";
 import { PriceChart } from "../../components/price-chart";
 import { AddAsset } from "../../components/add-asset";
@@ -149,13 +149,6 @@ export default function MarketPage() {
                 >
                   <TableCell>
                     <div className="symbol-cell">
-                      <button
-                        className="symbol-avatar"
-                        aria-label={"预览 " + a.symbol + " 走势"}
-                        onClick={() => selectAsset(a.symbol)}
-                      >
-                        {a.symbol.slice(0, 2)}
-                      </button>
                       <Link
                         to={"/stocks/" + a.symbol}
                         onClick={(e) => {
@@ -176,8 +169,9 @@ export default function MarketPage() {
                     </div>
                   </TableCell>
                   <TableCell className="numeric">
-                    {money(a.price)}
-                    {a.mock && <Hint>此报价为示例，尚未取得实际行情。</Hint>}
+                    <InfoLabel label={money(a.price)}>
+                      {a.mock ? "此报价为示例，尚未取得实际行情。" : null}
+                    </InfoLabel>
                   </TableCell>
                   <TableCell>
                     <Change value={a.change_percent} />
@@ -194,8 +188,11 @@ export default function MarketPage() {
                         aria-label={"阅读 " + a.symbol + " 研报"}
                         className="report-count"
                       >
-                        <FileText size={15} />
-                        阅读
+                        <Glasses
+                          size={17}
+                          strokeWidth={1.5}
+                          aria-hidden="true"
+                        />
                       </Link>
                     ) : (
                       <span className="muted">—</span>
@@ -245,8 +242,11 @@ export default function MarketPage() {
                   </div>
                   <div>
                     <span>市盈率</span>
-                    <b>{detail.data.metrics.pe?.toFixed(1) || "—"}</b>
-                    {detail.data.metrics.mock && <Hint>此市盈率为示例。</Hint>}
+                    <InfoLabel
+                      label={<b>{detail.data.metrics.pe?.toFixed(1) || "—"}</b>}
+                    >
+                      {detail.data.metrics.mock ? "此市盈率为示例。" : null}
+                    </InfoLabel>
                   </div>
                 </div>
                 <Link className="preview-link" to={"/stocks/" + symbol}>

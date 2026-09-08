@@ -1,3 +1,4 @@
+import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { Link } from "react-router";
 import { ExternalLink } from "lucide-react";
 import type { Detail, History } from "../types";
@@ -38,11 +39,10 @@ export function TechnicalPanel({ data }: { data: Detail }) {
   return (
     <section className="dense-panel">
       <h2>
-        价格与风险
-        <Hint>
+        <InfoLabel label="价格与风险">
           {t.mock ? "本区根据示例历史价格计算。" : "根据历史收盘价计算。"}
           均线是对应期间的平均价格；波动率与最大回撤用于观察价格风险。
-        </Hint>
+        </InfoLabel>
       </h2>
       <dl className="metric-grid">
         {[
@@ -116,11 +116,10 @@ export function ValuationPanel({ data }: { data: Detail }) {
   return (
     <section className="dense-panel valuation-panel">
       <h2>
-        情景估值
-        <Hint>
+        <InfoLabel label="情景估值">
           {v.mock ? "本区基于示例财务数据，仅表示假设测算。" : ""}
           {v.note}
-        </Hint>
+        </InfoLabel>
       </h2>
       <div className="valuation-summary">
         <div>
@@ -168,10 +167,9 @@ export function PeersPanel({ data }: { data: Detail }) {
   return (
     <section className="dense-panel">
       <h2>
-        同业比较
-        <Hint>
+        <InfoLabel label="同业比较">
           同业估值口径可能不同，应结合业务结构与增长质量判断。缺失资料时使用明确标记的示例指标。
-        </Hint>
+        </InfoLabel>
       </h2>
       <table className="peers-table">
         <thead>
@@ -186,8 +184,9 @@ export function PeersPanel({ data }: { data: Detail }) {
           {data.peers.map((p) => (
             <tr key={p.symbol}>
               <td>
-                {p.symbol}
-                {p.mock && <Hint>本行部分指标为示例。</Hint>}
+                <InfoLabel label={p.symbol}>
+                  {p.mock ? "本行部分指标为示例。" : null}
+                </InfoLabel>
               </td>
               <td>{money(p.price)}</td>
               <td>{p.pe?.toFixed(1) || "—"}</td>
@@ -222,8 +221,9 @@ export function CatalystPanel({ data }: { data: Detail }) {
           <li>跟踪毛利率和费用投入</li>
           <li>观察资本开支与现金回收</li>
           <li>
-            核验财报日历和公司公告
-            <Hint>尚未取得近期新闻与可靠日历，不生成虚构事件或日期。</Hint>
+            <InfoLabel label="核验财报日历和公司公告">
+              尚未取得近期新闻与可靠日历，不生成虚构事件或日期。
+            </InfoLabel>
           </li>
         </ul>
       )}
