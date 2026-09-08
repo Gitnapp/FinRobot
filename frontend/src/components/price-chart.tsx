@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { usePriceHistory } from "../hooks/queries";
+import { LoadingState } from "@gitnapp/ui/components/ui/loading";
 import { useEffect, useRef, useState } from "react";
 import {
   AreaSeries,
@@ -10,7 +10,6 @@ import {
 } from "lightweight-charts";
 import { ChartCandlestick, ChartNoAxesCombined } from "lucide-react";
 import { Button, Source } from "./ui";
-import type { History } from "../types";
 
 export function PriceChart({
   small = false,
@@ -21,14 +20,7 @@ export function PriceChart({
 }) {
   const container = useRef<HTMLDivElement>(null);
   const [range, setRange] = useState(90);
-  const archive = useQuery({
-    queryKey: ["full-history", symbol],
-    enabled: Boolean(symbol),
-    queryFn: ({ signal }) =>
-      api<History>(`/assets/${symbol}/history`, { signal }),
-    staleTime: 21600000,
-    retry: false,
-  });
+  const archive = usePriceHistory(symbol);
   const shownHistory = archive.data;
   const [candles, setCandles] = useState(false);
   const [dark, setDark] = useState(
@@ -137,11 +129,7 @@ export function PriceChart({
           </Button>
         </div>
       </div>
-      {archive.isPending && (
-        <p role="status" className="muted">
-          正在加载完整日线…
-        </p>
-      )}
+      {archive.isPending && <LoadingState />}
       {archive.isError && (
         <div role="status" className="actions">
           <span className="muted">完整历史暂不可用</span>

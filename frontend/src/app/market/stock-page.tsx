@@ -55,9 +55,14 @@ import {
 } from "../../components/ui";
 
 function ResearchSummary({ id }: { id: string }) {
-  const { data } = useReport(id);
+  const { data, error, refetch } = useReport(id);
   const p = data?.payload;
-  if (!p) return <Loading />;
+  if (!p)
+    return error ? (
+      <ErrorState error={error} retry={() => void refetch()} />
+    ) : (
+      <Loading />
+    );
   return (
     <>
       <CardHeader>

@@ -1,6 +1,7 @@
+import { LoadingState } from "@gitnapp/ui/components/ui/loading";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { FilePlus2, LoaderCircle } from "lucide-react";
+import { FilePlus2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -49,11 +50,7 @@ export function ResearchAction({
           active ? navigate(`/reports/${active.id}`) : setOpen(true)
         }
       >
-        {active ? (
-          <LoaderCircle size={15} className="spin" />
-        ) : (
-          <FilePlus2 size={15} />
-        )}{" "}
+        {active ? <LoadingState /> : <FilePlus2 size={15} />}{" "}
         {active ? "查看进度" : "生成研报"}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>

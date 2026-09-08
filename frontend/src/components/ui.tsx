@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { LoaderCircle, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { InfoHint, InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 export { Button } from "@gitnapp/ui/components/ui/button";
 export { Input } from "@gitnapp/ui/components/ui/input";
@@ -55,14 +55,7 @@ export const dateText = (v: string | null | undefined) =>
         year: "numeric",
       })
     : "—";
-export function Loading() {
-  return (
-    <div className="empty" role="status">
-      <LoaderCircle size={22} className="spin" />
-      <span>正在载入</span>
-    </div>
-  );
-}
+export { LoadingState as Loading } from "@gitnapp/ui/components/ui/loading";
 export function ErrorState({
   error,
   retry,

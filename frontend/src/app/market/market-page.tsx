@@ -1,3 +1,5 @@
+import { usePriceHistory } from "../../hooks/queries";
+import { LoadingBoundary } from "@gitnapp/ui/components/ui/loading";
 import {
   Select,
   SelectTrigger,
@@ -6,7 +8,7 @@ import {
   SelectItem,
 } from "@gitnapp/ui/components/ui/select";
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useSearchParams, useNavigate } from "react-router";
 import { Plus, Search, ArrowRight, FileText } from "lucide-react";
 import {
   Table,
@@ -34,6 +36,11 @@ import { AddAsset } from "../../components/add-asset";
 import { WatchlistEditor } from "../../components/watchlist-editor";
 
 export default function MarketPage() {
+  const navigate = useNavigate();
+  function selectAsset(symbol: string) {
+    if (matchMedia("(max-width: 767px)").matches) navigate("/stocks/" + symbol);
+    else setSelected(symbol);
+  }
   const lists = useWatchlists();
   const [params, setParams] = useSearchParams();
   const list =
@@ -49,6 +56,7 @@ export default function MarketPage() {
     ? selected
     : data[0]?.symbol || "";
   const detail = useDetail(symbol);
+  const history = usePriceHistory(symbol);
   if (lists.isLoading || isLoading) return <Loading />;
   if (error || lists.error)
     return (
@@ -121,6 +129,22 @@ export default function MarketPage() {
               {shown.map((a) => (
                 <TableRow
                   key={a.symbol}
+                  tabIndex={0}
+                  aria-label={`预览 ${a.symbol} 走势`}
+                  aria-selected={symbol === a.symbol}
+                  onClick={(e) => {
+                    if (!(e.target as HTMLElement).closest("a,button"))
+                      selectAsset(a.symbol);
+                  }}
+                  onKeyDown={(e) => {
+                    if (
+                      e.target === e.currentTarget &&
+                      (e.key === "Enter" || e.key === " ")
+                    ) {
+                      e.preventDefault();
+                      selectAsset(a.symbol);
+                    }
+                  }}
                   className={symbol === a.symbol ? "selected-row" : ""}
                 >
                   <TableCell>
@@ -128,11 +152,24 @@ export default function MarketPage() {
                       <button
                         className="symbol-avatar"
                         aria-label={"预览 " + a.symbol + " 走势"}
-                        onClick={() => setSelected(a.symbol)}
+                        onClick={() => selectAsset(a.symbol)}
                       >
                         {a.symbol.slice(0, 2)}
                       </button>
-                      <Link to={"/stocks/" + a.symbol}>
+                      <Link
+                        to={"/stocks/" + a.symbol}
+                        onClick={(e) => {
+                          if (
+                            !e.metaKey &&
+                            !e.ctrlKey &&
+                            !e.shiftKey &&
+                            !e.altKey
+                          ) {
+                            e.preventDefault();
+                            selectAsset(a.symbol);
+                          }
+                        }}
+                      >
                         <strong>{a.symbol}</strong>
                         <small>{a.name}</small>
                       </Link>
@@ -182,45 +219,52 @@ export default function MarketPage() {
           )}
         </section>
         <aside className="market-side">
-          {detail.data ? (
-            <>
-              <div className="preview-heading">
-                <div>
-                  <Link to={"/stocks/" + symbol} className="symbol-title">
-                    {symbol}
-                    <ArrowRight size={15} />
-                  </Link>
-                  <span className="muted">{detail.data.quote.name}</span>
+          <LoadingBoundary
+            pending={Boolean(symbol) && (detail.isPending || history.isPending)}
+          >
+            {detail.data ? (
+              <>
+                <div className="preview-heading">
+                  <div>
+                    <Link to={"/stocks/" + symbol} className="symbol-title">
+                      {symbol}
+                      <ArrowRight size={15} />
+                    </Link>
+                    <span className="muted">{detail.data.quote.name}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="preview-price">
-                {money(detail.data.quote.price)}
-                <Change value={detail.data.quote.change_percent} />
-              </div>
-              <PriceChart key={symbol} symbol={symbol} small />
-              <div className="preview-facts">
-                <div>
-                  <span>市值</span>
-                  <b>{compact(detail.data.quote.market_cap)}</b>
+                <div className="preview-price">
+                  {money(detail.data.quote.price)}
+                  <Change value={detail.data.quote.change_percent} />
                 </div>
-                <div>
-                  <span>市盈率</span>
-                  <b>{detail.data.metrics.pe?.toFixed(1) || "—"}</b>
-                  {detail.data.metrics.mock && <Hint>此市盈率为示例。</Hint>}
+                <PriceChart key={symbol} symbol={symbol} small />
+                <div className="preview-facts">
+                  <div>
+                    <span>市值</span>
+                    <b>{compact(detail.data.quote.market_cap)}</b>
+                  </div>
+                  <div>
+                    <span>市盈率</span>
+                    <b>{detail.data.metrics.pe?.toFixed(1) || "—"}</b>
+                    {detail.data.metrics.mock && <Hint>此市盈率为示例。</Hint>}
+                  </div>
                 </div>
-              </div>
-              <Link className="preview-link" to={"/stocks/" + symbol}>
-                查看标的
-                <ArrowRight size={15} />
-              </Link>
-            </>
-          ) : symbol ? (
-            <Loading />
-          ) : (
-            <Empty>
-              <span>选择标的查看走势</span>
-            </Empty>
-          )}
+                <Link className="preview-link" to={"/stocks/" + symbol}>
+                  查看标的
+                  <ArrowRight size={15} />
+                </Link>
+              </>
+            ) : symbol ? (
+              <ErrorState
+                error={detail.error || new Error("暂时无法获取标的")}
+                retry={() => void detail.refetch()}
+              />
+            ) : (
+              <Empty>
+                <span>选择标的查看走势</span>
+              </Empty>
+            )}
+          </LoadingBoundary>
         </aside>
       </div>
       <AddAsset open={adding} onOpenChange={setAdding} listId={list?.id} />

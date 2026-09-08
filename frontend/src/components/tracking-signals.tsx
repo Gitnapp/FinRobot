@@ -1,3 +1,4 @@
+import { LoadingState } from "@gitnapp/ui/components/ui/loading";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -55,7 +56,7 @@ function State({ loading, retry }: { loading: boolean; retry: () => void }) {
   return (
     <div className="signal-empty" role="status">
       {loading ? (
-        "正在加载…"
+        <LoadingState className="w-full min-h-14" />
       ) : (
         <>
           暂时无法获取

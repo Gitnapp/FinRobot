@@ -296,3 +296,7 @@ textarea {
   [data-slot="button"] { position: relative; }
   [data-slot="button"]::after { content: ""; position: absolute; inset: -4px; }
 }
+
+@layer base {
+  button, a, select, [role="button"], [role="menuitem"], [role="option"] { cursor: default; }
+}

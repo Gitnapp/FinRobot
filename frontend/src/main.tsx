@@ -1,7 +1,12 @@
+import { LoadingScope } from "@gitnapp/ui/components/ui/loading";
 import { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, Link } from "react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useIsFetching,
+} from "@tanstack/react-query";
 import { TooltipProvider } from "@gitnapp/ui/components/ui/tooltip";
 import { Toaster } from "@gitnapp/ui/components/ui/sonner";
 import Shell from "./app/shell";
@@ -20,35 +25,43 @@ const client = new QueryClient({
     queries: { staleTime: 10000, retry: 1, refetchOnWindowFocus: false },
   },
 });
+function ProjectLoading({ children }: { children: React.ReactNode }) {
+  const pending = useIsFetching({
+    predicate: (query) => query.state.data === undefined,
+  });
+  return <LoadingScope active={pending > 0}>{children}</LoadingScope>;
+}
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={client}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <ErrorBoundary>
-          <Suspense fallback={<Loading />}>
-            <Routes>
-              <Route element={<Shell />}>
-                <Route index element={<Market />} />
-                <Route path="stocks/:symbol" element={<Stock />} />
-                <Route path="coverage" element={<Coverage />} />
-                <Route path="coverage/:symbol" element={<Stock />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="reports/:id" element={<Report />} />
-                <Route path="settings" element={<Settings />} />
-                <Route
-                  path="*"
-                  element={
-                    <div className="empty">
-                      页面不存在<Link to="/">返回看板</Link>
-                    </div>
-                  }
-                />
-              </Route>
-            </Routes>
-          </Suspense>
-        </ErrorBoundary>
-      </BrowserRouter>
-      <Toaster position="bottom-right" />
-    </TooltipProvider>
+    <ProjectLoading>
+      <TooltipProvider>
+        <BrowserRouter>
+          <ErrorBoundary>
+            <Suspense fallback={<Loading />}>
+              <Routes>
+                <Route element={<Shell />}>
+                  <Route index element={<Market />} />
+                  <Route path="stocks/:symbol" element={<Stock />} />
+                  <Route path="coverage" element={<Coverage />} />
+                  <Route path="coverage/:symbol" element={<Stock />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="reports/:id" element={<Report />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route
+                    path="*"
+                    element={
+                      <div className="empty">
+                        页面不存在<Link to="/">返回看板</Link>
+                      </div>
+                    }
+                  />
+                </Route>
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
+        </BrowserRouter>
+        <Toaster position="bottom-right" />
+      </TooltipProvider>
+    </ProjectLoading>
   </QueryClientProvider>,
 );

@@ -3,7 +3,6 @@ import { Link, useParams, useNavigate } from "react-router";
 import {
   ArrowLeft,
   Download,
-  LoaderCircle,
   RotateCcw,
   FileText,
   ExternalLink,
@@ -110,22 +109,14 @@ export default function ReportPage() {
       {!p ? (
         <div className="research-job">
           <div className="job-symbol">
-            {data.status === "failed" ? (
-              <RotateCcw size={28} />
-            ) : (
-              <LoaderCircle className="spin" size={28} />
-            )}
+            {data.status === "failed" ? <RotateCcw size={28} /> : <Loading />}
           </div>
-          <h2>
-            {data.status === "failed"
-              ? "研究暂未完成"
-              : "正在整理 " + data.symbol + " 的研报"}
-          </h2>
-          <p>
-            {data.status === "failed"
-              ? "请重新尝试生成研报。"
-              : "完成后会自动显示完整报告。"}
-          </p>
+          {data.status === "failed" && (
+            <>
+              <h2>研究暂未完成</h2>
+              <p>请重新尝试生成研报。</p>
+            </>
+          )}
           {data.status === "failed" && (
             <Button onClick={() => void retry()} disabled={busy}>
               重新研究

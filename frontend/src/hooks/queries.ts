@@ -58,3 +58,13 @@ export const useCoverage = () =>
     queryFn: () => api<Detail[]>("/coverage"),
     refetchInterval: 10000,
   });
+
+export const usePriceHistory = (symbol: string) =>
+  useQuery({
+    queryKey: ["full-history", symbol],
+    enabled: Boolean(symbol),
+    queryFn: ({ signal }) =>
+      api<import("../types").History>(`/assets/${symbol}/history`, { signal }),
+    staleTime: 21600000,
+    retry: false,
+  });
