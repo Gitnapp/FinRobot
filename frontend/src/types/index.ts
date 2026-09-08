@@ -45,6 +45,7 @@ export type Candle = {
   close: number;
 };
 export type History = {
+  complete?: boolean;
   points: Candle[];
   source: string;
   mock: boolean;
@@ -103,7 +104,47 @@ export type Detail = {
   };
   coverage: Coverage | null;
   reports: Report[];
-  model: FinancialModel;
+  model?: FinancialModel;
+  technical: {
+    sma20: number;
+    sma50: number;
+    sma200: number;
+    low: number;
+    high: number;
+    range_position: number;
+    return_year: number;
+    volatility: number;
+    drawdown: number;
+    trend: string;
+    mock: boolean;
+  };
+  metrics: {
+    pe: number | null;
+    beta: number | null;
+    growth: number | null;
+    mock: boolean;
+  };
+  valuation: {
+    enterprise_value: number;
+    wacc: number;
+    terminal_growth: number;
+    sensitivity: number[][];
+    wacc_axis: number[];
+    growth_axis: number[];
+    mock: boolean;
+    note: string;
+  };
+  peers: {
+    symbol: string;
+    name: string;
+    price: number;
+    market_cap: number | null;
+    pe: number | null;
+    beta: number | null;
+    growth: number | null;
+    mock: boolean;
+  }[];
+  summary?: string | null;
   news: News;
 };
 export type Payload = {
@@ -119,6 +160,7 @@ export type Payload = {
   demo_narrative: boolean;
   has_mock_data: boolean;
   verdict: string;
+  charts?: { id: string; title: string; caption: string; url: string }[];
 };
 export type FullReport = Report & { payload: Payload | null };
 export type Provider = {
@@ -135,3 +177,5 @@ export type Settings = {
   providers: Provider[];
   sources: { name: string; configured: boolean }[];
 };
+
+export type Watchlist = { id: string; name: string; symbols: string[] };

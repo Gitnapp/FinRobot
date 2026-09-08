@@ -10,21 +10,24 @@ import {
   DialogDescription,
 } from "@gitnapp/ui/components/ui/dialog";
 import { api, write } from "../api/client";
-import { useRefresh } from "../hooks/queries";
+import { useRefresh, useWatchlists } from "../hooks/queries";
 import { Button, Input } from "./ui";
 import { toast } from "sonner";
 
 export function AddAsset({
   open,
   onOpenChange,
+  listId,
 }: {
   open: boolean;
+  listId?: string;
   onOpenChange: (open: boolean) => void;
 }) {
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const refresh = useRefresh();
+  const lists = useWatchlists();
   const { data = [] } = useQuery({
     queryKey: ["catalog"],
     queryFn: () =>
@@ -36,7 +39,10 @@ export function AddAsset({
   async function add(symbol: string) {
     setBusy(true);
     try {
-      await write("/assets", { symbol });
+      await write(
+        "/watchlists/" + (listId || lists.data?.[0]?.id) + "/symbols",
+        { symbol },
+      );
       await refresh();
       onOpenChange(false);
       setSearch("");

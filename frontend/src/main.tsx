@@ -31,6 +31,7 @@ createRoot(document.getElementById("root")!).render(
                 <Route index element={<Market />} />
                 <Route path="stocks/:symbol" element={<Stock />} />
                 <Route path="coverage" element={<Coverage />} />
+                <Route path="coverage/:symbol" element={<Stock />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="reports/:id" element={<Report />} />
                 <Route path="settings" element={<Settings />} />

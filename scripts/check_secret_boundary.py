@@ -7,7 +7,7 @@ from pathlib import Path
 secrets = [
     v
     for k, v in os.environ.items()
-    if (k.endswith("_API_KEY") or k.endswith("_TOKEN")) and len(v) > 10
+    if (k.endswith("_KEY") or k.endswith("_TOKEN")) and len(v) > 10
 ]
 files = (
     subprocess.check_output(["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"])

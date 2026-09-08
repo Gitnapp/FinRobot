@@ -5,8 +5,8 @@ import json
 import uuid
 from datetime import datetime, timedelta, timezone
 
+from .dossier import compose
 from .exports import export_files
-from .model import compute_model
 from .research import write_narrative
 from .store import now
 
@@ -92,16 +92,13 @@ class Worker:
         try:
             symbol = job["symbol"]
             settings = self.store.settings()
-            quote, base, news = await asyncio.gather(
-                self.market.quote(symbol),
-                self.market.fundamentals(symbol),
-                self.market.news(symbol),
-            )
+            dossier = await compose(self.market, symbol, self.store.assumptions(symbol))
+            quote, base, news = dossier["quote"], dossier["fundamentals"], dossier["news"]
             self.store.execute("UPDATE reports SET stage='计算预测模型' WHERE id=?", (job["id"],))
-            model = compute_model(base, self.store.assumptions(symbol))
+            model = dossier["model"]
             self.store.execute("UPDATE reports SET stage='撰写研究报告' WHERE id=?", (job["id"],))
             narrative = await write_narrative(
-                symbol, quote, base, model, news, settings, job["focus"]
+                symbol, quote, base, model, news, settings, job["focus"], dossier
             )
             payload = {
                 "id": job["id"],
@@ -110,6 +107,10 @@ class Worker:
                 "created_at": now(),
                 "quote": quote,
                 "financial_base": base,
+                "history": dossier["history"],
+                "technical": dossier["technical"],
+                "valuation": dossier["valuation"],
+                "peers": dossier["peers"],
                 "model": model,
                 "focus": job["focus"],
                 "trigger": job["trigger"],

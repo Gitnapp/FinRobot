@@ -1,26 +1,11 @@
 import type { ReactNode } from "react";
-import { Info, LoaderCircle, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@gitnapp/ui/components/ui/tooltip";
+import { LoaderCircle, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { InfoHint, InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 export { Button } from "@gitnapp/ui/components/ui/button";
 export { Input } from "@gitnapp/ui/components/ui/input";
 export { Badge } from "@gitnapp/ui/components/ui/badge";
 
-export function Hint({ children }: { children: ReactNode }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button className="hint" aria-label="查看说明">
-          <Info size={14} />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-80">{children}</TooltipContent>
-    </Tooltip>
-  );
-}
+export const Hint = InfoHint;
 export function Source({
   mock,
   source,
@@ -30,13 +15,14 @@ export function Source({
   source: string;
   note?: string;
 }) {
+  if (!mock) return note ? <Hint>{note}</Hint> : null;
   return (
-    <span className={`source ${mock ? "is-demo" : ""}`}>
-      {mock ? "模拟" : source}
-      {note && <Hint>{note}</Hint>}
+    <span className="source is-demo">
+      示例<Hint>{note || "本区为示例数据，不能视为真实经营或价格表现。"}</Hint>
     </span>
   );
 }
+
 export function Change({ value }: { value: number }) {
   const positive = value >= 0;
   return (
@@ -66,9 +52,7 @@ export const dateText = (v: string | null | undefined) =>
     ? new Date(v).toLocaleString("zh-CN", {
         month: "2-digit",
         day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
+        year: "numeric",
       })
     : "—";
 export function Loading() {
@@ -127,10 +111,29 @@ export function PageHeader({
   return (
     <div className="page-heading">
       <div>
-        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <h1>{title}</h1>
       </div>
       <div className="actions">{children}</div>
     </div>
   );
+}
+
+export function Updated({
+  report,
+}: {
+  report?: import("../types").Report | null;
+}) {
+  if (!report) return <span className="muted">待研究</span>;
+  return (
+    <InfoLabel className="update-status" label="已更新">
+      研究更新于 {dateText(report.completed_at)}
+    </InfoLabel>
+  );
+}
+
+export function researchBrief(text = "") {
+  const paragraph = text.split(/\n+/).filter(Boolean).at(-1) || "";
+  return (paragraph.replace(/\[\d+\]/g, "").match(/[^。！？]+[。！？]?/g) || [])
+    .slice(0, 2)
+    .join("");
 }

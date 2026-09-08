@@ -186,13 +186,15 @@ textarea {
    `hover: none`) also matches mouse-driven touchscreen Windows desktops and
    would inflate every button there (design.md: 桌面密度不变). */
 @media (max-width: 47.999rem), ((hover: none) and (pointer: coarse)) {
-  button {
-    min-height: 2.75rem;
-    min-width: 2.75rem;
+  [data-slot="button"] {
+    min-height: 2.25rem;
+    font-size: 0.875rem;
   }
 
   [data-slot="button"][data-size^="icon"] {
-    min-width: 2.75rem;
+    min-width: 2.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
   }
 
   /* iOS Safari 在聚焦 font-size < 16px 的表单控件时会自动放大视口（模态框 zoom-in）。
@@ -287,4 +289,10 @@ textarea {
   [data-slot="select-content"] {
     border-color: var(--foreground);
   }
+}
+
+/* Touch hit area is independent of the visible button surface. */
+@media (hover: none) and (pointer: coarse) {
+  [data-slot="button"] { position: relative; }
+  [data-slot="button"]::after { content: ""; position: absolute; inset: -4px; }
 }

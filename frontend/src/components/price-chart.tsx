@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../api/client";
 import { useEffect, useRef, useState } from "react";
 import {
   AreaSeries,
@@ -11,14 +13,23 @@ import { Button, Source } from "./ui";
 import type { History } from "../types";
 
 export function PriceChart({
-  history,
   small = false,
+  symbol,
 }: {
-  history: History;
   small?: boolean;
+  symbol: string;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const [range, setRange] = useState(90);
+  const archive = useQuery({
+    queryKey: ["full-history", symbol],
+    enabled: Boolean(symbol),
+    queryFn: ({ signal }) =>
+      api<History>(`/assets/${symbol}/history`, { signal }),
+    staleTime: 21600000,
+    retry: false,
+  });
+  const shownHistory = archive.data;
   const [candles, setCandles] = useState(false);
   const [dark, setDark] = useState(
     () => matchMedia("(prefers-color-scheme: dark)").matches,
@@ -30,8 +41,16 @@ export function PriceChart({
     return () => mq.removeEventListener("change", changed);
   }, []);
   useEffect(() => {
-    if (!container.current) return;
-    const points = history.points.slice(-range);
+    if (!container.current || !shownHistory) return;
+    const last = shownHistory.points.at(-1);
+    if (!last) return;
+    const cutoff = new Date(Date.parse(last.time) - range * 86400000)
+      .toISOString()
+      .slice(0, 10);
+    const points =
+      range === 0
+        ? shownHistory.points
+        : shownHistory.points.filter((point) => point.time >= cutoff);
     const style = getComputedStyle(document.documentElement);
     const color = dark ? "#a3a3a3" : "#737373";
     const chart = createChart(container.current, {
@@ -49,7 +68,7 @@ export function PriceChart({
         horzLines: { color: dark ? "#292929" : "#f1f1f1" },
       },
       rightPriceScale: { borderVisible: false },
-      timeScale: { borderVisible: false },
+      timeScale: { borderVisible: false, minBarSpacing: 0.001 },
       handleScroll: !small,
       handleScale: !small,
     });
@@ -76,27 +95,27 @@ export function PriceChart({
     }
     chart.timeScale().fitContent();
     return () => chart.remove();
-  }, [history, small, range, candles, dark]);
+  }, [shownHistory, small, range, candles, dark]);
   return (
     <section className="chart-section">
       <div className="section-toolbar">
         <div className="section-title">
           价格走势{" "}
           <Source
-            mock={history.mock}
-            source={history.source}
-            note={history.note}
+            mock={shownHistory?.mock ?? false}
+            source={shownHistory?.source ?? ""}
+            note={shownHistory?.note}
           />
         </div>
         <div className="chart-controls">
-          {[30, 90, 260].map((n, i) => (
+          {[30, 90, 365, 0].map((n, i) => (
             <Button
               key={n}
               variant={range === n ? "secondary" : "ghost"}
               size="sm"
               onClick={() => setRange(n)}
             >
-              {["1M", "3M", "1Y"][i]}
+              {["1M", "3M", "1Y", "全部"][i]}
             </Button>
           ))}
           <Button
@@ -113,15 +132,39 @@ export function PriceChart({
           </Button>
         </div>
       </div>
+      {archive.isPending && (
+        <p role="status" className="muted">
+          正在加载完整日线…
+        </p>
+      )}
+      {archive.isError && (
+        <div role="status" className="actions">
+          <span className="muted">完整历史暂不可用</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void archive.refetch()}
+          >
+            重试
+          </Button>
+        </div>
+      )}
       <div
         className="price-chart"
         ref={container}
         role="img"
-        aria-label={`${history.mock ? "模拟" : "历史"}${candles ? "K线" : "价格"}走势，截至 ${history.as_of}`}
+        aria-label={`${shownHistory?.mock ? "模拟" : "历史"}${candles ? "K线" : "价格"}走势，截至 ${shownHistory?.as_of ?? ""}`}
       />
+      {range === 0 && shownHistory?.complete === false && (
+        <p className="muted text-xs">早期日线暂缺，当前展示可用历史。</p>
+      )}
       <div className="chart-caption">
-        {history.mock ? "模拟历史日线" : "历史日线"} · USD{" "}
-        <span>截至 {history.as_of}</span>
+        日线 · USD{" "}
+        <span>
+          {shownHistory
+            ? `${range === 0 ? shownHistory.points[0]?.time + " — " : "截至 "}${shownHistory.as_of}`
+            : ""}
+        </span>
       </div>
     </section>
   );

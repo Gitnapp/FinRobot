@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useParams, useNavigate } from "react-router";
 import {
   ArrowLeft,
-  Check,
   Download,
-  ExternalLink,
-  FileText,
   LoaderCircle,
   RotateCcw,
+  FileText,
+  ExternalLink,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -16,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@gitnapp/ui/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { useRefresh, useReport } from "../../hooks/queries";
+import { useReport, useRefresh } from "../../hooks/queries";
 import { write } from "../../api/client";
 import type { Report } from "../../types";
 import {
@@ -25,10 +24,28 @@ import {
   ErrorState,
   Loading,
   PageHeader,
-  Source,
+  Hint,
 } from "../../components/ui";
-import { ModelTable } from "../../components/model-table";
-
+const FIGURE_INDEX: Record<number, number> = {
+  0: 0,
+  2: 5,
+  3: 1,
+  4: 2,
+  5: 3,
+  6: 4,
+};
+function ReportFigure({
+  chart,
+}: {
+  chart: { url: string; title: string; caption: string };
+}) {
+  return (
+    <figure className="research-figure">
+      <img src={chart.url} alt={chart.title} />
+      <figcaption>{chart.caption}</figcaption>
+    </figure>
+  );
+}
 export default function ReportPage() {
   const { id = "" } = useParams();
   const { data, error, isLoading, refetch } = useReport(id);
@@ -38,51 +55,48 @@ export default function ReportPage() {
   if (isLoading) return <Loading />;
   if (error) return <ErrorState error={error} retry={() => void refetch()} />;
   if (!data) return null;
+  const p = data.payload;
   async function retry() {
     setBusy(true);
     try {
-      const result = await write<Report>("/research", {
+      const r = await write<Report>("/research", {
         symbol: data!.symbol,
         focus: data!.focus,
       });
-      await refresh();
-      navigate(`/reports/${result.id}`);
+      void refresh();
+      navigate("/reports/" + r.id);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setBusy(false);
     }
   }
-  const payload = data.payload;
   return (
     <div className="page report-page">
-      <Link className="back-link" to="/reports">
+      <Link to="/reports" className="back-link">
         <ArrowLeft size={14} />
         报告库
       </Link>
-      <PageHeader
-        eyebrow={`FINROBOT / RESEARCH v${data.version}`}
-        title={`${data.symbol} · 研究报告`}
-      >
-        {payload && (
+      <PageHeader title={data.symbol + " · 股票研究"}>
+        {p && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button>
                 <Download size={15} />
-                下载报告
+                下载研报
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {[
                 ["pdf", "PDF 文档"],
                 ["html", "HTML 网页"],
-                ["md", "Markdown"],
-                ["csv", "预测模型 CSV"],
-                ["json", "完整数据 JSON"],
-              ].map(([ext, name]) => (
+                ["md", "Markdown 文稿"],
+                ["csv", "财务预测表"],
+                ["json", "完整研究数据"],
+              ].map(([ext, n]) => (
                 <DropdownMenuItem key={ext} asChild>
-                  <a href={`/api/reports/${id}/download/${ext}`} download>
-                    {name}
+                  <a href={"/api/reports/" + id + "/download/" + ext} download>
+                    {n}
                   </a>
                 </DropdownMenuItem>
               ))}
@@ -90,44 +104,30 @@ export default function ReportPage() {
           </DropdownMenu>
         )}
         <Button variant="outline" asChild>
-          <Link to={`/stocks/${data.symbol}`}>标的详情</Link>
+          <Link to={"/stocks/" + data.symbol}>标的详情</Link>
         </Button>
       </PageHeader>
-      {!payload ? (
+      {!p ? (
         <div className="research-job">
           <div className="job-symbol">
             {data.status === "failed" ? (
-              <RotateCcw size={27} />
+              <RotateCcw size={28} />
             ) : (
-              <LoaderCircle size={28} className="spin" />
+              <LoaderCircle className="spin" size={28} />
             )}
           </div>
           <h2>
             {data.status === "failed"
-              ? "研究未完成"
-              : `${data.symbol} · ${data.stage}`}
+              ? "研究暂未完成"
+              : "正在整理 " + data.symbol + " 的研报"}
           </h2>
-          <p>{data.error || "任务已保存在本地，完成后将自动显示报告。"}</p>
-          <div className="job-stages">
-            {[
-              "排队中",
-              "收集行情与财务",
-              "计算预测模型",
-              "撰写研究报告",
-              "生成报告文件",
-            ].map((stage, index) => (
-              <div
-                key={stage}
-                className={data.stage === stage ? "current-stage" : ""}
-              >
-                <span>{index + 1}</span>
-                {stage}
-              </div>
-            ))}
-          </div>
+          <p>
+            {data.status === "failed"
+              ? "请重新尝试生成研报。"
+              : "完成后会自动显示完整报告。"}
+          </p>
           {data.status === "failed" && (
             <Button onClick={() => void retry()} disabled={busy}>
-              <RotateCcw size={15} />
               重新研究
             </Button>
           )}
@@ -135,87 +135,62 @@ export default function ReportPage() {
       ) : (
         <>
           <div className="report-metadata">
-            <span>
-              <Check size={14} />
-              已归档
-            </span>
-            <span>{dateText(data.completed_at)}</span>
-            <span>{payload.engine}</span>
-            <Source
-              source={payload.demo_narrative ? "演示研究" : "AI Research"}
-              mock={payload.has_mock_data}
-              note={
-                payload.has_mock_data
-                  ? "本报告含模拟数据，结论仅用于验证流程。"
-                  : "AI 叙述依据所附来源，仍需人工核实。"
-              }
-            />
+            <span>研究日期 {dateText(data.completed_at)}</span>
+            {p.has_mock_data && (
+              <span>
+                假设测算
+                <Hint>
+                  财务预测使用示例输入；价格、新闻和财务数据的口径分别列在附录。
+                </Hint>
+              </span>
+            )}
           </div>
-          {payload.has_mock_data && (
-            <div className="data-notice">
-              <span className="status-dot" />
-              含模拟输入 · 研究结论待核实
-            </div>
-          )}
           <div className="report-layout">
-            <nav className="report-toc" aria-label="报告目录">
-              <div className="eyebrow">CONTENTS</div>
-              {payload.sections.map((s, i) => (
-                <a href={`#section-${i}`} key={s.title}>
-                  <span>{String(i + 1).padStart(2, "0")}</span>
+            <nav className="report-toc" aria-label="研报目录">
+              {p.sections.map((s, i) => (
+                <a href={"#section-" + i} key={s.title}>
                   {s.title}
                 </a>
               ))}
-              <a href="#forecast-table">
-                <span>09</span>预测模型
-              </a>
-              <a href="#report-sources">
-                <span>10</span>来源索引
-              </a>
+              <a href="#report-sources">来源索引</a>
             </nav>
             <article className="report-body">
-              {payload.sections.map((section, i) => (
-                <section id={`section-${i}`} key={section.title}>
-                  <div className="report-section-number">
-                    {String(i + 1).padStart(2, "0")}
-                  </div>
-                  <h2>{section.title}</h2>
+              {p.sections.map((s, i) => (
+                <section id={"section-" + i} key={s.title}>
+                  <h2>{s.title}</h2>
                   <div className="report-prose">
-                    {section.content.split("\n").map((p, index) => (
-                      <p key={index}>{p}</p>
-                    ))}
+                    {s.content
+                      .split("\n")
+                      .filter(Boolean)
+                      .map((t, j) => (
+                        <p key={j}>{t}</p>
+                      ))}
                   </div>
+                  {p.charts?.[FIGURE_INDEX[i]] && (
+                    <ReportFigure chart={p.charts[FIGURE_INDEX[i]]} />
+                  )}
                 </section>
               ))}
-              <section id="forecast-table">
-                <ModelTable symbol={data.symbol} snapshot={payload.model} />
-              </section>
               <section id="report-sources">
                 <h2>来源索引</h2>
-                {payload.sources.map((s, i) => (
-                  <div key={i} className="source-row">
+                {p.sources.map((s, i) => (
+                  <div className="source-row" key={i}>
                     <span>[{i + 1}]</span>
                     <div>
                       {s.mock ? (
-                        <strong>{s.label}</strong>
+                        <strong>{s.label} · 示例输入</strong>
                       ) : (
                         <a href={s.url} target="_blank" rel="noreferrer">
                           {s.label}
                           <ExternalLink size={12} />
                         </a>
                       )}
-                      <small>
-                        {s.mock ? "模拟数据，无事实引用" : "来源数据时间"} ·{" "}
-                        {s.as_of || "未提供"}
-                      </small>
+                      <small>{s.as_of?.slice(0, 10)}</small>
                     </div>
                   </div>
                 ))}
               </section>
-              <footer className="report-end">
-                <FileText size={16} />
-                Garage Research · 数据与假设随此版本冻结
-              </footer>
+              <footer className="report-end">Garage Research</footer>
             </article>
           </div>
         </>

@@ -43,13 +43,7 @@ const fields: [keyof Assumptions, string][] = [
   ["exit_multiple", "退出 EV / EBITDA"],
 ];
 
-export function ModelTable({
-  symbol,
-  snapshot,
-}: {
-  symbol: string;
-  snapshot?: FinancialModel;
-}) {
+export function ModelTable({ symbol }: { symbol: string }) {
   const [scenario, setScenario] = useState("base");
   const [edit, setEdit] = useState(false);
   const [draft, setDraft] = useState<Assumptions | null>(null);
@@ -59,9 +53,8 @@ export function ModelTable({
     queryKey: ["model", symbol, scenario],
     queryFn: () =>
       api<FinancialModel>(`/models/${symbol}?scenario=${scenario}`),
-    enabled: !snapshot,
   });
-  const model = snapshot || query.data;
+  const model = query.data;
   if (!model)
     return query.error ? <ErrorState error={query.error} /> : <Loading />;
   async function save() {
@@ -72,7 +65,7 @@ export function ModelTable({
       await refresh();
       setScenario("base");
       setEdit(false);
-      toast.success("假设已保存，后续报告将使用新模型");
+      toast.success("假设已保存");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -84,7 +77,7 @@ export function ModelTable({
       <div className="section-toolbar model-toolbar">
         <div>
           <div className="section-title">
-            20 行预测模型 <Hint>{model.notes.join(" ")}</Hint>
+            简单模型 <Hint>{model.notes.join(" ")}</Hint>
           </div>
           <div className="model-meta">
             百万美元 <span>·</span>{" "}
@@ -93,10 +86,9 @@ export function ModelTable({
               source={model.mock ? "模拟" : model.source}
               note={`基期 ${model.as_of} · ${model.source}`}
             />
-            {snapshot && <span>· 报告快照</span>}
           </div>
         </div>
-        {!snapshot && (
+        <>
           <div className="actions">
             {[
               ["bear", "保守"],
@@ -134,7 +126,7 @@ export function ModelTable({
               </a>
             </Button>
           </div>
-        )}
+        </>
       </div>
       <div className="model-assumptions">
         <span>
@@ -206,9 +198,7 @@ export function ModelTable({
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>预测假设 · {symbol}</DialogTitle>
-            <DialogDescription>
-              修改基准情景，后续报告将使用保存后的假设。
-            </DialogDescription>
+            <DialogDescription>调整基准情景的预测假设。</DialogDescription>
           </DialogHeader>
           {draft && (
             <form

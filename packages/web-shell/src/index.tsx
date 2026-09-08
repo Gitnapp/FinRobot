@@ -376,7 +376,7 @@ export function RailNavLink({
         // 高亮几何（design.md「高亮几何」）：折叠后只剩图标，着色面必须是正方形，
         // 用 size-8 钉成 32×32（正好填满 48px 图标轨的 px-2 内宽）并水平居中。
         // 展开态是整行长条，桌面高度与折叠态一致（32px = design.md 紧凑控件），
-        // 触屏命中区仍靠 min-h-11 撑到 44px。
+        // 移动端着色面 36px，透明命中区上下各扩展 2px；导航项之间需留 4px。
         // 注意：本包 cn() 是纯拼接、没有 tailwind-merge，两侧不得输出冲突的同族 class。
         //
         // 两态水平内边距必须等效（design.md「图标位置在展开/折叠间不横向跳动」）：
@@ -384,7 +384,7 @@ export function RailNavLink({
         // 绝不能用 mx-auto：auto margin 按「正在 300ms 动画中的」轨宽实时求值，
         // 折叠瞬间会把图标甩到宽轨中点再滑回来（实测单帧 98px 的可见闪动）。
         // size-8 已等于折叠态 nav 的内宽，本就贴合左缘，无需 auto margin 居中。
-        collapsed ? "size-8 justify-center" : "min-h-11 px-2 py-2.5 md:min-h-8 md:py-1.5",
+        collapsed ? "size-8 justify-center" : "min-h-9 px-2 py-1.5 after:absolute after:inset-x-0 after:-inset-y-0.5 md:min-h-8 md:after:hidden",
       )}
     >
       {icon}

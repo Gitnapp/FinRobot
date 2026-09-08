@@ -59,3 +59,14 @@ def test_scenarios_and_loss_making_business():
 def test_invalid_assumptions_rejected(invalid):
     with pytest.raises(ValidationError):
         Assumptions(**invalid)
+
+
+def test_peer_bars_use_zero_baseline_for_fair_magnitude_comparison():
+    from reportlab.graphics.charts.barcharts import VerticalBarChart
+
+    from finrobot_equity.research_desk.charts import bars
+
+    drawing = bars("Peers", ["A", "B", "C"], [[27.4, 44.5, 121.2]], ["P/E"])
+    chart = next(item for item in drawing.contents if isinstance(item, VerticalBarChart))
+    assert chart.valueAxis.valueMin == 0
+    assert chart.valueAxis.valueMax > 121.2

@@ -12,7 +12,7 @@ import { Textarea } from "@gitnapp/ui/components/ui/textarea";
 import { Label } from "@gitnapp/ui/components/ui/label";
 import { toast } from "sonner";
 import { write } from "../api/client";
-import { useRefresh, useSettings } from "../hooks/queries";
+import { useRefresh } from "../hooks/queries";
 import type { Report } from "../types";
 import { Button } from "./ui";
 
@@ -28,7 +28,7 @@ export function ResearchAction({
   const [busy, setBusy] = useState(false);
   const refresh = useRefresh();
   const navigate = useNavigate();
-  const settings = useSettings();
+
   async function run() {
     setBusy(true);
     try {
@@ -54,19 +54,13 @@ export function ResearchAction({
         ) : (
           <FilePlus2 size={15} />
         )}{" "}
-        {active ? "查看研究进度" : "生成 Research"}
+        {active ? "查看进度" : "生成研报"}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>研究 {symbol}</DialogTitle>
-            <DialogDescription>
-              使用{" "}
-              {settings.data?.provider === "mock"
-                ? "演示研究"
-                : settings.data?.model || "当前模型"}
-              ，报告将保存到报告库。
-            </DialogDescription>
+            <DialogDescription>分析业务、财务、估值与风险。</DialogDescription>
           </DialogHeader>
           <Label htmlFor="research-focus">研究重点（可选）</Label>
           <Textarea
@@ -81,7 +75,7 @@ export function ResearchAction({
               取消
             </Button>
             <Button disabled={busy} onClick={() => void run()}>
-              {busy ? "提交中…" : "开始研究"}
+              {busy ? "提交中…" : "生成研报"}
             </Button>
           </div>
         </DialogContent>

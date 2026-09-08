@@ -17,10 +17,10 @@ describe("button design.md customizations", () => {
     expect(classes).toContain("motion-reduce:transform-none");
   });
 
-  it("guarantees the coarse-pointer 44px hit target on every size", () => {
-    expect(buttonVariants()).toContain("max-md:min-h-11");
+  it("does not enlarge the visible mobile button with utility min sizes", () => {
+    expect(buttonVariants()).not.toContain("max-md:min-h-11");
     for (const size of ["icon", "icon-xs", "icon-sm", "icon-lg"] as const) {
-      expect(buttonVariants({ size })).toContain("max-md:min-w-11");
+      expect(buttonVariants({ size })).not.toContain("max-md:min-w-11");
     }
   });
 

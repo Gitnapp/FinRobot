@@ -38,13 +38,16 @@ def test_report_files_and_frozen_model(tmp_path):
     assert report["status"] == "completed", report["error"]
     payload = json.loads(report["payload"])
     assert payload["has_mock_data"] and payload["demo_narrative"]
-    assert len(payload["sections"]) == 8
+    assert len(payload["sections"]) == 12
     root = store.reports_dir / job["id"]
     for ext in ("pdf", "html", "md", "json", "csv"):
-        assert (root / f"report.{ext}").stat().st_size > 500
+        assert (root / f"report.{ext}").stat().st_size > (300 if ext == "csv" else 500)
     assert (root / "report.pdf").read_bytes().startswith(b"%PDF")
     assert "模拟" in (root / "report.html").read_text()
-    assert "营运资金变动" in (root / "report.csv").read_text()
+    assert "营业收入" in (root / "report.csv").read_text()
+    assert len(payload["charts"]) == 6
+    assert sum(len(s["content"]) for s in payload["sections"]) > 2800
+    assert (root / "report.html").read_text().count("<img ") == 6
     store.execute(
         "INSERT INTO models VALUES (?,?,?)",
         ("NVDA", json.dumps({"growth": 0.5}), now()),
@@ -114,10 +117,22 @@ def test_api_validation_settings_and_recoverable_removal(tmp_path):
     setup_store(tmp_path)
     with TestClient(app) as client:
         assert client.get("/api/health").json()["ok"]
-        assert client.post("/api/assets", json={"symbol": "../../etc"}).status_code == 422
-        assert client.post("/api/assets", json={"symbol": "  avgo "}).json()["symbol"] == "AVGO"
+        assert (
+            client.post("/api/watchlists/default/symbols", json={"symbol": "../../etc"}).status_code
+            == 422
+        )
+        assert (
+            client.post("/api/watchlists/default/symbols", json={"symbol": "  avgo "}).json()[
+                "symbol"
+            ]
+            == "AVGO"
+        )
         assert client.post("/api/research", json={"symbol": "UNTRACKED"}).status_code == 404
         assert client.put("/api/models/NVDA", json={"gross_margin": 2}).status_code == 422
+        assert client.get("/api/models/NVDA").status_code == 404
+        assert "model" not in client.get("/api/assets/NVDA").json()
+        client.put("/api/coverage/NVDA", json={"active": False, "cadence": "weekly"})
+        assert app.state.store.assumptions("NVDA") is not None
         base = client.get("/api/models/NVDA").json()
         assert len(base["rows"]) == 20
         assert client.get("/api/models/NVDA?scenario=invalid").status_code == 422
@@ -147,8 +162,8 @@ def test_api_validation_settings_and_recoverable_removal(tmp_path):
             == 403
         )
         assert client.delete("/api/coverage/NVDA").status_code == 200
-        assert client.delete("/api/assets/AVGO").status_code == 200
-        assert client.get("/api/assets/AVGO").status_code == 404
+        assert client.delete("/api/watchlists/default/symbols/AVGO").status_code == 200
+        assert "AVGO" not in client.get("/api/watchlists").json()[0]["symbols"]
 
 
 def test_failed_model_is_not_disguised_as_demo(tmp_path, monkeypatch):
@@ -163,3 +178,67 @@ def test_failed_model_is_not_disguised_as_demo(tmp_path, monkeypatch):
     report = store.one("SELECT * FROM reports WHERE id=?", (job["id"],))
     assert report["status"] == "failed" and report["payload"] is None
     assert "未配置密钥" in report["error"]
+
+
+def test_watchlist_membership_order_and_coverage_are_independent(tmp_path):
+    app = create_app(tmp_path)
+    setup_store(tmp_path)
+    with TestClient(app) as client:
+        created = client.post("/api/watchlists", json={"name": "科技观察"}).json()
+        lid = created["id"]
+        for s in ["MSFT", "NVDA"]:
+            assert (
+                client.post("/api/watchlists/" + lid + "/symbols", json={"symbol": s}).status_code
+                == 200
+            )
+        client.put("/api/watchlists/" + lid, json={"name": "核心科技"})
+        client.put("/api/watchlists/" + lid + "/order", json={"symbols": ["NVDA", "MSFT"]})
+        listed = client.get("/api/assets?list_id=" + lid).json()
+        assert [q["symbol"] for q in listed] == ["NVDA", "MSFT"]
+        assert (
+            client.put(
+                "/api/watchlists/" + lid + "/order", json={"symbols": ["NVDA", "NVDA"]}
+            ).status_code
+            == 422
+        )
+        client.put("/api/coverage/NVDA", json={"active": False, "cadence": "weekly"})
+        client.delete("/api/watchlists/" + lid + "/symbols/NVDA")
+        assert client.get("/api/models/NVDA").status_code == 200
+        assert client.get("/api/coverage/NVDA").status_code == 200
+        client.delete("/api/watchlists/" + lid)
+        assert client.get("/api/models/NVDA").status_code == 200
+        assert client.delete("/api/watchlists/default").status_code == 409
+        client.delete("/api/coverage/NVDA")
+        assert client.get("/api/models/NVDA").status_code == 404
+
+
+def test_report_rejects_invented_reference_numbers():
+    import pytest
+
+    from finrobot_equity.research_desk.research import validate_references
+
+    validate_references({"summary": "收入假设见 [2]，报价见 [1]。"}, 2)
+    with pytest.raises(ValueError):
+        validate_references({"summary": "并不存在的来源 [9]。"}, 2)
+
+
+def test_product_copy_excludes_implementation_labels():
+    import re
+    from pathlib import Path
+
+    frontend = Path(__file__).parents[2] / "frontend/src"
+    for folder in ("app/market", "app/coverage", "app/reports", "components"):
+        for source in (frontend / folder).glob("*.tsx"):
+            assert not re.search(
+                r"v\{|报告版本|最新 v|本地调度|研究服务在线|WORKSPACE /|MARKETS", source.read_text()
+            ), source.name
+
+
+def test_research_language_does_not_leak_implementation_terms():
+    import pytest
+
+    from finrobot_equity.research_desk.research import validate_report_language
+
+    validate_report_language({"summary": "现金流折现结果依赖收入与利润假设。"})
+    with pytest.raises(ValueError):
+        validate_report_language({"summary": "这是 valuation模块 的结果。"})

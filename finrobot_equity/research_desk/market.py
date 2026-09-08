@@ -4,12 +4,11 @@ import asyncio
 import hashlib
 import json
 import math
-import os
 import random
 import time
 from datetime import date, datetime, timedelta, timezone
 
-import httpx
+from .providers import ProviderClient, ProviderError
 
 CATALOG = [
     ("NVDA", "NVIDIA", "半导体", 230.36, 0.84, 130497),
@@ -101,48 +100,13 @@ def mock_history(symbol):
     }
 
 
-class ProviderError(Exception):
-    pass
-
-
 class Market:
     def __init__(self, store):
         self.store = store
-        self.gate = asyncio.Semaphore(3)
-        self.cooldown = {}
+        self.providers = ProviderClient()
 
     async def get(self, provider, endpoint, params):
-        key_name = "FMP_API_KEY" if provider == "FMP" else "FINNHUB_API_KEY"
-        secret = os.getenv(key_name)
-        if not secret:
-            raise ProviderError(f"{provider} 未配置")
-        if self.cooldown.get(provider, 0) > time.time():
-            raise ProviderError(f"{provider} 限流冷却中")
-        root = (
-            "https://financialmodelingprep.com/stable/"
-            if provider == "FMP"
-            else "https://finnhub.io/api/v1/"
-        )
-        query = {**params, ("apikey" if provider == "FMP" else "token"): secret}
-        async with self.gate:
-            try:
-                async with httpx.AsyncClient(timeout=12) as client:
-                    response = await client.get(root + endpoint, params=query)
-            except httpx.HTTPError:
-                raise ProviderError(f"{provider} 网络暂不可用") from None
-        if response.status_code != 200:
-            if response.status_code == 429:
-                self.cooldown[provider] = time.time() + 900
-            raise ProviderError(f"{provider} HTTP {response.status_code}（权限、额度或服务限制）")
-        try:
-            data = response.json()
-        except ValueError:
-            raise ProviderError(f"{provider} 响应格式无效") from None
-        if not data or (
-            isinstance(data, dict) and (data.get("error") or data.get("Error Message"))
-        ):
-            raise ProviderError(f"{provider} 暂无数据或权限受限")
-        return data
+        return await self.providers.get(provider, endpoint, params)
 
     async def cached(self, key, fetch, ttl=900):
         mode = self.store.settings()["data_mode"]

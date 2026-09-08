@@ -41,7 +41,7 @@ function SettingsForm({ initial }: { initial: Settings }) {
     <>
       <div className="settings-layout">
         <aside className="providers-list">
-          <div className="eyebrow">MODEL PROVIDERS</div>
+          <div className="eyebrow">模型服务</div>
           {initial.providers.map((p) => (
             <button
               className={p.id === provider ? "selected" : ""}
@@ -77,22 +77,22 @@ function SettingsForm({ initial }: { initial: Settings }) {
             <div>
               <h2>{selected.name}</h2>
               <span className="muted">
-                {selected.configured ? "可用配置" : "需要在 Infisical 配置密钥"}
+                {selected.configured ? "可用配置" : "需要配置密钥"}
               </span>
             </div>
             <span className="source">
               <KeyRound size={12} />{" "}
-              {provider === "mock" ? "Demo" : "Infisical"}
+              {provider === "mock"
+                ? "演示"
+                : selected.configured
+                  ? "已配置"
+                  : "未配置"}
             </span>
           </div>
           <div className="settings-fields">
             <div>
               <Label htmlFor="api-key">
-                API Key{" "}
-                <Hint>
-                  密钥由 Infisical
-                  注入后端进程，仅返回是否配置。浏览器不接收密钥值。
-                </Hint>
+                API Key <Hint>密钥仅用于请求对应服务，不会返回浏览器。</Hint>
               </Label>
               <Input
                 id="api-key"

@@ -2,17 +2,19 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { Asset, Detail, FullReport, Report, Settings } from "../types";
 
-export const useAssets = () =>
+export const useAssets = (listId?: string) =>
   useQuery({
-    queryKey: ["assets"],
-    queryFn: () => api<Asset[]>("/assets"),
+    queryKey: ["assets", listId],
+    queryFn: () =>
+      api<Asset[]>(listId ? "/assets?list_id=" + listId : "/assets"),
     refetchInterval: 10000,
   });
-export const useDetail = (symbol: string) =>
+export const useDetail = (symbol: string, coverage = false) =>
   useQuery({
-    queryKey: ["detail", symbol],
+    queryKey: ["detail", symbol, coverage],
     enabled: Boolean(symbol),
-    queryFn: () => api<Detail>(`/assets/${symbol}`),
+    queryFn: () =>
+      api<Detail>("/" + (coverage ? "coverage" : "assets") + "/" + symbol),
     refetchInterval: (query) =>
       query.state.data?.reports.some(
         (r) => r.status === "running" || r.status === "queued",
@@ -44,3 +46,15 @@ export function useRefresh() {
   const client = useQueryClient();
   return () => client.invalidateQueries();
 }
+
+export const useWatchlists = () =>
+  useQuery({
+    queryKey: ["watchlists"],
+    queryFn: () => api<import("../types").Watchlist[]>("/watchlists"),
+  });
+export const useCoverage = () =>
+  useQuery({
+    queryKey: ["coverage"],
+    queryFn: () => api<Detail[]>("/coverage"),
+    refetchInterval: 10000,
+  });

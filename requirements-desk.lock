@@ -56,6 +56,8 @@ pytest==9.1.1
     # via -r requirements-desk.txt
 python-dateutil==2.9.0.post0
     # via pandas
+python-dotenv==1.2.3
+    # via -r requirements-desk.txt
 pytz==2026.3.post1
     # via pandas
 reportlab==4.5.1

@@ -11,10 +11,11 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from .exports import table_data
+from .dossier import compose
+from .exports import report_date, table_data
 from .jobs import Worker, enqueue, next_due
 from .market import CATALOG, Market
-from .model import compute_model
+from .model import compute_model, defaults
 from .research import call_model, provider_status
 from .schemas import (
     Assumptions,
@@ -23,7 +24,11 @@ from .schemas import (
     SettingsInput,
     SymbolInput,
 )
+from .history import HistoryArchive
+from .providers import ProviderError
+from .signals import TrackingSignals
 from .store import Store, now
+from .watchlists import routes as watchlist_routes
 
 # FinRobot's report module configures root logging. HTTP clients must never log
 # request URLs because financial providers carry credentials in query parameters.
@@ -34,6 +39,8 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 def create_app(directory=None):
     store = Store(directory)
     market = Market(store)
+    archive = HistoryArchive(store, market.providers)
+    signals = TrackingSignals(store, market.providers)
     worker = Worker(store, market)
 
     @asynccontextmanager
@@ -50,6 +57,7 @@ def create_app(directory=None):
     app.state.store = store
     app.state.market = market
     app.state.worker = worker
+    app.include_router(watchlist_routes(store))
 
     @app.middleware("http")
     async def local_write_guard(request: Request, call_next):
@@ -95,8 +103,15 @@ def create_app(directory=None):
         ]
 
     @app.get("/api/assets")
-    async def assets():
-        rows = store.all("SELECT * FROM assets ORDER BY created_at,symbol")
+    async def assets(list_id: str | None = None):
+        rows = (
+            store.all(
+                "SELECT a.* FROM assets a JOIN watchlist_symbols w ON a.symbol=w.symbol WHERE w.list_id=? ORDER BY w.position",
+                (list_id,),
+            )
+            if list_id
+            else store.all("SELECT * FROM assets ORDER BY created_at,symbol")
+        )
         quotes = await asyncio.gather(*(market.quote(r["symbol"]) for r in rows))
         coverage = {r["symbol"]: r for r in store.all("SELECT * FROM coverage")}
         reports = store.reports()
@@ -112,46 +127,60 @@ def create_app(directory=None):
             quote["last_job"] = own[0] if own else None
         return quotes
 
-    @app.post("/api/assets", status_code=201)
-    def add_asset(body: SymbolInput):
-        store.execute("INSERT OR IGNORE INTO assets VALUES (?,?)", (body.symbol, now()))
-        return {"symbol": body.symbol}
-
-    @app.delete("/api/assets/{symbol}")
-    def remove_asset(symbol: str):
-        symbol = require_asset(symbol)
-        if store.one(
-            "SELECT 1 FROM reports WHERE symbol=? AND status IN ('queued','running')",
-            (symbol,),
-        ):
-            raise HTTPException(409, "请等待该标的研究任务完成后再移出自选")
-        with store.connection() as db:
-            for table in ("coverage", "models", "assets"):
-                db.execute(f"DELETE FROM {table} WHERE symbol=?", (symbol,))
-        return {"ok": True}
-
     @app.get("/api/assets/{symbol}")
     async def detail(symbol: str):
         symbol = require_asset(symbol)
-        quote, history, base, news = await asyncio.gather(
-            market.quote(symbol),
-            market.history(symbol),
-            market.fundamentals(symbol),
-            market.news(symbol),
-        )
+        data = await compose(market, symbol, store.assumptions(symbol))
+        data.pop("model")
         return {
-            "quote": quote,
-            "history": history,
-            "fundamentals": base,
-            "news": news,
+            **data,
             "coverage": store.one("SELECT * FROM coverage WHERE symbol=?", (symbol,)),
             "reports": store.reports(symbol),
-            "model": compute_model(base, store.assumptions(symbol)),
         }
 
-    @app.put("/api/coverage/{symbol}")
-    def coverage(symbol: str, body: CoverageInput):
+    def require_coverage(symbol):
         symbol = require_asset(symbol)
+        if not store.one("SELECT 1 FROM coverage WHERE symbol=?", (symbol,)):
+            raise HTTPException(404, "请先将标的加入持续跟踪")
+        return symbol
+
+    @app.get("/api/coverage/{symbol}")
+    async def coverage_detail(symbol: str):
+        symbol = require_coverage(symbol)
+        data = await compose(market, symbol, store.assumptions(symbol))
+        store.execute(
+            "INSERT OR IGNORE INTO models VALUES (?,?,?)",
+            (symbol, json.dumps(data["model"]["assumptions"]), now()),
+        )
+        last = store.one(
+            "SELECT payload FROM reports WHERE symbol=? AND status='completed' ORDER BY completed_at DESC LIMIT 1",
+            (symbol,),
+        )
+        report = json.loads(last["payload"]) if last else None
+        return {
+            **data,
+            "coverage": store.one("SELECT * FROM coverage WHERE symbol=?", (symbol,)),
+            "reports": store.reports(symbol),
+            "summary": report["sections"][0]["content"] if report else None,
+        }
+
+    @app.get("/api/coverage")
+    async def coverage_list():
+        return await asyncio.gather(
+            *(
+                coverage_detail(row["symbol"])
+                for row in store.all("SELECT symbol FROM coverage ORDER BY symbol")
+            )
+        )
+
+    @app.put("/api/coverage/{symbol}")
+    async def coverage(symbol: str, body: CoverageInput):
+        symbol = require_asset(symbol)
+        base = await market.fundamentals(symbol)
+        store.execute(
+            "INSERT OR IGNORE INTO models VALUES (?,?,?)",
+            (symbol, json.dumps(defaults(base)), now()),
+        )
         old = store.one("SELECT * FROM coverage WHERE symbol=?", (symbol,))
         # Adding / resuming schedules one initial report; changing frequency resets next due time.
         due = old["next_run"] if old else now()
@@ -175,16 +204,17 @@ def create_app(directory=None):
     def remove_coverage(symbol: str):
         symbol = require_asset(symbol)
         store.execute("DELETE FROM coverage WHERE symbol=?", (symbol,))
+        store.execute("DELETE FROM models WHERE symbol=?", (symbol,))
         return {"ok": True}
 
     @app.get("/api/models/{symbol}")
     async def get_model(symbol: str, scenario: Literal["base", "bull", "bear"] = "base"):
-        symbol = require_asset(symbol)
+        symbol = require_coverage(symbol)
         return compute_model(await market.fundamentals(symbol), store.assumptions(symbol), scenario)
 
     @app.put("/api/models/{symbol}")
     async def save_model(symbol: str, body: Assumptions):
-        symbol = require_asset(symbol)
+        symbol = require_coverage(symbol)
         store.execute(
             "INSERT OR REPLACE INTO models VALUES (?,?,?)",
             (symbol, body.model_dump_json(), now()),
@@ -193,7 +223,7 @@ def create_app(directory=None):
 
     @app.get("/api/models/{symbol}/export")
     async def model_export(symbol: str, scenario: Literal["base", "bull", "bear"] = "base"):
-        symbol = require_asset(symbol)
+        symbol = require_coverage(symbol)
         model = compute_model(
             await market.fundamentals(symbol), store.assumptions(symbol), scenario
         )
@@ -217,6 +247,17 @@ def create_app(directory=None):
         row.pop("payload", None)
         return row
 
+    @app.get("/api/assets/{symbol}/history")
+    async def full_history(symbol: str):
+        try:
+            return await archive.read(symbol_checked(symbol))
+        except ProviderError:
+            raise HTTPException(503, "完整历史暂不可用，请稍后重试") from None
+
+    @app.get("/api/assets/{symbol}/signals/{kind}")
+    async def tracking_signals(symbol: str, kind: Literal["catalysts", "sentiment"]):
+        return await signals.read(symbol_checked(symbol), kind)
+
     @app.get("/api/reports")
     def reports(symbol: str | None = None):
         return store.reports(symbol_checked(symbol) if symbol else None)
@@ -238,7 +279,7 @@ def create_app(directory=None):
         if not filename.is_file():
             raise HTTPException(404, "报告文件缺失")
         return FileResponse(
-            filename, filename=f"{row['symbol']}-research-v{row['version']}.{extension}"
+            filename, filename=f"{row['symbol']}-research-{report_date(row)}.{extension}"
         )
 
     @app.get("/api/settings")

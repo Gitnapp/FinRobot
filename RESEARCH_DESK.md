@@ -4,7 +4,7 @@ FinRobot 的本地单用户投研工作台。MVP 聚焦自选行情、研究报�
 
 ## 启动
 
-需要 Node 24、pnpm 11.12.0、Python 3.12、uv；真实数据模式需要已登录 Infisical。
+需要 Node 24、pnpm 11.12.0、Python 3.12、uv。凭证保存在项目根目录的 .env 中，勿提交该文件。
 
 ```bash
 make setup
@@ -12,15 +12,15 @@ make build
 make start
 ```
 
-打开 http://127.0.0.1:8001。`make start` 通过仓库现有 `.infisical.json` 注入 dev 环境密钥，不生成本地密钥文件。无密钥可 `make demo`，首次启动会选用演示研究；已有工作空间请在模型设置中明确选择演示引擎。开发时后端照常启动，另运行 `make dev` 打开 http://127.0.0.1:5178。
+打开 http://127.0.0.1:8001。make start 会读取项目根目录 .env，覆盖继承的同名环境变量；文件由 dotenv 解析为配置，不作为 shell 脚本执行。凭证文件权限应为 600，Git 和 Docker 构建上下文均忽略它。如需演示研究，在“模型与数据”中选择演示引擎。开发时后端照常启动，另运行 make dev 打开 http://127.0.0.1:5178。
 
 ## 功能
 
-- 自选标的：添加、筛选、移除；行情、价格日线 / K 线与来源时间分别展示。
-- Research：输入研究重点，后台生成 8 章报告；状态可观察，失败可重试。真实模型失败保留失败任务，不伪造成功报告。
-- 报告库：保存所有版本与输入快照；下载 PDF、HTML、Markdown、JSON 与预测模型 CSV。
+- 自选列表：创建、改名、删除列表；增删与调整标的顺序。列表成员与 Coverage 独立。市场看板展示报价、日线 / K 线和研报入口，不展示 Coverage 列表。
+- Research：输入研究重点，后台生成 12 章报告；状态可观察，失败可重试。真实模型失败保留失败任务，不伪造成功报告。
+- 报告库：保存完整研究数据与文件。用户界面只表达是否更新、是否完成；内部修订编号保留在存储中。下载 PDF、HTML、Markdown、JSON 和财务预测表。PDF/HTML 采用 FinRobot 原版等宽双栏结构，并提供走势、盈利、利润率、现金流、同业估值和 DCF 敏感性六张图表。
 - Coverage：加入即排期首次研究，此后每日 / 每周生成报告；可暂停、恢复、修改频率、移出。手动与定时任务共享队列，同一标的只允许一个未结束任务。
-- 预测模型：基期 + 三年、20 行，包含收入、利润、CapEx、营运资金、FCF、退出 EV；支持 3 种情景与 8 个假设参数。CSV 导出和报告使用同一计算函数。
+- Coverage 专属简单模型：加入跟踪即保存初始假设，支持基期 + 三年、20 行、3 种情景及 8 个可编辑参数。普通标的页和普通模型接口访问不会展示/开放它。研报提供单独的财务预测摘要。
 - 模型设置：参考 ValueCell 的服务商 → API endpoint → 模型组织；支持当前 OpenAI-compatible / SiliconFlow / Kimi 与本地演示引擎。API Key 只在后端。
 
 ## 数据与计算边界
@@ -40,7 +40,7 @@ frontend/src/
   app/{market,coverage,reports,settings}/   业务页面
   components/                              通用业务组件
   api/ hooks/ types/                       API、查询和类型
-packages/{ui,design-tokens,web-shell}/      Rational UI 原样源码快照
+packages/{ui,design-tokens,web-shell}/      Rational UI 源码副本（同步手机控件修复）
 finrobot_equity/research_desk/
   main.py schemas.py                       HTTP 边界、验证
   store.py jobs.py                          SQLite、队列、调度
@@ -60,8 +60,12 @@ make test
 make build
 ```
 
-自动化测试覆盖公式一致性、情景、非法参数、并发去重、报告文件、快照不可变、调度、暂停、重启中断恢复、API 验证和模型失败。浏览器验收记录见 `QA.md`。
+自动化测试覆盖公式一致性、情景、非法参数、并发去重、报告文件、快照不可变、调度、暂停、重启中断恢复、API 验证和模型失败。浏览器验收记录见 `QA_REFINEMENT.md`。
 
 Dockerfile 提供构建入口，容器启动应仅映射本机地址 `-p 127.0.0.1:8001:8001` 并挂载 `/data`。本 MVP 没有多用户登录，不能直接作为公网服务部署。本次未进行云部署。
 
 参考文档：[FastAPI lifespan](https://fastapi.tiangolo.com/advanced/events/)、[Lightweight Charts](https://tradingview.github.io/lightweight-charts/docs)、[Model Studio Qwen 思考模式](https://www.alibabacloud.com/help/en/model-studio/deep-thinking)。
+
+## 产品表达规则
+
+见 AGENTS.md：主界面不显示版本号、调度细节、供应商标识或裸时间戳。必要的数据质量提示用简短标签与说明入口。数据接入缺口和所需权限集中记录在 DATA_REQUIREMENTS.md。

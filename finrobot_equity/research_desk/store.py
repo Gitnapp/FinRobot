@@ -46,6 +46,11 @@ class Store:
                     WHERE status IN ('queued','running');
                 CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires REAL NOT NULL);
+                CREATE TABLE IF NOT EXISTS watchlists (id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS watchlist_symbols (
+                    list_id TEXT NOT NULL REFERENCES watchlists(id) ON DELETE CASCADE,
+                    symbol TEXT NOT NULL REFERENCES assets(symbol), position INTEGER NOT NULL,
+                    PRIMARY KEY(list_id,symbol));
             """)
             # Seed the watchlist once; deleting all assets should remain an intentional empty state.
             if not db.execute("SELECT 1 FROM settings").fetchone():
@@ -66,6 +71,12 @@ class Store:
                     "data_mode": "auto",
                 }
                 db.execute("INSERT INTO settings VALUES (1,?)", (json.dumps(settings),))
+            if not db.execute("SELECT 1 FROM watchlists").fetchone():
+                db.execute("INSERT INTO watchlists VALUES ('default','自选',?)", (now(),))
+                for i, row in enumerate(
+                    db.execute("SELECT symbol FROM assets ORDER BY created_at,symbol").fetchall()
+                ):
+                    db.execute("INSERT INTO watchlist_symbols VALUES ('default',?,?)", (row[0], i))
 
     def all(self, sql, params=()):
         with self.connection() as db:
