@@ -47,10 +47,8 @@ export function PriceChart({
     const cutoff = new Date(Date.parse(last.time) - range * 86400000)
       .toISOString()
       .slice(0, 10);
-    const points =
-      range === 0
-        ? shownHistory.points
-        : shownHistory.points.filter((point) => point.time >= cutoff);
+    // Keep the complete series so panning beyond the selected window reveals history.
+    const points = shownHistory.points;
     const style = getComputedStyle(document.documentElement);
     const color = dark ? "#a3a3a3" : "#737373";
     const chart = createChart(container.current, {
@@ -93,7 +91,14 @@ export function PriceChart({
         points.map((p) => ({ time: p.time as Time, value: p.close })),
       );
     }
-    chart.timeScale().fitContent();
+    if (range === 0) {
+      chart.timeScale().fitContent();
+    } else {
+      chart.timeScale().setVisibleRange({
+        from: (cutoff < points[0].time ? points[0].time : cutoff) as Time,
+        to: last.time as Time,
+      });
+    }
     return () => chart.remove();
   }, [shownHistory, small, range, candles, dark]);
   return (
