@@ -1,6 +1,6 @@
 .app-breadcrumb ol {
   flex-wrap: nowrap;
-  animation: breadcrumb-path-switch 180ms cubic-bezier(.22,1,.36,1);
+  animation: breadcrumb-path-switch 360ms ease-in-out;
 }
 .app-breadcrumb .breadcrumb-current {
   min-width: 0;
@@ -25,7 +25,7 @@
   white-space: nowrap;
   font-weight: 400;
   border-radius: 6px;
-  transition: color 180ms ease, background-color 180ms ease;
+  transition: color 300ms ease, background-color 300ms ease;
 }
 .app-breadcrumb a:hover {
   background: var(--accent);
@@ -98,12 +98,16 @@ header:has(> .app-breadcrumb) {
 }
 
 
+.app-breadcrumb.rui-compact-path .rui-path-ancestor {
+  transition: max-width 420ms cubic-bezier(.4,0,.2,1), opacity 320ms ease-in-out, visibility 420ms;
+}
+
 /* Navigation motion belongs to the path itself, never the page fade-in. */
 @keyframes breadcrumb-path-switch {
-  from { transform:translateX(4px); }
-  to { transform:translateX(0); }
+  from { opacity:.82; }
+  to { opacity:1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .app-breadcrumb ol { animation:none; }
-  .app-breadcrumb a { transition:none; }
+  .app-breadcrumb a, .app-breadcrumb.rui-compact-path .rui-path-ancestor { transition:none; }
 }
