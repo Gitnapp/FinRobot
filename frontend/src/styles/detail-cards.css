@@ -26,7 +26,7 @@
 .stock-page .signal-meta { font-size:11px; }
 .stock-page .peer-table-scroll { overflow-x:auto; flex:1; }
 .stock-page .peers-table td { height:64px; }
-.stock-page .model-panel { height:var(--detail-model-height); display:flex; flex-direction:column; min-height:0; box-sizing:border-box; }
+.stock-page .model-panel { height:auto; display:flex; flex-direction:column; min-height:0; box-sizing:border-box; }
 .stock-page .model-panel > [data-slot="table-container"] { flex:1; min-height:0; }
 .stock-page .model-panel .financial-table th,.stock-page .model-panel .financial-table td { padding-block:6px; }
 .stock-page .model-footnote { margin-top:8px; font-size:10px; }

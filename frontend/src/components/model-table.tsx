@@ -16,7 +16,6 @@ import { api } from "../api/client";
 import type { FinancialModel } from "../types";
 import { AnimatedSwitcher } from "./animated-switcher";
 import { AssumptionsPanel } from "./assumptions-panel";
-import { CardPagination,useCardPage } from "./layout/card-pagination";
 import { Button,ErrorState,Loading } from "./ui";
 
 export function modelValue(
@@ -50,7 +49,6 @@ export function ModelTable({ symbol }: { symbol: string }) {
         signal,
       }),
   });
-  const page = useCardPage(query.data?.rows || [], 6, symbol);
   const previous = useRef<{ symbol: string; model: FinancialModel } | null>(
     null,
   );
@@ -176,7 +174,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {page.items.map((row, i) => (
+          {model.rows.map((row, i) => (
             <Fragment key={row.key}>
               {["revenue", "capex", "multiple"].includes(row.key) && (
                 <TableRow className="model-group">
@@ -208,7 +206,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
                 }
               >
                 <TableCell className="row-number">
-                  {String(page.offset + i + 1).padStart(2, "0")}
+                  {String(i + 1).padStart(2, "0")}
                 </TableCell>
                 <TableCell>
                   <InfoLabel
@@ -235,7 +233,6 @@ export function ModelTable({ symbol }: { symbol: string }) {
           ))}
         </TableBody>
       </Table>
-      <CardPagination {...page} onChange={page.setPage} label="模型行项目分页"/>
       <div className="model-footnote">
         <div className="model-note">
           <span>*</span>
