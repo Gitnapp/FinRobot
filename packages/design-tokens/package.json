@@ -1,6 +1,6 @@
 {
   "name": "@gitnapp/design-tokens",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "rational-ui shared design tokens (monochrome, oklch, Tailwind v4 @theme). Pure CSS, no runtime deps. Source of truth: root design.md.",
   "repository": {
     "type": "git",

@@ -12,7 +12,7 @@ import { Check,Pencil } from "lucide-react";
 import { useState } from "react";
 import { api } from "../../api/client";
 import { AddAsset } from "../../components/add-asset";
-import { AnimatedSwitcher } from "../../components/animated-switcher";
+import { AnimatedSwitcher } from "@gitnapp/ui/components/ui/animated-switcher";
 import {
 CoverageAssetCard,
 UnmatchedSecurities,
@@ -21,7 +21,7 @@ type CoveredCompany,
 } from "../../components/coverage-asset-card";
 import type { Snapshot } from "../../components/intelligence";
 import { RefreshNotice } from "../../components/layout/async-content";
-import { FilterToolbar } from "../../components/layout/filter-toolbar";
+import { FilterToolbar } from "@gitnapp/ui/components/ui/filter-toolbar";
 import {
 Button,
 Empty,
@@ -134,6 +134,7 @@ export default function CoveragePage() {
         search={{
           value: search,
           onChange: setSearch,
+          placeholder: "搜索代码或公司",
           label: "搜索标的跟踪标的",
         }}
       />

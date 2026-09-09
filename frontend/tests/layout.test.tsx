@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router";
 import { TooltipProvider } from "@gitnapp/ui/components/ui/tooltip";
 import { AsyncContent } from "../src/components/layout/async-content";
 import { NavigationLink } from "../src/components/navigation-link";
-import { SplitView } from "../src/components/layout/split-view";
+import { SplitView } from "@gitnapp/ui/components/ui/split-view";
 let root:Root|undefined;
 const mount=(node:React.ReactNode)=>{const host=document.createElement("div");document.body.append(host);root=createRoot(host);act(()=>root!.render(node));return host;};
 afterEach(()=>{act(()=>root?.unmount());document.body.innerHTML="";});

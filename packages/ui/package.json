@@ -1,6 +1,6 @@
 {
   "name": "@gitnapp/ui",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "rational-ui 共享 shadcn 组件库。基于 @gitnapp/design-tokens 主题，语义真相源：根 design.md。",
   "repository": {
     "type": "git",

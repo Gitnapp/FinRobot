@@ -14,7 +14,7 @@ import { Fragment,useEffect,useRef,useState } from "react";
 import { toast } from "sonner";
 import { api } from "../api/client";
 import type { FinancialModel } from "../types";
-import { AnimatedSwitcher } from "./animated-switcher";
+import { AnimatedSwitcher } from "@gitnapp/ui/components/ui/animated-switcher";
 import { AssumptionsPanel } from "./assumptions-panel";
 import { Button,ErrorState,Loading } from "./ui";
 

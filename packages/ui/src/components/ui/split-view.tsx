@@ -1,5 +1,5 @@
-import { useState,type ReactNode } from "react";
-import "../../styles/split-view.css";
+"use client";
+import { type ReactNode, useState } from "react";
 
 export function usePreviewSelection() {
   const [selected, setSelected] = useState("");

@@ -2,7 +2,7 @@ import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { ExternalLink } from "lucide-react";
 import type { Detail,History } from "../types";
 import { useEvidence } from "./intelligence";
-import { CardPagination,useCardPage } from "./layout/card-pagination";
+import { CardPagination,useCardPage } from "@gitnapp/ui/components/ui/card-pagination";
 import { compact,money } from "./ui";
 
 export function Sparkline({ history }: { history: History }) {

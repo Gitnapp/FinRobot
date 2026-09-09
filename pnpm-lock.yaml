@@ -166,7 +166,7 @@ importers:
   packages/web-shell:
     dependencies:
       '@gitnapp/ui':
-        specifier: 0.4.0
+        specifier: 0.5.0
         version: link:../ui
     devDependencies:
       '@types/node':

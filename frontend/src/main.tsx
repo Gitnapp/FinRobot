@@ -13,7 +13,6 @@ import { Loading } from "./components/ui";
 import "./styles.css";
 import "./styles/cards.css";
 import "./styles/navigation.css";
-import "./styles/switcher.css";
 
 const MacroPage = lazy(() =>
   import("./app/context/context-page").then((m) => ({ default: m.MacroPage })),

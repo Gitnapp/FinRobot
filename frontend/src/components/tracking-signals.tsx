@@ -12,9 +12,9 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 import { api } from "../api/client";
-import { AnimatedSwitcher } from "./animated-switcher";
+import { AnimatedSwitcher } from "@gitnapp/ui/components/ui/animated-switcher";
 import type { Snapshot } from "./intelligence";
-import { CardPagination,useCardPage } from "./layout/card-pagination";
+import { CardPagination,useCardPage } from "@gitnapp/ui/components/ui/card-pagination";
 import { Button } from "./ui";
 
 type Result<T> = {

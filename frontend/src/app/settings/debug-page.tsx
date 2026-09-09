@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../api/client";
-import { AnimatedSwitcher } from "../../components/animated-switcher";
-import { FilterToolbar } from "../../components/layout/filter-toolbar";
+import { AnimatedSwitcher } from "@gitnapp/ui/components/ui/animated-switcher";
+import { FilterToolbar } from "@gitnapp/ui/components/ui/filter-toolbar";
 import {
 Button,
 ErrorState,

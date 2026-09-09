@@ -1,7 +1,7 @@
-import { Input } from "@gitnapp/ui/components/ui/input";
+"use client";
 import { Search } from "lucide-react";
 import type { ReactNode } from "react";
-import "../../styles/filter-toolbar.css";
+import { Input } from "./input";
 
 export function FilterToolbar({
   leading,
@@ -29,7 +29,7 @@ export function FilterToolbar({
           <Input
             type="search"
             aria-label={search.label}
-            placeholder={search.placeholder || "搜索代码或公司"}
+            placeholder={search.placeholder || "搜索"}
             value={search.value}
             onChange={(event) => search.onChange(event.target.value)}
           />

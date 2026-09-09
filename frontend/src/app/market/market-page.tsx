@@ -21,11 +21,11 @@ import { Link,useNavigate,useSearchParams } from "react-router";
 import { AddAsset } from "../../components/add-asset";
 import { AssetPreparation } from "../../components/asset-preparation";
 import { RefreshNotice } from "../../components/layout/async-content";
-import { FilterToolbar } from "../../components/layout/filter-toolbar";
+import { FilterToolbar } from "@gitnapp/ui/components/ui/filter-toolbar";
 import {
 SplitView,
 usePreviewSelection,
-} from "../../components/layout/split-view";
+} from "@gitnapp/ui/components/ui/split-view";
 import { MarketPreview } from "../../components/market-preview";
 import {
 Change,
@@ -107,7 +107,8 @@ export default function MarketPage() {
             <span className="muted">{data.length} 个标的</span>
           </>
         }
-        search={{ value: search, onChange: setSearch, label: "筛选标的" }}
+        search={{ value: search, onChange: setSearch,
+          placeholder: "搜索代码或公司", label: "筛选标的" }}
       />
       <SplitView
         open={Boolean(symbol) && !closing}

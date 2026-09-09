@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect,it } from "vitest";
-import { CardPagination,useCardPage } from "../src/components/layout/card-pagination";
+import { CardPagination,useCardPage } from "@gitnapp/ui/components/ui/card-pagination";
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT=true;
 it("pages every item, clamps after data shrinks, and resets on subject changes",()=>{
  const element=document.createElement('div');document.body.append(element);const root=createRoot(element);

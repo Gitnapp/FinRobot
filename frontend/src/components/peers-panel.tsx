@@ -12,7 +12,7 @@ import { useEffect,useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import { api,write } from "../api/client";
-import { CardPagination,useCardPage } from "./layout/card-pagination";
+import { CardPagination,useCardPage } from "@gitnapp/ui/components/ui/card-pagination";
 import { Button,Input,Loading,compact,money } from "./ui";
 
 type Peer = {

@@ -429,7 +429,15 @@ Suggestion / Error / AuiIf），**不为凑数重写**。新增交互优先复�
 - control、task、focus token分别管理控件、任务卡片和焦点；改变字号或padding不改变已有交互结构。
 - 日历过去事件使用calendar-past-background；时间分界线明确标示即将到来的事件。无数据直接显示空状态，不要求用户不断点击翻空页。
 
-- 图标＋文字的操作按钮必须有可见背景或边框；ghost只用于纯图标或纯文字操作。AddButton的quiet仅在iconOnly时透明，其余使用outline。返回动作同样保留按钮外形；菜单条目仍使用菜单原生样式。
-- 列表管理弹窗的工具栏与列表仅使用12px容器gap，列表不再叠加顶部margin。
 
-- 箭头悬停位移仅用于明确标记data-page-link的新页面跳转入口，以及导航卡片。禁止用全局图标名选择器为下拉菜单、折叠、分页、排序、返回按钮或模态框添加位移动画。
+## 0.5 交互与加载规范
+
+- LoadingState 在所属区域几何中心显示数学曲线动画；每次加载随机选择一种，期间保持不变。initial超过2秒显示耗时说明，refresh只显示动画。说明文字不移动图形中心。尊重减少动态效果。
+- MathCurveLoader 的视觉参考为 https://paidax01.github.io/math-curve-loaders/ ，使用独立SVG参数曲线实现，不引入画廊运行时。
+- 图标＋文字操作必须有可见背景或边框；AddButton quiet只适用于纯图标。返回按钮使用outline并与正文左侧对齐，不使用负margin。
+- 箭头位移仅用于data-page-link明确标记的向前页面跳转；下拉、返回、模态框、排序和分页不启用。顶栏不应用页面淡入。
+- OverflowText 只在实际截断时显示提示，并响应容器宽度和字体变化。
+- CardPagination/useCardPage 为长内容提供统一页码、边界禁用、数据缩短校正和上下文切换复位；不通过裁切隐藏内容。
+- FilterToolbar 统一选择器与搜索区域，搜索上限search-control-width，窄屏自动换行。SplitView提供独立滚动与可中断的展开/收起，关闭阶段inert，结束后回调卸载。
+- AnimatedSwitcher测量选中控件实际宽度，只绘制一个指示条。
+- TaskProgress支持补充说明，用于耗时预告或部分数据暂缺，不伪造百分比。

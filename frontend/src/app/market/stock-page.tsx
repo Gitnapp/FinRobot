@@ -10,7 +10,7 @@ import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Link,useLocation,useParams,useSearchParams } from "react-router";
-import { AnimatedSwitcher } from "../../components/animated-switcher";
+import { AnimatedSwitcher } from "@gitnapp/ui/components/ui/animated-switcher";
 import { AssetPreparation } from "../../components/asset-preparation";
 import {
 CatalystPanel,
@@ -19,7 +19,7 @@ ValuationPanel,
 } from "../../components/coverage-insights";
 import { EvidenceCard,ResearchLeads } from "../../components/intelligence";
 import { RefreshNotice } from "../../components/layout/async-content";
-import { CardPagination,useCardPage } from "../../components/layout/card-pagination";
+import { CardPagination,useCardPage } from "@gitnapp/ui/components/ui/card-pagination";
 import { ModelTable } from "../../components/model-table";
 import { PeersPanel } from "../../components/peers-panel";
 import { PriceChart } from "../../components/price-chart";

@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { api,write } from "../api/client";
 import { useRefresh } from "../hooks/queries";
 import type { Assumptions } from "../types";
-import { AnimatedSwitcher } from "./animated-switcher";
+import { AnimatedSwitcher } from "@gitnapp/ui/components/ui/animated-switcher";
 import { Button,ErrorState,Loading } from "./ui";
 
 const fields: [keyof Assumptions, string][] = [

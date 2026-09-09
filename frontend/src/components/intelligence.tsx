@@ -9,7 +9,7 @@ import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
 import { InfoHint } from "@gitnapp/ui/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { CardPagination,useCardPage } from "./layout/card-pagination";
+import { CardPagination,useCardPage } from "@gitnapp/ui/components/ui/card-pagination";
 import { compact } from "./ui";
 export type Snapshot<T> = {
   refreshing?: boolean;

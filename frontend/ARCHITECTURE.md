@@ -89,3 +89,7 @@ TaskDefinition 只定义标题和幂等阶段；TaskQueue 统一负责事务领�
 ## 数学曲线加载
 
 MathCurveLoader 使用 Math Curve Loaders（https://paidax01.github.io/math-curve-loaders/）展示的曲线族作为视觉参考，以独立 SVG 参数曲线实现拖尾效果。每次挂载随机一种，加载期间保持不变；减少动态效果时静止显示。LoadingState 在所属区域几何中心放置图形，说明文字置于其下方，不改变中心位置。initial 模式超过2秒显示耗时说明，refresh 模式只显示动画。历史研报正文和任务信息并行读取。
+
+## 组件包版本
+
+已安装并校验 @gitnapp/ui 0.5.0、@gitnapp/design-tokens 0.3.0、@gitnapp/web-shell 0.6.0。FilterToolbar、SplitView、AnimatedSwitcher、CardPagination/useCardPage 已移至组件包，页面直接导入；对应本地组件和样式副本已删除。数学曲线加载器采用SSR安全初始化，避免服务端与浏览器随机值不一致。

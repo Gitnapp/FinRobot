@@ -9,9 +9,9 @@ TableRow,
 import { ArrowRight,Download,FileText } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
-import { AnimatedSwitcher } from "../../components/animated-switcher";
+import { AnimatedSwitcher } from "@gitnapp/ui/components/ui/animated-switcher";
 import { RefreshNotice } from "../../components/layout/async-content";
-import { FilterToolbar } from "../../components/layout/filter-toolbar";
+import { FilterToolbar } from "@gitnapp/ui/components/ui/filter-toolbar";
 import {
 Button,
 dateText,
