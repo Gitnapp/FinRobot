@@ -447,3 +447,20 @@ it("renders clickable ancestors and a non-interactive current breadcrumb", () =>
   expect(html).toContain('aria-current="page"');
   expect(html.match(/<a /g)).toHaveLength(1);
 });
+
+it("uses the standard compact path surface and shared navigation metrics", () => {
+  const html = renderToStaticMarkup(
+    <RailBreadcrumb
+      compact
+      items={[
+        { label: "标的列表", href: "/stocks" },
+        { label: "公司", href: "/stocks/AMD" },
+        { label: "报告", href: "/stocks/AMD/reports" },
+      ]}
+    />,
+  );
+  expect(html).toContain("rui-rail-breadcrumb");
+  expect(html).toContain("rui-compact-path");
+  expect(html.match(/rui-nav-item-metrics/g)).toHaveLength(3);
+  expect(html.match(/rui-path-ancestor/g)).toHaveLength(2);
+});

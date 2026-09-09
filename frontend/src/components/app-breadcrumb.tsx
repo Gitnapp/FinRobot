@@ -88,7 +88,6 @@ export function AppBreadcrumb({
   }
   return (
     <RailBreadcrumb
-      key={`${pathname}:${current || ""}`}
       className={`app-breadcrumb${identifier && !current ? " path-pending" : ""}`}
       compact={Boolean(identifier)}
       items={

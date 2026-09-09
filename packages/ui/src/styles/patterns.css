@@ -294,9 +294,9 @@
   visibility: hidden;
   overflow: hidden;
   transition:
-    max-width 200ms ease,
-    opacity 180ms ease,
-    visibility 180ms;
+    max-width var(--breadcrumb-expand-duration) cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 320ms ease-in-out,
+    visibility var(--breadcrumb-expand-duration);
 }
 .rui-compact-path:hover .rui-path-ancestor,
 .rui-compact-path:focus-within .rui-path-ancestor {
@@ -735,6 +735,67 @@
 @media (prefers-reduced-motion: reduce) {
   .switcher-indicator,
   .animated-switcher > button {
+    transition: none;
+  }
+}
+
+/* RailBreadcrumb: one surface, balanced separator spacing, independent subtle motion. */
+.rui-nav-item-metrics {
+  padding-inline: var(--navigation-item-inset);
+  padding-block: var(--navigation-item-block-inset);
+}
+.rui-rail-breadcrumb [data-slot="breadcrumb-list"] {
+  flex-wrap: nowrap;
+  animation: rui-breadcrumb-switch var(--breadcrumb-switch-duration) ease-in-out;
+}
+.rui-rail-breadcrumb :is([data-slot="breadcrumb-link"], [data-slot="breadcrumb-page"]) {
+  border-radius: 6px;
+  font-weight: 400;
+  gap: var(--navigation-item-inset);
+  transition:
+    color 300ms ease,
+    background-color 300ms ease;
+}
+.rui-rail-breadcrumb [aria-current="page"] {
+  color: var(--foreground);
+  font-weight: 600;
+  background: var(--accent);
+}
+.rui-rail-breadcrumb [data-slot="breadcrumb-link"]:hover {
+  color: var(--foreground);
+  background: var(--accent);
+}
+.rui-rail-breadcrumb.rui-compact-path {
+  border-radius: 6px;
+  background: var(--accent);
+}
+.rui-rail-breadcrumb.rui-compact-path [data-slot="breadcrumb-list"] {
+  gap: 0;
+}
+.rui-rail-breadcrumb.rui-compact-path
+  :is([data-slot="breadcrumb-link"], [data-slot="breadcrumb-page"]) {
+  background: transparent;
+  border-radius: 0;
+}
+.rui-rail-breadcrumb.rui-compact-path
+  .rui-path-ancestor
+  > :is([data-slot="breadcrumb-link"], [data-slot="breadcrumb-page"]) {
+  padding-inline-end: 0;
+}
+@keyframes rui-breadcrumb-switch {
+  from {
+    opacity: 0.82;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rui-rail-breadcrumb [data-slot="breadcrumb-list"] {
+    animation: none;
+  }
+  .rui-rail-breadcrumb :is([data-slot="breadcrumb-link"], [data-slot="breadcrumb-page"]),
+  .rui-rail-breadcrumb .rui-path-ancestor {
     transition: none;
   }
 }

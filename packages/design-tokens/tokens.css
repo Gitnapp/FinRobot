@@ -57,6 +57,10 @@
 }
 
 :root {
+  --navigation-item-inset: 8px;
+  --navigation-item-block-inset: 6px;
+  --breadcrumb-switch-duration: 360ms;
+  --breadcrumb-expand-duration: 420ms;
   --search-control-width: 320px;
   --navigation-motion-duration: 180ms;
   --panel-motion-duration: 240ms;

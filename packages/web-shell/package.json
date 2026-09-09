@@ -1,6 +1,6 @@
 {
   "name": "@gitnapp/web-shell",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "跨产品应用外壳（主题 rail + 顶栏功能 tab），语义真相源：根 design.md「应用外壳」",
   "repository": {
     "type": "git",
@@ -21,7 +21,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@gitnapp/ui": "0.5.0"
+    "@gitnapp/ui": "0.5.1"
   },
   "peerDependencies": {
     "react": ">=19",

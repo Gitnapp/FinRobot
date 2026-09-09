@@ -354,7 +354,7 @@ export function RailAppSwitcher({
   );
 }
 
-const NAV_ITEM_METRICS = "min-h-9 px-2 py-1.5 text-sm leading-5 md:min-h-8";
+const NAV_ITEM_METRICS = "rui-nav-item-metrics min-h-9 px-2 py-1.5 text-sm leading-5 md:min-h-8";
 
 export function RailNavLink({
   href,
@@ -776,9 +776,12 @@ export function RailBreadcrumb({
     <Breadcrumb
       aria-label={ariaLabel}
       tabIndex={compact ? 0 : undefined}
-      className={cn("min-w-0", compact && "rui-compact-path", className)}
+      className={cn("rui-rail-breadcrumb min-w-0", compact && "rui-compact-path", className)}
     >
-      <BreadcrumbList className="flex-nowrap text-sm">
+      <BreadcrumbList
+        key={items.map((item) => `${item.href || ""}:${item.label}`).join("|")}
+        className="flex-nowrap text-sm"
+      >
         {items.map((item, index) => (
           <Fragment key={item.href || `${index}-${item.label}`}>
             <BreadcrumbItem

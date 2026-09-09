@@ -93,3 +93,5 @@ MathCurveLoader 使用 Math Curve Loaders（https://paidax01.github.io/math-curv
 ## 组件包版本
 
 已安装并校验 @gitnapp/ui 0.5.0、@gitnapp/design-tokens 0.3.0、@gitnapp/web-shell 0.6.0。FilterToolbar、SplitView、AnimatedSwitcher、CardPagination/useCardPage 已移至组件包，页面直接导入；对应本地组件和样式副本已删除。数学曲线加载器采用SSR安全初始化，避免服务端与浏览器随机值不一致。
+
+面包屑现直接使用 web-shell 0.6.1 的标准 RailBreadcrumb。间距与细微动效由组件库及 design-tokens 0.3.1 管理，应用不再添加动画key或padding覆盖。

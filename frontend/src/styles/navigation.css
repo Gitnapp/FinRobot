@@ -1,75 +1,7 @@
-.app-breadcrumb ol {
-  flex-wrap: nowrap;
-  animation: breadcrumb-path-switch 360ms ease-in-out;
-}
-.app-breadcrumb .breadcrumb-current {
-  min-width: 0;
-}
-.app-breadcrumb .breadcrumb-current span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mobile-header .app-breadcrumb {
-  flex: 1;
-  margin-left: 8px;
-}
-.app-breadcrumb {
-  min-width: 0;
-  max-width: calc(100vw - 160px);
-}
-.app-breadcrumb a {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  font-weight: 400;
-  border-radius: 6px;
-  transition: color 300ms ease, background-color 300ms ease;
-}
-.app-breadcrumb a:hover {
-  background: var(--accent);
-  color: var(--foreground);
-}
-header:has(> .app-breadcrumb) {
-  padding-right: 64px;
-}
-.app-breadcrumb a[aria-current="page"] {
-  color: var(--foreground);
-  font-weight: 600;
-  background: var(--accent);
-}
-.app-breadcrumb.rui-compact-path {
-  border-radius: 6px;
-  background: var(--accent);
-}
-.app-breadcrumb.rui-compact-path ol {
-  gap: 0;
-}
-.app-breadcrumb.rui-compact-path a {
-  background: transparent;
-  border-radius: 0;
-}
-/* The next link supplies the separator's leading inset; do not double it. */
-.app-breadcrumb.rui-compact-path .rui-path-ancestor > a {
-  padding-inline-end: 0;
-}
-.app-breadcrumb.rui-compact-path a:hover {
-  background: transparent;
-  border-radius: 0;
-}
-.app-breadcrumb.rui-compact-path a[aria-current="page"] {
-  background: transparent;
-  border-radius: 0;
-}
-.app-breadcrumb.rui-compact-path a:focus-visible {
-  outline: var(--focus-ring-width) solid var(--ring);
-  outline-offset: var(--focus-ring-offset);
-}
-.path-pending {
-  visibility: hidden;
-  min-width: 90px;
-}
+.app-breadcrumb { min-width:0; max-width:calc(100vw - 160px); }
+.mobile-header .app-breadcrumb { flex:1; margin-left:8px; }
+header:has(> .app-breadcrumb) { padding-right:64px; }
+.path-pending { visibility:hidden; min-width:90px; }
 
 .settings-top-nav {
   display: flex;
@@ -99,19 +31,4 @@ header:has(> .app-breadcrumb) {
   .settings-top-nav a {
     min-height: 44px;
   }
-}
-
-
-.app-breadcrumb.rui-compact-path .rui-path-ancestor {
-  transition: max-width 420ms cubic-bezier(.4,0,.2,1), opacity 320ms ease-in-out, visibility 420ms;
-}
-
-/* Navigation motion belongs to the path itself, never the page fade-in. */
-@keyframes breadcrumb-path-switch {
-  from { opacity:.82; }
-  to { opacity:1; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .app-breadcrumb ol { animation:none; }
-  .app-breadcrumb a, .app-breadcrumb.rui-compact-path .rui-path-ancestor { transition:none; }
 }

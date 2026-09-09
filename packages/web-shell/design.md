@@ -441,3 +441,10 @@ Suggestion / Error / AuiIf），**不为凑数重写**。新增交互优先复�
 - FilterToolbar 统一选择器与搜索区域，搜索上限search-control-width，窄屏自动换行。SplitView提供独立滚动与可中断的展开/收起，关闭阶段inert，结束后回调卸载。
 - AnimatedSwitcher测量选中控件实际宽度，只绘制一个指示条。
 - TaskProgress支持补充说明，用于耗时预告或部分数据暂缺，不伪造百分比。
+
+
+## 标准 RailBreadcrumb（0.6.1）
+
+紧凑路径采用单一背景。左右外边距与分隔箭头两侧均为navigation-item-inset（8px），上下padding为6px，与其他导航项一致。祖先条目不再附加右侧padding，避免和下一个链接的左侧padding叠加。
+
+悬停/键盘聚焦展开420ms，路径变更使用360ms、0.82到1的轻微透明度变化；无位移、回弹或缩放，不跟随页面内容动画。组件依据items变化更新路径，不要求调用方追加key或动画类。减少动态效果时关闭动效。应用只配置items和容器尺寸，不覆写组件间距。
