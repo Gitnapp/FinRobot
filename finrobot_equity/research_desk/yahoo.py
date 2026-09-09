@@ -30,6 +30,7 @@ class YahooMarket:
         self.store = store
         self.pending = {}
         self.gate = asyncio.Semaphore(2)
+        self.dataset_gate = asyncio.Semaphore(2)
 
     async def snapshot(self, symbol):
         key = "yahoo:daily:" + symbol
@@ -134,7 +135,7 @@ class YahooMarket:
         }
 
     async def _dataset(self, symbol, kind):
-        async with self.gate:
+        async with self.dataset_gate:
             process = await asyncio.create_subprocess_exec(
                 sys.executable,
                 str(Path(__file__).with_name("yahoo_worker.py")),

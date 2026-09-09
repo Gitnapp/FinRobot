@@ -1,5 +1,6 @@
 """Live market and financial adapters; unavailable facts are never synthesized."""
 
+import asyncio
 import json
 import time
 from datetime import date, datetime, timedelta, timezone
@@ -15,6 +16,7 @@ from .financial_data.providers import (
 from .intelligence.cache import SnapshotCache
 from .intelligence.sources import Sources
 from .intelligence.transport import SourceTransport
+from .peers import Peers
 from .providers import ProviderClient, ProviderError
 from .tickflow import TickFlowMarket, currency_for
 from .yahoo import YAHOO_MARKETS, YahooMarket
@@ -43,9 +45,11 @@ def identity(symbol):
 class Market:
     def __init__(self, store):
         self.store = store
+        self.price_pending = {}
         self.providers = ProviderClient()
         self.tickflow = TickFlowMarket(store, self.providers)
         self.yahoo = YahooMarket(store)
+        self.peers = Peers(store, self)
         self.data_cache = SnapshotCache(store)
         self.sources = Sources(SourceTransport())
         self.financial_data = FinancialData(
@@ -61,13 +65,66 @@ class Market:
         )
 
     def price_source(self, symbol):
-        return self.yahoo if symbol.rsplit(".", 1)[-1] in YAHOO_MARKETS else self.tickflow
+        selected = self.store.one(
+            "SELECT value FROM cache WHERE key=?", ("price-source:" + symbol,)
+        )
+        return (
+            self.yahoo
+            if symbol.rsplit(".", 1)[-1] in YAHOO_MARKETS
+            or (selected and selected["value"] == '"yahoo"')
+            else self.tickflow
+        )
 
     async def instrument(self, symbol):
         return await self.price_source(symbol).instrument(symbol)
 
+    async def _price_bundle(self, symbol):
+        key = "price-bundle:" + symbol
+        previous = self.store.one("SELECT value,expires FROM cache WHERE key=?", (key,))
+        if previous and previous["expires"] > time.time():
+            return json.loads(previous["value"])
+
+        async def collect():
+            primary = self.price_source(symbol)
+            for source in [primary, self.yahoo] if primary is not self.yahoo else [primary]:
+                try:
+                    async with asyncio.timeout(35):
+                        quote, history = await asyncio.gather(
+                            source.quote(symbol), source.history(symbol)
+                        )
+                    if quote.get("price") is None or not history.get("points"):
+                        raise ProviderError("empty_price_series")
+                    bundle = {"quote": quote, "history": history}
+                    with self.store.connection() as db:
+                        db.execute(
+                            "INSERT OR REPLACE INTO cache VALUES (?,?,?)",
+                            (key, json.dumps(bundle), time.time() + 3600),
+                        )
+                        if source is self.yahoo:
+                            # Keep the successful source across reads/restarts; never flap between adjustment bases.
+                            db.execute(
+                                "INSERT OR REPLACE INTO cache VALUES (?,?,?)",
+                                ("price-source:" + symbol, '"yahoo"', time.time() + 3600),
+                            )
+                    return bundle
+                except (ProviderError, KeyError, TypeError, ValueError, TimeoutError):
+                    continue
+            if previous and previous["expires"] > time.time() - 86400:
+                bundle = json.loads(previous["value"])
+                bundle["quote"]["note"] = "显示最近一次有效行情"
+                bundle["quote"]["stale"] = True
+                bundle["history"]["stale"] = True
+                return bundle
+            raise ProviderError("price_sources_unavailable")
+
+        if symbol not in self.price_pending:
+            task = asyncio.create_task(collect())
+            self.price_pending[symbol] = task
+            task.add_done_callback(lambda _: self.price_pending.pop(symbol, None))
+        return await asyncio.shield(self.price_pending[symbol])
+
     async def price_history(self, symbol):
-        return await self.price_source(symbol).history(symbol)
+        return (await self._price_bundle(symbol))["history"]
 
     async def search(self, query):
         if query.upper().rsplit(".", 1)[-1] in YAHOO_MARKETS:
@@ -103,7 +160,7 @@ class Market:
 
     async def quote(self, symbol):
         try:
-            quote = await self.price_source(symbol).quote(symbol)
+            quote = dict((await self._price_bundle(symbol))["quote"])
             match = next((r for r in CATALOG if r[0] == symbol), None)
             if match:
                 quote.update(sector=match[2])

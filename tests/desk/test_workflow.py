@@ -132,20 +132,20 @@ def test_api_validation_settings_and_recoverable_removal(tmp_path):
         )
         assert client.post("/api/research", json={"symbol": "UNTRACKED"}).status_code == 404
         assert client.put("/api/models/NVDA", json={"gross_margin": 2}).status_code == 422
-        assert client.get("/api/models/NVDA").status_code == 404
-        assert "model" not in client.get("/api/assets/NVDA").json()
+        assert client.get("/api/data/NVDA/model").status_code == 404
+        assert "model" not in client.get("/api/data/NVDA/detail").json()
         client.put("/api/coverage/NVDA", json={"active": False, "cadence": "weekly"})
         assert app.state.store.assumptions("NVDA") is not None
-        base = client.get("/api/models/NVDA").json()
+        base = client.get("/api/data/NVDA/model").json()
         assert len(base["rows"]) == 24
-        assert client.get("/api/models/NVDA?scenario=invalid").status_code == 422
+        assert client.get("/api/data/NVDA/model?scenario=invalid").status_code == 422
         assert (
             client.put(
                 "/api/coverage/NVDA", json={"active": False, "cadence": "weekly"}
             ).status_code
             == 200
         )
-        assert client.get("/api/assets/NVDA").json()["coverage"]["active"] == 0
+        assert client.get("/api/data/NVDA/detail").json()["coverage"]["active"] == 0
         assert client.get("/api/models/NVDA/export").headers["content-type"].startswith("text/csv")
         settings = client.get("/api/settings").json()
         assert "api_key" not in json.dumps(settings)
@@ -206,13 +206,13 @@ def test_watchlist_membership_order_and_coverage_are_independent(tmp_path):
         )
         client.put("/api/coverage/NVDA", json={"active": False, "cadence": "weekly"})
         client.delete("/api/watchlists/" + lid + "/symbols/NVDA")
-        assert client.get("/api/models/NVDA").status_code == 200
-        assert client.get("/api/coverage/NVDA").status_code == 200
+        assert client.get("/api/data/NVDA/model").status_code == 200
+        assert client.get("/api/data/NVDA/detail?context=coverage").status_code == 200
         client.delete("/api/watchlists/" + lid)
-        assert client.get("/api/models/NVDA").status_code == 200
+        assert client.get("/api/data/NVDA/model").status_code == 200
         assert client.delete("/api/watchlists/default").status_code == 409
         client.delete("/api/coverage/NVDA")
-        assert client.get("/api/models/NVDA").status_code == 404
+        assert client.get("/api/data/NVDA/model").status_code == 404
 
 
 def test_report_rejects_invented_reference_numbers():

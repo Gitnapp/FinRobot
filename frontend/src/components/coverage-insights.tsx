@@ -128,6 +128,7 @@ export function ValuationPanel({ data }: { data: Detail }) {
         <div>
           <span>企业价值现值</span>
           <strong>{compact(v ? v.enterprise_value * 1e6 : null)}</strong>
+          {v && <small className="muted">{v.unit.split(" ")[0]}</small>}
         </div>
         <div>
           <span>折现率</span>
@@ -139,7 +140,7 @@ export function ValuationPanel({ data }: { data: Detail }) {
         </div>
       </div>
       <table className="sensitivity-table">
-        <caption>估值敏感性（十亿美元）</caption>
+        <caption>估值敏感性{v ? `（十亿 ${v.unit.split(" ")[0]}）` : ""}</caption>
         <thead>
           <tr>
             <th>折现率 / 增长</th>
@@ -167,49 +168,6 @@ export function ValuationPanel({ data }: { data: Detail }) {
                   })}
                 </td>
               ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
-  );
-}
-export function PeersPanel({ data }: { data: Detail }) {
-  return (
-    <section className="dense-panel">
-      <h2>
-        <InfoLabel label="同业比较">
-          同业估值口径可能不同，应结合业务结构与增长质量判断。缺失资料保留空值，不补造可比公司指标。
-        </InfoLabel>
-      </h2>
-      <table className="peers-table">
-        <thead>
-          <tr>
-            <th>标的</th>
-            <th>股价</th>
-            <th>市盈率</th>
-            <th>Beta</th>
-          </tr>
-        </thead>
-        <tbody>
-          {!data.peers.length && (
-            <tr>
-              <td>—</td>
-              <td>—</td>
-              <td>—</td>
-              <td>—</td>
-            </tr>
-          )}
-          {data.peers.map((p) => (
-            <tr key={p.symbol}>
-              <td>
-                <InfoLabel label={p.symbol}>
-                  {p.mock ? "本行部分指标为示例。" : null}
-                </InfoLabel>
-              </td>
-              <td>{money(p.price)}</td>
-              <td>{p.pe?.toFixed(1) || "—"}</td>
-              <td>{p.beta?.toFixed(2) || "—"}</td>
             </tr>
           ))}
         </tbody>

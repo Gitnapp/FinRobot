@@ -70,3 +70,44 @@ def test_yahoo_cooldown_retains_last_good_without_fake_data(tmp_path):
         ),
     )
     assert asyncio.run(y.snapshot("EXA.PA"))["stale"]
+
+
+def test_empty_primary_switches_quote_and_history_together(tmp_path):
+    store = Store(tmp_path)
+    store.init()
+    market = Market(store)
+
+    class Empty:
+        async def quote(self, symbol):
+            raise ProviderError("history_unavailable")
+
+        async def history(self, symbol):
+            raise ProviderError("history_unavailable")
+
+    class Available:
+        calls = 0
+
+        async def quote(self, symbol):
+            self.calls += 1
+            await asyncio.sleep(0.01)
+            return {"symbol": symbol, "price": 27.66, "currency": "HKD", "source": "Yahoo Finance"}
+
+        async def history(self, symbol):
+            return {"points": [{"time": "2026-09-08", "close": 27.66}], "as_of": "2026-09-08"}
+
+    market.tickflow = Empty()
+    market.yahoo = Available()
+
+    async def run():
+        quote, history = await asyncio.gather(
+            market.quote("00470.HK"), market.price_history("00470.HK")
+        )
+        assert quote["price"] == history["points"][-1]["close"] == 27.66
+        assert market.yahoo.calls == 1
+        assert market.price_source("00470.HK") is market.yahoo
+        restarted = Market(store)
+        assert restarted.price_source("00470.HK") is restarted.yahoo
+        assert (await restarted.price_history("00470.HK")) == history
+        await restarted.yahoo.close()
+
+    asyncio.run(run())

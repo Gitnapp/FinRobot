@@ -14,7 +14,7 @@ export const useDetail = (symbol: string, coverage = false) =>
     queryKey: ["detail", symbol, coverage],
     enabled: Boolean(symbol),
     queryFn: () =>
-      api<Detail>("/" + (coverage ? "coverage" : "assets") + "/" + symbol),
+      api<Detail>(`/data/${symbol}/detail?context=${coverage ? "coverage" : "stocks"}`),
     refetchInterval: (query) =>
       query.state.data?.reports.some(
         (r) => r.status === "running" || r.status === "queued",
@@ -28,11 +28,11 @@ export const useReports = () =>
     queryFn: () => api<Report[]>("/reports"),
     refetchInterval: 3000,
   });
-export const useReport = (id: string) =>
+export const useReport = (id: string, symbol?: string) =>
   useQuery({
     queryKey: ["report", id],
     enabled: Boolean(id),
-    queryFn: () => api<FullReport>(`/reports/${id}`),
+    queryFn: () => api<FullReport>(symbol ? `/data/${symbol}/report?report_id=${id}` : `/reports/${id}`),
     refetchInterval: (q) =>
       q.state.data?.status === "completed" || q.state.data?.status === "failed"
         ? false

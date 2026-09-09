@@ -77,3 +77,15 @@ Adanos 的股票目录包含 HKEX，不能以非美股为由排除港股。已�
 ## 分项折旧摊销（2026-09-09）
 
 增加 OtherDepreciationAndAmortization 与 AdjustmentForAmortization 两个标准现金流量表分项。已有合计值时优先使用合计；合计缺失且两项期间、币种匹配时才相加，任一缺失则保持空值。AMD 2025 年现金流量表分别披露 750 百万美元和 2,254 百万美元，D&A 合计 3,004；营业利润 3,694，按本项目营业利润+D&A口径得到 EBITDA 6,698 百万美元。此值不是公司调整后 EBITDA。来源：https://ir.amd.com/financial-information/sec-filings/content/0000002488-26-000018/amd-20251227.htm
+
+## 行情源切换
+
+主源无法取得有效报价或完整日线时，行情模块整体切换至Yahoo。报价与完整日线共用成对缓存和并发请求，切换成功后持久记录所选来源，重启后保持，避免复权口径反复切换。所有来源失败时保留有限期限内的上次有效数据。00470.HK 实测报价与日线末值均为27.66 HKD，截至2026-09-08。
+
+## 详情接口与市场能力（2026-09-09）
+
+- 详情读取统一为 `/api/data/{symbol}/detail?context=stocks|coverage`；模型为 `model?scenario=base|bull|bear`，推荐假设为 `assumptions`，报告内容为 `report?report_id=...`。行情、财务、同业、情绪、日历继续使用该统一入口。
+- 原 `/api/assets/{symbol}`、`/api/coverage/{symbol}`、`/api/models/{symbol}` 和模型 assumptions 的重复 GET 实现已删除；PUT/DELETE 等业务命令和下载导出保留，并调用领域模块。
+- 移除估值、跟踪模型初始化和研报生成的非美股禁用分支。功能依据数据可用性判断，估值使用原财务币种；模型缺失输入不会填假事实。
+- 情绪通过Adanos目录核验代码和交易所；完整证券代码也可作为身份依据。Euronext附加国家核验，不能将荷兰上市股票与美国ADR混用。
+- 51/51 标的均已通过统一详情接口取得模型与估值。情绪核验：28 ready、17 empty、6 asset_not_supported；未支持项为688795.SH、688802.SH、00522.HK、01024.HK、688836.SH、BESI.AS。样本不足与市场禁止不混为一谈。

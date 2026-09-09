@@ -34,6 +34,7 @@ class Store:
                 CREATE TABLE IF NOT EXISTS coverage (
                     symbol TEXT PRIMARY KEY REFERENCES assets(symbol), cadence TEXT NOT NULL,
                     active INTEGER NOT NULL, next_run TEXT, last_run TEXT);
+                CREATE TABLE IF NOT EXISTS peer_selections (symbol TEXT PRIMARY KEY, symbols TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS models (
                     symbol TEXT PRIMARY KEY REFERENCES assets(symbol), assumptions TEXT NOT NULL,
                     updated_at TEXT NOT NULL);

@@ -253,7 +253,8 @@ export function RetailSentiment({ symbol }: { symbol: string }) {
         <CardTitle>散户情绪</CardTitle>
         <CardAction>
           <InfoHint>
-            最近 7 个 UTC 自然日的 Reddit 讨论，来源：Adanos。情绪分 -1 至
+            {query.data?.reason === "asset_not_supported" ? "供应商尚未匹配到当前上市证券，不用其他上市地的证券替代。" : query.data?.status === "empty" ? "当前证券已接入，但本期没有有效讨论样本。" : ""}
+            最近 7 个 UTC 自然日的 Reddit 讨论，来源：Adanos。样本较少时分数波动较大。情绪分 -1 至
             +1，热度 0 至
             100；热度变化不等于股价方向，空值表示信号不足。看多、看空比例采用供应商原始口径。
           </InfoHint>

@@ -17,6 +17,8 @@ class Provider:
         await asyncio.sleep(0.01)
         if isinstance(self.value, Exception):
             raise self.value
+        if args[1].endswith("/search"):
+            return {"results": [{"ticker": self.value.get("ticker"), "exchange": self.value.get("exchange", "HKEX") }]}
         return self.value
 
 
@@ -134,7 +136,7 @@ def test_hong_kong_identifier_is_normalized_and_response_checked(tmp_path):
     result = asyncio.run(s.read("00700.HK", "sentiment"))
     assert result["status"] == "ready"
     assert result["data"]["score"] == 0.189
-    assert calls[0][1] == "reddit/stocks/v1/stock/0700"
+    assert calls[-1][1] == "reddit/stocks/v1/stock/0700"
     s.providers.value = {"ticker": "XIACY", "found": True, "sentiment_score": 0.8}
     assert asyncio.run(s.read("01810.HK", "sentiment"))["status"] == "unavailable"
 
@@ -142,3 +144,10 @@ def test_hong_kong_identifier_is_normalized_and_response_checked(tmp_path):
 def test_supported_hong_kong_without_mentions_is_empty(tmp_path):
     s = service(tmp_path, {"ticker": "1810", "found": False})
     assert asyncio.run(s.read("01810.HK", "sentiment"))["status"] == "empty"
+
+
+def test_korean_sentiment_and_cross_exchange_identity(tmp_path):
+    s = service(tmp_path, {"ticker":"005930", "exchange":"KRX", "found":True, "sentiment_score":.218})
+    assert asyncio.run(s.read("005930.KS", "sentiment"))["data"]["score"] == .218
+    result = asyncio.run(s.read("005930.SH", "sentiment"))
+    assert result["data"] is None and result["reason"] == "asset_not_supported"

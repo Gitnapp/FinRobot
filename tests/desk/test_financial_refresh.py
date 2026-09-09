@@ -83,7 +83,14 @@ def test_background_failure_keeps_last_good_and_coalesces(tmp_path):
     store.execute("INSERT INTO coverage(symbol,cadence,active) VALUES ('AAPL','daily',1)")
     cache = SnapshotCache(store)
     cache.init()
-    payload = json.dumps({"fields": {"revenue": {"value": 123}}, "period": "2025-09-28"})
+    payload = json.dumps(
+        {
+            "fields": {"revenue": {"value": 123}},
+            "period": "2025-09-28",
+            "currency": "USD",
+            "start": "2024-09-29",
+        }
+    )
     store.execute(
         "INSERT INTO intelligence_snapshots(key,payload,fetched,expires) VALUES (?,?,?,0)",
         ("financial-metrics:AAPL", payload, time.time() - 2 * 86400),

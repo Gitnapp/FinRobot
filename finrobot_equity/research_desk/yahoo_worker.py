@@ -3,8 +3,10 @@
 import json
 import logging
 import math
+import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -12,6 +14,86 @@ import yfinance as yf
 
 logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 ticker = yf.Ticker(sys.argv[1])
+if len(sys.argv) > 2 and sys.argv[2] == "currency_rates":
+    rates = {"USD": 1.0}
+    for currency in ("CNY", "HKD", "JPY", "KRW", "EUR"):
+        frame = yf.Ticker(currency + "USD=X").history(period="5d")
+        if not frame.empty:
+            value = float(frame["Close"].iloc[-1])
+            if math.isfinite(value) and value > 0:
+                rates[currency] = value
+    if len(rates) != 6:
+        raise ValueError("selection_fx_unavailable")
+    print(json.dumps({"rates": rates, "fetched_at": time.time()}, allow_nan=False))
+    sys.exit(0)
+if len(sys.argv) > 2 and sys.argv[2] == "profile":
+    info = ticker.get_info()
+    if info.get("quoteType") != "EQUITY" or not info.get("currency"):
+        raise ValueError("not_an_equity")
+    print(
+        json.dumps(
+            {
+                "name": info.get("longName") or info.get("shortName"),
+                "industry": info.get("industry"),
+                "currency": info["currency"],
+                "market_cap": info.get("marketCap"),
+                "exchange": info.get("exchange"),
+            },
+            allow_nan=False,
+        )
+    )
+    sys.exit(0)
+if len(sys.argv) > 2 and sys.argv[2] == "industry_peers":
+    industry = sys.argv[1]
+    taxonomy = yf.EquityQuery("eq", ["region", "us"]).valid_values["industry"]
+    supported = {value for values in taxonomy.values() for value in values}
+    rows = []
+    if industry in supported:
+        for regions in [("us",), ("cn", "hk"), ("jp", "kr", "nl", "fr")]:
+            query = yf.EquityQuery(
+                "and",
+                [
+                    yf.EquityQuery("eq", ["industry", industry]),
+                    yf.EquityQuery("is-in", ["region", *regions]),
+                ],
+            )
+            result = yf.screen(query, size=60, sortField="intradaymarketcap", sortAsc=False)
+            if not isinstance(result.get("quotes"), list):
+                raise ValueError("industry_screen_unavailable")
+            rows.extend(result["quotes"])
+    else:
+        # Yahoo's domain API has industry keys that the screener taxonomy lacks.
+        key = re.sub(r"[^a-z0-9]+", "-", industry.lower()).strip("-")
+        companies = yf.Industry(key).top_companies
+        if companies is None or companies.empty:
+            raise ValueError("industry_directory_unavailable")
+
+        def details(symbol):
+            try:
+                info = yf.Ticker(symbol).get_info()
+                if info.get("industry") != industry:
+                    return None
+                return {
+                    key: info.get(key)
+                    for key in (
+                        "symbol",
+                        "shortName",
+                        "longName",
+                        "marketCap",
+                        "currency",
+                        "exchange",
+                        "quoteType",
+                    )
+                }
+            except Exception:
+                return None
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            rows = [row for row in executor.map(details, companies.index[:10]) if row]
+        if not rows:
+            raise ValueError("industry_profiles_unavailable")
+    print(json.dumps(rows, allow_nan=False))
+    sys.exit(0)
 if len(sys.argv) > 2 and sys.argv[2] == "statistics":
     info = ticker.get_info()
     values = {
@@ -105,6 +187,8 @@ for date, row in frame.iterrows():
 # A still-open daily bar is not a confirmed closing price.
 zone = ZoneInfo(metadata.get("exchangeTimezoneName") or "UTC")
 regular_end = metadata.get("currentTradingPeriod", {}).get("regular", {}).get("end")
+if isinstance(regular_end, datetime):
+    regular_end = regular_end.timestamp()
 if (
     points
     and regular_end

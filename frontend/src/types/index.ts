@@ -133,6 +133,7 @@ export type Detail = {
     mock: boolean;
   };
   valuation: {
+    unit: string;
     enterprise_value: number;
     wacc: number;
     terminal_growth: number;

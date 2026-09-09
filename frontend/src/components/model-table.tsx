@@ -45,7 +45,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
     placeholderData: (previous, previousQuery) =>
       previousQuery?.queryKey[1] === symbol ? previous : undefined,
     queryFn: () =>
-      api<FinancialModel>(`/models/${symbol}?scenario=${scenario}`),
+      api<FinancialModel>(`/data/${symbol}/model?scenario=${scenario}`),
   });
   const previous = useRef<{ symbol: string; model: FinancialModel } | null>(
     null,

@@ -10,4 +10,4 @@ python-dotenv>=1,<2
 
 akshare>=1.18,<2
 
-yfinance>=0.2.65,<1
+yfinance>=1.7,<2

@@ -1,3 +1,4 @@
+import { PeersPanel } from "../../components/peers-panel";
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import { TrackingControls } from "../../components/tracking-controls";
 import {
@@ -50,7 +51,6 @@ import {
   TechnicalPanel,
   FinancialPanel,
   ValuationPanel,
-  PeersPanel,
   CatalystPanel,
 } from "../../components/coverage-insights";
 import {
@@ -66,8 +66,8 @@ import {
   researchBrief,
 } from "../../components/ui";
 
-function ResearchSummary({ id }: { id: string }) {
-  const { data, error, refetch } = useReport(id);
+function ResearchSummary({ id, symbol }: { id: string; symbol: string }) {
+  const { data, error, refetch } = useReport(id, symbol);
   const p = data?.payload;
   if (!p)
     return error ? (
@@ -123,7 +123,7 @@ export default function StockPage() {
   const sentiment = useSignal(symbol, "sentiment");
   const latestId =
     data?.reports.find((r) => r.status === "completed")?.id || "";
-  const report = useReport(latestId);
+  const report = useReport(latestId, symbol);
   const [readySymbol, setReadySymbol] = useState("");
   const initialPending =
     isLoading ||
@@ -203,7 +203,7 @@ export default function StockPage() {
               <PriceChart key={symbol} symbol={symbol} />
               <TechnicalPanel data={data} />
               <FinancialPanel data={data} />
-              <PeersPanel data={data} />
+              <PeersPanel symbol={symbol} />
               <EvidenceCard symbol={symbol} />
               <ResearchLeads symbol={symbol} />
             </div>
@@ -212,7 +212,7 @@ export default function StockPage() {
               <RetailSentiment key={`sentiment-${symbol}`} symbol={symbol} />
               <Card>
                 {latest ? (
-                  <ResearchSummary id={latest.id} />
+                  <ResearchSummary id={latest.id} symbol={symbol} />
                 ) : (
                   <>
                     <CardHeader>

@@ -15,7 +15,7 @@ PROVIDERS = [
     (
         "Finnhub",
         "FINNHUB_API_KEY",
-        ["financials", "company_metrics", "catalysts", "news"],
+        ["financials", "company_metrics", "catalysts", "news", "peers"],
         "https://finnhub.io/docs/api",
         "Reported financial statements, earnings calendar, metrics and company news are wired; specific endpoint entitlements vary",
     ),
@@ -29,7 +29,17 @@ PROVIDERS = [
     (
         "Yahoo Finance",
         None,
-        ["prices", "financials", "security_metadata", "earnings_dates", "analyst_estimates"],
+        [
+            "prices",
+            "financials",
+            "security_metadata",
+            "earnings_dates",
+            "analyst_estimates",
+            "peers",
+            "detail",
+            "model",
+            "assumptions",
+        ],
         "https://ranaroussi.github.io/yfinance/reference/api/yfinance.Ticker.html",
         "Prices, metadata and annual statements wired; earnings dates wired as an alternative; analyst estimates documented but not used as historical facts",
     ),
@@ -106,6 +116,10 @@ def capability_inventory():
         "datasets": [
             "metrics",
             "market_metrics",
+            "peers",
+            "detail",
+            "model",
+            "assumptions",
             "company",
             "quote",
             "prices",

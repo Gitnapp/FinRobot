@@ -3,7 +3,7 @@
 import asyncio
 import math
 
-from .market import CATALOG, ProviderError
+from .market import ProviderError
 from .model import compute_model
 
 
@@ -38,6 +38,8 @@ def valuation(base, model):
     rows = {r["key"]: r["values"] for r in model["rows"]}
     # This is an enterprise-value DCF using unlevered operating cash flows, not the
     # simple model's net-income FCF. Never infer share count or net debt from spot price.
+    if any(rows[k][i] is None for k in ("ebit", "da", "capex", "nwc") for i in range(1, 4)):
+        return None
     fcff = [
         rows["ebit"][i] * (1 - model["assumptions"]["tax_rate"])
         + rows["da"][i]
@@ -118,23 +120,7 @@ async def basic_metrics(market, symbol):
 
 
 async def compose(market, symbol, assumptions=None):
-    if symbol.endswith((".SH", ".SZ", ".BJ", ".HK", ".KS", ".KQ", ".T", ".AS", ".PA")):
-        quote, history, metrics = await asyncio.gather(
-            market.quote(symbol), market.history(symbol), basic_metrics(market, symbol)
-        )
-        return {
-            "quote": quote,
-            "history": history,
-            "market_only": True,
-            "metrics": metrics,
-            "technical": technical(history),
-            "peers": [],
-            "news": {"items": [], "mock": False},
-            "model": None,
-            "fundamentals": None,
-            "valuation": None,
-        }
-
+    comparisons = market.peers.read(symbol)["data"]["members"]
     quote, base, history, news, metrics = await asyncio.gather(
         market.quote(symbol),
         market.fundamentals(symbol),
@@ -149,27 +135,13 @@ async def compose(market, symbol, assumptions=None):
             "market_only": True,
             "metrics": metrics,
             "technical": technical(history),
-            "peers": [],
+            "peers": comparisons,
             "news": news,
             "model": None,
             "fundamentals": None,
             "valuation": None,
         }
     model = compute_model(base, assumptions)
-    peers = [r for r in CATALOG if r[2] == quote["sector"] and r[0] != symbol][:3]
-    peer_quotes = await asyncio.gather(*(market.quote(r[0]) for r in peers))
-    peer_metrics = await asyncio.gather(*(basic_metrics(market, r[0]) for r in peers))
-    comparisons = [
-        {
-            "symbol": p["symbol"],
-            "name": p["name"],
-            "price": p["price"],
-            "market_cap": p["market_cap"],
-            "change_percent": p["change_percent"],
-            **m,
-        }
-        for p, m in zip(peer_quotes, peer_metrics)
-    ]
     return {
         "quote": quote,
         "fundamentals": base,

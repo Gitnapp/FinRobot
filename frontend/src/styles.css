@@ -2766,3 +2766,16 @@ select {
   gap: 4px 12px;
   font-size: 11px;
 }
+
+.peer-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.peer-heading h2 { margin-bottom: 0; }
+.peer-table-scroll { overflow-x: auto; margin-top: 8px; }
+.peer-comparison .peers-table { min-width: 440px; }
+.peer-comparison .peers-table td { font-variant-numeric: tabular-nums; }
+.peer-comparison .peers-table th:not(:first-child),
+.peer-comparison .peers-table td:not(:first-child) { text-align: right; white-space: nowrap; }
+.peer-comparison .peers-table td:first-child { min-width: 120px; max-width: 220px; }
+.peer-currency { display: block; color: var(--muted-foreground); font-size: 10px; }
+.peer-selected > div { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.peer-search-results { display: flex; flex-direction: column; }
+.peer-search-results button { justify-content: flex-start; }

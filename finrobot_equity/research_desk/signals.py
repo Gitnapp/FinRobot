@@ -30,16 +30,6 @@ class TrackingSignals:
         self.pending = {}
 
     async def read(self, symbol, kind):
-        if kind == "sentiment" and symbol.endswith(
-            (".SH", ".SZ", ".BJ", ".KS", ".KQ", ".T", ".AS", ".PA")
-        ):
-            return {
-                "status": "unavailable",
-                "as_of": None,
-                "data": None,
-                "reason": "market_not_supported",
-            }
-
         mode = self.store.settings()["data_mode"]
         key = f"signals:{mode}:{symbol}:{kind}"
         row = self.store.one("SELECT value,expires FROM cache WHERE key=?", (key,))
@@ -60,8 +50,13 @@ class TrackingSignals:
                 result["data"] = await getattr(self, kind)(symbol)
             if result["data"] is None:
                 result.update(status="empty")
-        except (ProviderError, TimeoutError, ValueError, TypeError, KeyError, IndexError):
-            result.update(status="unavailable", reason="temporarily_unavailable")
+        except (ProviderError, TimeoutError, ValueError, TypeError, KeyError, IndexError) as exc:
+            result.update(
+                status="unavailable",
+                reason="asset_not_supported"
+                if isinstance(exc, ProviderError) and str(exc) == "not_found"
+                else "temporarily_unavailable",
+            )
             if cached:
                 old = json.loads(cached["value"])
                 age = (
@@ -141,9 +136,62 @@ class TrackingSignals:
             }
         return {"events": sorted(events.values(), key=lambda x: x["date"]), "source": "Finnhub"}
 
+    async def sentiment_ticker(self, symbol):
+        exchanges = {
+            "SH": {"SSE", "SHSE", "SHH"},
+            "SZ": {"SZSE", "SHZ"},
+            "BJ": {"BSE"},
+            "HK": {"HKEX", "HKG"},
+            "KS": {"KRX", "KOSPI"},
+            "KQ": {"KRX", "KOSDAQ"},
+            "T": {"TSE", "JPX", "TYO"},
+            "AS": {"AMS", "EURONEXT AMSTERDAM"},
+            "PA": {"PAR", "EURONEXT PARIS"},
+        }
+        base, _, suffix = symbol.rpartition(".")
+        if suffix not in exchanges:
+            return symbol.removesuffix(".US")
+        key = "sentiment-identity:" + symbol
+        cached = self.store.one("SELECT value,expires FROM cache WHERE key=?", (key,))
+        if cached and cached["expires"] > time.time():
+            return json.loads(cached["value"])
+        raw = await self.providers.get(
+            "Adanos", "reddit/stocks/v1/search", {"q": base, "limit": 20}
+        )
+
+        def same_code(code):
+            code = code.upper().split(".")[0]
+            return int(code) == int(base) if code.isdigit() and base.isdigit() else code == base
+
+        matches = [
+            r
+            for r in raw.get("results", [])
+            if (
+                r.get("ticker", "").upper() == symbol
+                or (
+                    same_code(r.get("ticker", ""))
+                    and (
+                        str(r.get("exchange", "")).upper() in exchanges[suffix]
+                        or (
+                            str(r.get("exchange", "")).upper() == "EURONEXT"
+                            and r.get("country")
+                            == {"AS": "Netherlands", "PA": "France"}.get(suffix)
+                        )
+                    )
+                )
+            )
+        ]
+        if len(matches) != 1:
+            raise ProviderError("not_found")
+        ticker = matches[0]["ticker"].upper()
+        self.store.execute(
+            "INSERT OR REPLACE INTO cache VALUES (?,?,?)",
+            (key, json.dumps(ticker), time.time() + 7 * 86400),
+        )
+        return ticker
+
     async def sentiment(self, symbol):
-        # Adanos HKEX identifiers use four digits without the exchange suffix.
-        ticker = str(int(symbol.removesuffix(".HK"))).zfill(4) if symbol.endswith(".HK") else symbol
+        ticker = await self.sentiment_ticker(symbol)
         today = datetime.now(timezone.utc).date()
         start = today - timedelta(days=6)
         raw = await self.providers.get(

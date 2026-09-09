@@ -14,6 +14,10 @@ class FixtureMarket(Market):
         super().__init__(store)
         self.tickflow = self
         self.financial_data.providers = {}
+        self.peers.discover = self.fixture_peers
+
+    async def fixture_peers(self, symbol):
+        return {"members": [], "industry": "测试行业"}
 
     async def instrument(self, symbol):
         return {"symbol": symbol, "name": "测试公司（虚构）", "exchange": "TEST"}

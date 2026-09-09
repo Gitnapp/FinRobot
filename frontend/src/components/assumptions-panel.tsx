@@ -51,7 +51,7 @@ export function AssumptionsPanel({
   const query = useQuery({
     queryKey: ["assumptions", symbol],
     enabled: open,
-    queryFn: () => api<Recommendation>(`/models/${symbol}/assumptions`),
+    queryFn: () => api<Recommendation>(`/data/${symbol}/assumptions`),
     refetchInterval: (q) => (q.state.data?.state === "pending" ? 1500 : 30000),
   });
   const [draft, setDraft] = useState<Assumptions | null>(null);
