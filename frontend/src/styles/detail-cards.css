@@ -1,0 +1,20 @@
+.stock-page { --detail-card-height:480px; --detail-model-height:740px; }
+.stock-page .detail-column > :is([data-slot="card"],.dense-panel,.chart-section),
+.stock-page .research-opinion,.stock-page .research-reports,
+.stock-page .valuation-panel { height:var(--detail-card-height); box-sizing:border-box; min-height:0; display:flex; flex-direction:column; }
+.stock-page [data-slot="card-content"] { min-height:0; flex:1; display:flex; flex-direction:column; }
+.stock-page .research-report-list { max-height:none; overflow:visible; }
+.stock-page .research-report-link { min-height:64px; }
+.stock-page .research-lead { min-height:56px; }
+.stock-page .catalyst-row { min-height:56px; }
+.stock-page .disclosure-events { height:auto; flex:1; overflow:visible; }
+.stock-page .signal-event { min-height:80px; padding-block:10px; }
+.stock-page .signal-meta { font-size:11px; }
+.stock-page .peer-table-scroll { overflow-x:auto; flex:1; }
+.stock-page .peers-table td { height:64px; }
+.stock-page .model-panel { height:var(--detail-model-height); display:flex; flex-direction:column; min-height:0; box-sizing:border-box; }
+.stock-page .model-panel > [data-slot="table-container"] { flex:1; min-height:0; }
+.stock-page .model-panel .financial-table th,.stock-page .model-panel .financial-table td { padding-block:6px; }
+.stock-page .model-footnote { margin-top:8px; font-size:10px; }
+@media(max-width:767px) { .stock-page { --detail-card-height:560px; --detail-model-height:820px; } }
+

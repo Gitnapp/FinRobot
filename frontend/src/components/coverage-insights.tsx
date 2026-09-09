@@ -1,3 +1,4 @@
+import { CardPagination, useCardPage } from "./layout/card-pagination";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { ExternalLink } from "lucide-react";
 import type { Detail, History } from "../types";
@@ -178,12 +179,13 @@ export function ValuationPanel({ data }: { data: Detail }) {
   );
 }
 export function CatalystPanel({ data }: { data: Detail }) {
-  const items = data.news.items.filter((n) => n.url && n.title).slice(0, 4);
+  const items = data.news.items.filter((n) => n.url && n.title);
+  const page = useCardPage(items, 4, data.quote.symbol);
   if (!items.length) return null;
   return (
     <section className="dense-panel">
       <h2>近期催化</h2>
-      {items.map((n) => (
+      {page.items.map((n) => (
         <a
           className="catalyst-row"
           key={n.url}
@@ -195,6 +197,7 @@ export function CatalystPanel({ data }: { data: Detail }) {
           <ExternalLink size={13} />
         </a>
       ))}
+      <CardPagination {...page} onChange={page.setPage} label="近期催化分页"/>
     </section>
   );
 }

@@ -1,3 +1,4 @@
+import { CardPagination, useCardPage } from "./layout/card-pagination";
 import {
   Dialog,
   DialogContent,
@@ -70,6 +71,7 @@ export function PeersPanel({ symbol }: { symbol: string }) {
   });
   const data = query.data?.data;
   const members = data?.members || [];
+  const page = useCardPage(members, 4, symbol);
   async function save(symbols: string[] | null) {
     setBusy(true);
     try {
@@ -141,7 +143,7 @@ export function PeersPanel({ symbol }: { symbol: string }) {
                 </td>
               </tr>
             )}
-            {members.map((p) => (
+            {page.items.map((p) => (
               <tr key={p.symbol}>
                 <td>
                   <InfoLabel
@@ -191,6 +193,7 @@ export function PeersPanel({ symbol }: { symbol: string }) {
           </tbody>
         </table>
       </div>
+      <CardPagination {...page} onChange={page.setPage} label="同业比较分页"/>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent aria-describedby={undefined}>
           <DialogHeader>

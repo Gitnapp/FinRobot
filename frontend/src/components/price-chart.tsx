@@ -1,3 +1,4 @@
+import "../styles/price-chart.css";
 import { LoadingState } from "@gitnapp/ui/components/ui/loading";
 import {
   AreaSeries,
@@ -129,7 +130,6 @@ export function PriceChart({
           </Button>
         </div>
       </div>
-      {archive.isPending && <LoadingState inline />}
       {archive.isError && (
         <div role="status" className="actions">
           <span className="muted">完整历史暂不可用</span>
@@ -142,6 +142,7 @@ export function PriceChart({
           </Button>
         </div>
       )}
+      <div className="price-chart-frame">
       <div
         className="price-chart"
         style={{
@@ -151,6 +152,8 @@ export function PriceChart({
         role="img"
         aria-label={`${shownHistory?.mock ? "模拟" : "历史"}${candles ? "K线" : "价格"}走势，截至 ${shownHistory?.as_of ?? ""}`}
       />
+        {archive.isPending && <div className="price-chart-loading"><LoadingState inline/></div>}
+      </div>
       {range === 0 && shownHistory?.complete === false && (
         <p className="muted text-xs">早期日线暂缺，当前展示可用历史。</p>
       )}

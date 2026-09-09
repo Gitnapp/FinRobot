@@ -1,3 +1,5 @@
+import { CardPagination, useCardPage } from "../../components/layout/card-pagination";
+import "../../styles/detail-cards.css";
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import {
   Card,
@@ -43,6 +45,7 @@ import { useDetail, useReport } from "../../hooks/queries";
 function ResearchSummary({ id, symbol }: { id: string; symbol: string }) {
   const { data, error, refetch } = useReport(id, symbol);
   const p = data?.payload;
+  const summary = useCardPage(researchBrief(p?.sections[0]?.content).match(/.{1,140}/gs) || [], 1, id);
   if (!p)
     return error ? (
       <ErrorState error={error} retry={() => void refetch()} />
@@ -61,8 +64,8 @@ function ResearchSummary({ id, symbol }: { id: string; symbol: string }) {
       </CardHeader>
       <CardContent>
         <h3 className="text-xl leading-7 font-semibold">基本面与估值</h3>
-        <p className="text-sm leading-7 text-muted-foreground line-clamp-5">
-          {researchBrief(p.sections[0]?.content)}
+        <p className="text-sm leading-7 text-muted-foreground">
+          {summary.items[0]}
         </p>
         <div className="text-xs text-muted-foreground">
           {p.has_mock_data && (
@@ -71,6 +74,7 @@ function ResearchSummary({ id, symbol }: { id: string; symbol: string }) {
             </InfoLabel>
           )}
         </div>
+      <CardPagination {...summary} onChange={summary.setPage} label="研究观点分页"/>
       </CardContent>
     </>
   );
@@ -84,6 +88,7 @@ export default function StockPage() {
   const tab = params.get("tab") || "overview";
   const setTab = (value: string) =>
     setParams(value === "overview" ? {} : { tab: value }, { replace: true });
+  const reportPage = useCardPage(data?.reports || [], 4, symbol);
   const [researchOpened, setResearchOpened] = useState(tab === "research");
   const assetPath = `/${coverageMode ? "coverage" : "stocks"}/${symbol}`;
   if (isLoading) return <Loading />;
@@ -168,7 +173,7 @@ export default function StockPage() {
             <CardContent>
               {reports.length ? (
                 <div className="research-report-list">
-                  {reports.map((report) => (
+                  {reportPage.items.map((report) => (
                     <Link
                       key={report.id}
                       to={assetPath + "/reports/" + report.id}
@@ -202,6 +207,7 @@ export default function StockPage() {
               ) : (
                 <span className="muted">尚无报告</span>
               )}
+              <CardPagination {...reportPage} onChange={reportPage.setPage} label="报告分页"/>
             </CardContent>
           </Card>
         </div>

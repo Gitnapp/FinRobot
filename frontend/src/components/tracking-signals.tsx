@@ -1,3 +1,4 @@
+import { CardPagination, useCardPage } from "./layout/card-pagination";
 import {
   Card,
   CardAction,
@@ -91,7 +92,6 @@ type Disclosures = {
 export function CatalystCalendar({ symbol }: { symbol: string }) {
   const query = useSignal<Events>(symbol, "catalysts");
   const [period, setPeriod] = useState("upcoming");
-  const [page, setPage] = useState(0);
   const history = useQuery({
     queryKey: ["disclosures", symbol],
     enabled: period === "recent",
@@ -125,6 +125,7 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
       : [...past, ...disclosureEvents].sort((a, b) =>
           b.date.localeCompare(a.date),
         );
+  const eventPage = useCardPage(events || [], 3, `${symbol}:${period}`);
   return (
     <Card className="disclosure-calendar">
       <CardHeader>
@@ -154,7 +155,6 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
               aria-pressed={period === id}
               onClick={() => {
                 setPeriod(id);
-                setPage(0);
               }}
             >
               {label}
@@ -190,7 +190,7 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
               </p>
             )
           ) : (
-            events.slice(page * 5, (page + 1) * 5).map((e) => (
+            eventPage.items.map((e) => (
               <article className="signal-event" key={e.url || e.date + e.title}>
                 <time dateTime={e.date}>
                   <strong>{e.date.slice(5)}</strong>
@@ -235,30 +235,9 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
               </article>
             ))
           )}
-          {events && events.length > 5 && (
-            <div className="calendar-pagination">
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={page === 0}
-                onClick={() => setPage(page - 1)}
-              >
-                上一页
-              </Button>
-              <span>
-                {page + 1} / {Math.ceil(events.length / 5)}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={(page + 1) * 5 >= events.length}
-                onClick={() => setPage(page + 1)}
-              >
-                下一页
-              </Button>
-            </div>
-          )}
+
         </div>
+        <CardPagination {...eventPage} onChange={eventPage.setPage} label="披露日历分页"/>
       </CardContent>
     </Card>
   );

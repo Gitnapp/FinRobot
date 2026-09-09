@@ -1,3 +1,4 @@
+import { CardPagination, useCardPage } from "./layout/card-pagination";
 import { KeyValueGrid } from "@gitnapp/ui/components/ui/data-layout";
 import {
   Table,
@@ -49,6 +50,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
         signal,
       }),
   });
+  const page = useCardPage(query.data?.rows || [], 6, symbol);
   const previous = useRef<{ symbol: string; model: FinancialModel } | null>(
     null,
   );
@@ -66,7 +68,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
     query.data ||
     (previous.current?.symbol === symbol ? previous.current.model : null);
   if (!model)
-    return query.error ? <ErrorState error={query.error} /> : <Loading />;
+    return <section className="model-panel">{query.error ? <ErrorState error={query.error} /> : <Loading />}</section>;
   return (
     <section className="model-panel" aria-busy={query.isFetching}>
       <div className="model-toolbar">
@@ -174,7 +176,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {model.rows.map((row, i) => (
+          {page.items.map((row, i) => (
             <Fragment key={row.key}>
               {["revenue", "capex", "multiple"].includes(row.key) && (
                 <TableRow className="model-group">
@@ -206,7 +208,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
                 }
               >
                 <TableCell className="row-number">
-                  {String(i + 1).padStart(2, "0")}
+                  {String(page.offset + i + 1).padStart(2, "0")}
                 </TableCell>
                 <TableCell>
                   <InfoLabel
@@ -233,6 +235,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
           ))}
         </TableBody>
       </Table>
+      <CardPagination {...page} onChange={page.setPage} label="模型行项目分页"/>
       <div className="model-footnote">
         <div className="model-note">
           <span>*</span>

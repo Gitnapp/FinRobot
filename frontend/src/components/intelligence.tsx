@@ -1,3 +1,4 @@
+import { CardPagination, useCardPage } from "./layout/card-pagination";
 import {
   Card,
   CardAction,
@@ -50,6 +51,7 @@ export function useEvidence(symbol: string, enabled = true) {
 export function EvidenceCard({ symbol }: { symbol: string }) {
   const q = useEvidence(symbol);
   const d = q.data?.data;
+  const filingsPage = useCardPage(d?.filings || [], 2, symbol);
   const rows: [string, string, boolean][] = [
     ["revenue_growth", "营收增长", true],
     ["gross_margin", "毛利率", true],
@@ -94,7 +96,7 @@ export function EvidenceCard({ symbol }: { symbol: string }) {
         </dl>
         <div className="evidence-filings">
           {d?.filings.length ? (
-            d.filings.slice(0, 3).map((f) => (
+            filingsPage.items.map((f) => (
               <a key={f.url} href={f.url} target="_blank" rel="noreferrer">
                 {f.form}
                 <time>{f.date}</time>
@@ -108,6 +110,7 @@ export function EvidenceCard({ symbol }: { symbol: string }) {
             <span>财报原文 —</span>
           )}
         </div>
+        <CardPagination {...filingsPage} onChange={filingsPage.setPage} label="财务来源分页"/>
       </CardContent>
     </Card>
   );
@@ -127,6 +130,7 @@ export function useResearchLeads(symbol: string) {
 }
 export function ResearchLeads({ symbol }: { symbol: string }) {
   const q = useResearchLeads(symbol);
+  const page = useCardPage(q.data?.data?.items || [], 4, symbol);
   return (
     <Card>
       <CardHeader>
@@ -139,7 +143,7 @@ export function ResearchLeads({ symbol }: { symbol: string }) {
       </CardHeader>
       <CardContent>
         {q.data?.data?.items.length ? (
-          q.data.data.items.map((r, i) => (
+          page.items.map((r, i) => (
             <a
               className="research-lead"
               key={r.url}
@@ -147,13 +151,14 @@ export function ResearchLeads({ symbol }: { symbol: string }) {
               target="_blank"
               rel="noreferrer"
             >
-              <span>[{i + 1}]</span>
+              <span>[{page.offset + i + 1}]</span>
               <OverflowText text={r.title} />
             </a>
           ))
         ) : (
           <span className="muted text-xs">暂无已取得的资料线索</span>
         )}
+        <CardPagination {...page} onChange={page.setPage} label="资料线索分页"/>
       </CardContent>
     </Card>
   );
