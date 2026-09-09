@@ -41,7 +41,7 @@ export function TechnicalPanel({ data }: { data: Detail }) {
   return (
     <section className="dense-panel">
       <h2>
-        <InfoLabel label="价格与风险">
+        <InfoLabel label="价格趋势">
           {t.mock ? "本区根据示例历史价格计算。" : "根据历史收盘价计算。"}
           均线是对应期间的平均价格；波动率与最大回撤用于观察价格风险。
         </InfoLabel>

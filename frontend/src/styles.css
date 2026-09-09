@@ -3060,3 +3060,74 @@ header:has(> .app-breadcrumb), .mobile-header { padding-right: 64px; }
   background: var(--background);
   color: var(--foreground);
 }
+
+.macro-page { animation: none; }
+.market-grid, .market-grid:not(.has-preview) {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0fr);
+  gap: 0;
+  transition: grid-template-columns 240ms cubic-bezier(.22,1,.36,1), gap 240ms ease;
+  align-items: start;
+}
+.market-grid.has-preview { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap:0; }
+.market-preview-slot { min-width:0; overflow:hidden; opacity:0; visibility:hidden; transition:opacity 180ms ease, visibility 0s 240ms; }
+.has-preview > .market-preview-slot { opacity:1; visibility:visible; transition:opacity 180ms ease; }
+.market-preview-slot .market-side { display:block; width:100%; min-width:320px; box-sizing:border-box; padding:0 0 0 24px; border-top:0; border-left:1px solid var(--border); animation:none; }
+@media(max-width:767px) { .market-preview-slot { display:none; } }
+@media(prefers-reduced-motion:reduce) { .market-grid, .market-preview-slot, .has-preview > .market-preview-slot { transition:none; } }
+
+/* Canvas initialization cannot contribute intrinsic size to the macro card. */
+.macro-chart-frame { width:100%; min-width:0; flex:none; overflow:hidden; contain:strict; position:relative; }
+.macro-page .context-grid { align-items:start; }
+.macro-card-body { min-width:0; height:210px; flex:none; }
+.macro-card-placeholder { height:210px; display:flex; align-items:center; justify-content:center; }
+.macro-card-body .macro-chart { height:210px; min-width:0; }
+.macro-card-body .macro-headline { height:52px; min-height:52px; overflow:hidden; }
+
+
+.watchlist-table th:last-child,
+.watchlist-table td:last-child { padding-right: 24px; }
+
+
+.preview-quote-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:12px 0 16px; }
+.preview-quote-row .preview-price { display:flex; flex-direction:column; align-items:flex-start; gap:2px; margin:0; font-size:26px; letter-spacing:-.025em; }
+.preview-price > strong { font-weight:500; }
+.preview-price .change { font-size:12px; }
+.preview-quote-facts { display:flex; gap:16px; margin:0; flex-shrink:0; }
+.preview-quote-facts dt { font-size:11px; color:var(--muted-foreground); margin-bottom:4px; }
+.preview-quote-facts dd { margin:0; font-size:13px; font-variant-numeric:tabular-nums; }
+.market-side .preview-heading { margin-top:0; }
+.market-side .preview-heading > div { min-width:0; width:100%; }
+.market-side .symbol-title { display:block; min-width:0; width:100%; padding-right:4px; font-size:30px; line-height:1.25; font-weight:600; letter-spacing:-.025em; }
+.market-side .chart-section > .section-toolbar { margin-bottom:8px; gap:8px; }
+.market-side .chart-caption { margin-top:4px; font-size:10px; }
+.market-side .preview-data .dense-panel { margin-top:12px; padding-top:12px; }
+.market-side .preview-data h2 { margin-bottom:12px; }
+.market-side .metric-grid { gap:12px 8px; }
+.market-side .metric-grid dt { font-size:10px; margin-bottom:4px; }
+.market-side .metric-grid dd { font-size:13px; margin:0; }
+.market-side .price-range { margin-top:12px; font-size:10px; }
+
+.market-side .price-chart { margin-top:0; }
+
+/* The page owns one viewport; each column owns its own scroll area. */
+.page.market-page {
+  height:100%; min-height:0; box-sizing:border-box;
+  display:flex; flex-direction:column; overflow:hidden;
+  padding-bottom:0; animation:none;
+}
+.market-page > .page-heading, .market-page > .watchlist-toolbar { flex-shrink:0; }
+.market-page > .market-grid { flex:1; min-height:0; overflow:hidden; align-items:stretch; }
+.market-page .watchlist-panel { min-height:0; display:flex; flex-direction:column; overflow:hidden; }
+.market-page .watchlist-panel > [data-slot="table-container"] {
+  flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; scrollbar-width:none;
+}
+.market-page .watchlist-panel > [data-slot="table-container"]::-webkit-scrollbar { display:none; }
+.market-page .watchlist-table thead { position:sticky; top:0; z-index:1; background:var(--background); }
+.market-page .market-preview-slot { position:relative; min-height:0; overflow:hidden; border-left:1px solid var(--border); }
+.market-page .market-preview-slot .market-side {
+  height:100%; min-height:0; overflow-y:auto; overflow-x:hidden;
+  overscroll-behavior:contain; border-left:0; padding-bottom:24px;
+}
+
+.market-side .symbol-title .title-ending { display:inline-flex; align-items:center; gap:8px; white-space:nowrap; }
+.market-side .title-ending > svg { width:18px; height:18px; flex-shrink:0; }

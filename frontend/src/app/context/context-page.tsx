@@ -1,3 +1,4 @@
+import { LoadingState } from "@gitnapp/ui/components/ui/loading";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import { macroLabels as labels } from "./metrics";
@@ -37,7 +38,7 @@ function useMacro() {
 export function MacroPage() {
   const q = useMacro();
   return (
-    <div className="page">
+    <div className="page macro-page">
       <PageHeader title="宏观指标" />
       {q.isPending && <Loading />}
       <div className="context-grid">
@@ -58,13 +59,13 @@ export function MacroPage() {
                   </InfoHint>
                 </CardAction>
               </CardHeader>
-              <CardContent>
+              <CardContent className="macro-card-body">
                 {d ? (
                   <MacroChart points={d.points} unit={d.unit} range={seriesWindow(last?.date)} compact />
-                ) : q.data?.[key]?.state === "pending" ? (
-                  <Loading />
+                ) : q.isPending || q.data?.[key]?.state === "pending" ? (
+                  <LoadingState inline className="macro-card-placeholder" />
                 ) : (
-                  <span className="muted">暂无数据</span>
+                  <div className="macro-card-placeholder muted">暂无数据</div>
                 )}
               </CardContent>
             </Card>

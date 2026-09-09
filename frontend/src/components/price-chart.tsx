@@ -44,7 +44,7 @@ export function PriceChart({
     const style = getComputedStyle(document.documentElement);
     const color = dark ? "#a3a3a3" : "#737373";
     const chart = createChart(container.current, {
-      height: small ? 218 : 290,
+      height: small ? container.current.clientHeight : 290,
       autoSize: true,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
@@ -144,7 +144,7 @@ export function PriceChart({
       )}
       <div
         className="price-chart"
-        style={{ height: small ? 218 : 290 }}
+        style={{ height: small ? "clamp(60px, calc(100dvh - 600px), 180px)" : 290 }}
         ref={container}
         role="img"
         aria-label={`${shownHistory?.mock ? "模拟" : "历史"}${candles ? "K线" : "价格"}走势，截至 ${shownHistory?.as_of ?? ""}`}

@@ -1,5 +1,5 @@
 import { AppBreadcrumb } from "../components/app-breadcrumb";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import {
   Activity,
@@ -49,8 +49,8 @@ export default function Shell() {
   const [mobile, setMobile] = useState(false);
   const location = useLocation();
   const scroll = useRef<HTMLElement>(null);
-  useEffect(() => {
-    scroll.current?.scrollTo({ top: 0 });
+  useLayoutEffect(() => {
+    scroll.current?.scrollTo({ top: 0, behavior: "instant" });
   }, [location.pathname]);
   const active = navigation.find((n) =>
     n.href === "/"

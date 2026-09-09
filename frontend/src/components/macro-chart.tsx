@@ -40,7 +40,8 @@ export function MacroChart({
       ? "#a3a3a3"
       : "#525252";
     const chart = createChart(root.current, {
-      autoSize: true,
+      autoSize: false,
+      width: Math.max(1, root.current.clientWidth),
       height: compact ? 150 : 300,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
@@ -67,6 +68,11 @@ export function MacroChart({
       lastValueVisible: !compact,
     });
     chartRef.current = { chart, series };
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.floor(entry.contentRect.width);
+      if (width > 0) chart.resize(width, compact ? 150 : 300);
+    });
+    observer.observe(root.current);
     chart.subscribeCrosshairMove((event) => {
       if (!event.time || !event.point || !event.seriesData.get(series)) {
         setHoverDate(null);
@@ -80,6 +86,7 @@ export function MacroChart({
       );
     });
     return () => {
+      observer.disconnect();
       chart.remove();
       chartRef.current = null;
     };
@@ -126,6 +133,7 @@ export function MacroChart({
       </div>
       <div
         ref={root}
+        className="macro-chart-frame"
         style={{ height: compact ? 150 : 300, visibility: visible.length ? "visible" : "hidden" }}
         aria-label="指标历史走势图"
       />

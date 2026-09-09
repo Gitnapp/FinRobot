@@ -1,5 +1,5 @@
 import { AddButton } from "@gitnapp/ui/components/ui/actions";
-import { FinancialPanel, TechnicalPanel } from "../../components/coverage-insights";
+import { TechnicalPanel } from "../../components/coverage-insights";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { usePriceHistory } from "../../hooks/queries";
 import { LoadingBoundary } from "@gitnapp/ui/components/ui/loading";
@@ -41,13 +41,19 @@ export default function MarketPage() {
   const navigate = useNavigate();
   function selectAsset(symbol: string) {
     if (matchMedia("(max-width: 767px)").matches) navigate("/stocks/" + symbol);
-    else setSelected(current => current === symbol ? "" : symbol);
+    else if (selected === symbol && !closing) closePreview();
+    else { setClosing(false); setSelected(symbol); }
   }
   const lists = useWatchlists();
   const [params, setParams] = useSearchParams();
   const list = lists.data?.find((l) => l.id === params.get("list"));
   const { data = [], error, isLoading, refetch } = useAssets(list?.id);
   const [selected, setSelected] = useState("");
+  const [closing, setClosing] = useState(false);
+  function closePreview() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) setSelected("");
+    else setClosing(true);
+  }
   const [search, setSearch] = useState("");
   const [adding, setAdding] = useState(false);
   const shown = data.filter((a) =>
@@ -58,6 +64,10 @@ export default function MarketPage() {
     : "";
   const detail = useDetail(symbol);
   const history = usePriceHistory(symbol);
+  const companyName = detail.data?.quote.name.trim() || "";
+  const lastSpace = companyName.lastIndexOf(" ");
+  const titlePrefix = lastSpace >= 0 ? companyName.slice(0, lastSpace + 1) : Array.from(companyName).slice(0, -1).join("");
+  const titleEnding = lastSpace >= 0 ? companyName.slice(lastSpace + 1) : Array.from(companyName).at(-1) || "";
   if (lists.isLoading || isLoading) return <Loading />;
   if (error || lists.error)
     return (
@@ -105,7 +115,9 @@ export default function MarketPage() {
           </div>
 
       </div>
-      <div className={`market-grid${symbol ? " has-preview" : ""}`}>
+      <div className={`market-grid${symbol && !closing ? " has-preview" : ""}`} onTransitionEnd={event => {
+        if (event.target === event.currentTarget && event.propertyName === "grid-template-columns" && closing) { setSelected(""); setClosing(false); }
+      }}>
         <section className="watchlist-panel">
           <Table className="watchlist-table">
             <TableHeader>
@@ -225,8 +237,9 @@ export default function MarketPage() {
             </Empty>
           )}
         </section>
+        <div className="market-preview-slot" inert={!symbol || closing} aria-hidden={!symbol || closing}>
         {symbol && <aside className="market-side" id="market-preview" aria-label="标的预览">
-          <Button className="preview-close" variant="ghost" size="icon" aria-label="关闭预览" onClick={() => setSelected("")}><X size={16}/></Button>
+          <Button className="preview-close" variant="ghost" size="icon" aria-label="关闭预览" onClick={closePreview}><X size={16}/></Button>
           <LoadingBoundary
             pending={Boolean(symbol) && (detail.isPending || history.isPending)}
           >
@@ -235,33 +248,23 @@ export default function MarketPage() {
                 <div className="preview-heading">
                   <div>
                     <Link to={"/stocks/" + symbol} className="symbol-title" data-page-link>
-                      {detail.data.quote.name}
-                      <ArrowRight size={15} />
+                      {titlePrefix}<span className="title-ending">{titleEnding}<ArrowRight size={18} aria-hidden="true" /></span>
                     </Link>
                     <span className="muted">{detail.data.quote.symbol}</span>
                   </div>
                 </div>
-                <div className="preview-price">
-                  {money(detail.data.quote.price, detail.data.quote.currency)}
-                  <Change value={detail.data.quote.change_percent} />
+                <div className="preview-quote-row">
+                  <div className="preview-price">
+                    <strong>{money(detail.data.quote.price, detail.data.quote.currency)}</strong>
+                    <Change value={detail.data.quote.change_percent} />
+                  </div>
+                  <dl className="preview-quote-facts">
+                    <div><dt>市值</dt><dd>{compact(detail.data.quote.market_cap)}</dd></div>
+                    <div><dt>市盈率</dt><dd>{detail.data.metrics.pe?.toFixed(1) || "—"}</dd></div>
+                  </dl>
                 </div>
                 <PriceChart key={symbol} symbol={symbol} small />
-                <div className="preview-facts">
-                  <div>
-                    <span>市值</span>
-                    <b>{compact(detail.data.quote.market_cap)}</b>
-                  </div>
-                  <div>
-                    <span>市盈率</span>
-                    <InfoLabel
-                      label={<b>{detail.data.metrics.pe?.toFixed(1) || "—"}</b>}
-                    >
-                      {detail.data.metrics.mock ? "此市盈率为示例。" : null}
-                    </InfoLabel>
-                  </div>
-                </div>
                 <div className="preview-data">
-                  <FinancialPanel data={detail.data} />
                   <TechnicalPanel data={detail.data} />
                 </div>
               </>
@@ -277,6 +280,7 @@ export default function MarketPage() {
             )}
           </LoadingBoundary>
         </aside>}
+        </div>
       </div>
       <AddAsset open={adding} onOpenChange={setAdding} listId={list?.id} />
     </div>
