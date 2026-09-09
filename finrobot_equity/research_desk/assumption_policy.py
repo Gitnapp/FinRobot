@@ -4,6 +4,7 @@ import json
 
 from .assumption_advisor import propose
 from .schemas import Assumptions
+from .model import scenario_assumptions
 from .store import now
 
 
@@ -11,7 +12,10 @@ class AssumptionPolicy:
     def __init__(self, store, market, cache):
         self.store, self.market, self.cache = store, market, cache
 
-    def overrides(self, symbol):
+    def overrides(self, symbol, scenario="base"):
+        if scenario != "base":
+            row = self.store.one("SELECT values_json FROM scenario_overrides WHERE symbol=? AND scenario=?", (symbol, scenario))
+            return json.loads(row["values_json"]) if row else {}
         row = self.store.one(
             "SELECT values_json FROM assumption_overrides WHERE symbol=?", (symbol,)
         )
@@ -37,10 +41,16 @@ class AssumptionPolicy:
             )
         return proposal
 
-    def read(self, symbol):
+    def read(self, symbol, scenario="base"):
         snapshot = self.cache.read(
             "assumptions:" + symbol, lambda: self.collect(symbol), self.ttl(symbol), 365 * 86400
         )
+        if scenario != "base":
+            original = snapshot["data"]
+            recommended = scenario_assumptions(self.store.assumptions(symbol), scenario) if original else None
+            return {**snapshot, "data": {**original, "assumptions": recommended} if original else None,
+                    "effective": scenario_assumptions(recommended, "base", self.overrides(symbol, scenario)) if recommended else None,
+                    "overrides": self.overrides(symbol, scenario)}
         return {
             **snapshot,
             "effective": self.store.assumptions(symbol) if snapshot["data"] else None,
@@ -59,7 +69,22 @@ class AssumptionPolicy:
         else:
             await self.cache.refresh(key, lambda: self.collect(symbol), self.ttl(symbol))
 
-    def save(self, symbol, patch):
+    def save(self, symbol, patch, scenario="base"):
+        if scenario != "base":
+            with self.store.connection() as db:
+                db.execute("BEGIN IMMEDIATE")
+                row = db.execute("SELECT values_json FROM scenario_overrides WHERE symbol=? AND scenario=?", (symbol, scenario)).fetchone()
+                overrides = json.loads(row["values_json"]) if row else {}
+                for key, value in patch.items():
+                    if key not in Assumptions.model_fields:
+                        raise ValueError("Unknown assumption")
+                    if value is None: overrides.pop(key, None)
+                    else: overrides[key] = value
+                base = db.execute("SELECT assumptions FROM models WHERE symbol=?", (symbol,)).fetchone()
+                if not base: raise ValueError("Assumptions unavailable")
+                effective = scenario_assumptions(json.loads(base["assumptions"]), scenario, overrides)
+                db.execute("INSERT OR REPLACE INTO scenario_overrides VALUES (?,?,?)", (symbol, scenario, json.dumps(overrides)))
+            return effective
         with self.store.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute(

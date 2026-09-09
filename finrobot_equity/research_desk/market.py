@@ -98,7 +98,7 @@ class Market:
                     with self.store.connection() as db:
                         db.execute(
                             "INSERT OR REPLACE INTO cache VALUES (?,?,?)",
-                            (key, json.dumps(bundle), time.time() + 3600),
+                            (key, json.dumps(bundle), time.time() + 60),
                         )
                         if source is self.yahoo:
                             # Keep the successful source across reads/restarts; never flap between adjustment bases.

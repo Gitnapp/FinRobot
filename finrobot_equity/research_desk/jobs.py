@@ -1,3 +1,4 @@
+from .model_services import ModelServices
 """SQLite-backed queue + in-process scheduler. Run one local application worker."""
 
 import asyncio
@@ -115,7 +116,7 @@ class Worker:
         try:
             async with asyncio.timeout(300):
                 symbol = job["symbol"]
-                settings = self.store.settings()
+                settings = ModelServices(self.store).for_workflow("report")
                 if self.assumption_policy:
                     await self.assumption_policy.refresh(symbol)
                 dossier = await compose(self.market, symbol, self.store.assumptions(symbol))

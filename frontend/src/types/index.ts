@@ -173,6 +173,9 @@ export type Payload = {
 };
 export type FullReport = Report & { payload: Payload | null };
 export type Provider = {
+  model_filter: string;
+  selectable_models: string[];
+  managed_by: "env" | "manual";
   id: string;
   name: string;
   configured: boolean;
@@ -180,6 +183,7 @@ export type Provider = {
   models: string[];
 };
 export type Settings = {
+  llm_routes?: Partial<Record<"report" | "assumptions", {provider:string;model:string}>>;
   provider: string;
   model: string;
   data_mode: "auto";

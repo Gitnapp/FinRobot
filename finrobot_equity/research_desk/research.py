@@ -8,26 +8,6 @@ from pydantic import Field
 
 from finrobot_equity.core.src.modules.report_structure import ReportStructureManager
 
-PROVIDERS = {
-    "openai": {
-        "name": "OpenAI Compatible",
-        "key": "OPENAI_API_KEY",
-        "url": os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
-        "models": [os.getenv("OPENAI_MODEL", "gpt-4o-mini")],
-    },
-    "siliconflow": {
-        "name": "SiliconFlow",
-        "key": "SILICONFLOW_API_KEY",
-        "url": "https://api.siliconflow.cn/v1",
-        "models": ["Qwen/Qwen3-8B", "deepseek-ai/DeepSeek-V3"],
-    },
-    "kimi": {
-        "name": "Kimi",
-        "key": "KIMI_API_KEY",
-        "url": "https://api.moonshot.cn/v1",
-        "models": ["moonshot-v1-8k"],
-    },
-}
 
 TITLES = {
     "executive_summary": "投资摘要",
@@ -66,22 +46,9 @@ def validate_report_language(texts):
         raise ValueError("正文必须使用研究者语言，数据商与实现术语只属于来源附录")
 
 
-def provider_status():
-    return [
-        {
-            "id": key,
-            "name": p["name"],
-            "configured": bool(os.getenv(p["key"])) if p["key"] else True,
-            "base_url": p["url"],
-            "models": p["models"],
-        }
-        for key, p in PROVIDERS.items()
-    ]
-
-
 async def call_model(settings, messages, max_tokens=4500):
-    provider = PROVIDERS[settings["provider"]]
-    secret = os.getenv(provider["key"])
+    provider = settings["_connection"]
+    secret = provider["secret"]
     if not secret:
         raise RuntimeError("所选模型未配置密钥；请在设置中选择已配置的模型或演示研究")
     body = {"model": settings["model"], "messages": messages, "max_tokens": max_tokens}

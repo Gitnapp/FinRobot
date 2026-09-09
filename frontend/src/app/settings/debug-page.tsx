@@ -1,8 +1,7 @@
+import { AnimatedSwitcher } from "../../components/animated-switcher";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router";
 import { api } from "../../api/client";
-import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import { Button, Input, PageHeader, Loading, ErrorState } from "../../components/ui";
 
 type Plan = {id:string; symbol:string; dataset:string; next_run:string|number; last_success:number|null; status:string; error:string|null};
@@ -17,10 +16,9 @@ export default function DebugPage() {
   const logs=useQuery({queryKey:["debug-logs",before],queryFn:()=>api<{items:Log[];next_cursor:number|null}>(`/debug/logs${before ? `?before=${before}` : ""}`),enabled:tab==="logs",refetchInterval:before ? false : 5000});
   const current=tab==="plans" ? plans : logs;
   return <div className="page">
-    <BackLink asChild><Link to="/settings">返回设置</Link></BackLink>
     <PageHeader title="调试" />
     <div className="debug-toolbar">
-      <div className="segmented">{[["plans","更新计划"],["logs","执行日志"]].map(([key,label])=><button key={key} className={tab===key?"selected":""} onClick={()=>setTab(key)}>{label}</button>)}</div>
+      <AnimatedSwitcher className="segmented">{[["plans","更新计划"],["logs","执行日志"]].map(([key,label])=><button key={key} className={tab===key?"selected":""} onClick={()=>setTab(key)}>{label}</button>)}</AnimatedSwitcher>
       <Input aria-label="筛选任务或标的" placeholder="筛选任务或标的" value={search} onChange={e=>setSearch(e.target.value)} />
     </div>
     {current.isPending && <Loading />}

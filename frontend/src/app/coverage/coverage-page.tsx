@@ -1,9 +1,11 @@
+import { AddAsset } from "../../components/add-asset";
+import { AnimatedSwitcher } from "../../components/animated-switcher";
 import { AddButton } from "@gitnapp/ui/components/ui/actions";
 import { CardGrid } from "@gitnapp/ui/components/ui/data-layout";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
-import { Search } from "lucide-react";
+import { Search, Pencil, Check } from "lucide-react";
 import {
   Select,
   SelectTrigger,
@@ -28,7 +30,8 @@ import {
 } from "../../components/coverage-asset-card";
 import type { Snapshot } from "../../components/intelligence";
 export default function CoveragePage() {
-  const navigate = useNavigate();
+  const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(false);
   const directory = useQuery({
     queryKey: ["coverage-directory"],
     queryFn: () => api<CoveredCompany[]>("/coverage-directory"),
@@ -74,12 +77,11 @@ export default function CoveragePage() {
     );
   return (
     <div className="page">
-      <PageHeader title="持续跟踪">
-        <AddButton attention="secondary" onClick={() => navigate("/")} />
-      </PageHeader>
+      <PageHeader title="标的跟踪" />
+      <div className="coverage-toolbar">
       <div className="coverage-list-picker">
         <Select value={list} onValueChange={setList}>
-          <SelectTrigger aria-label="持续跟踪列表" className="w-[168px]">
+          <SelectTrigger aria-label="标的跟踪列表" className="w-[168px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -91,10 +93,11 @@ export default function CoveragePage() {
             ))}
           </SelectContent>
         </Select>
+        <AddButton attention="quiet" iconOnly label="添加跟踪标的" onClick={() => setAdding(true)} />
+        <Button variant="ghost" size="icon" aria-label={editing ? "完成编辑" : "编辑跟踪条目"} aria-pressed={editing} onClick={() => setEditing(value => !value)}>{editing ? <Check size={16} /> : <Pencil size={16} />}</Button>
         <span className="muted">{members.length} 家公司</span>
       </div>
-      <div className="coverage-toolbar">
-        <div className="segmented">
+        <AnimatedSwitcher className="segmented">
           {[
             ["all", "全部"],
             ["active", "跟踪中"],
@@ -108,23 +111,25 @@ export default function CoveragePage() {
               {label}
             </button>
           ))}
-        </div>
+        </AnimatedSwitcher>
         <div className="search-field coverage-search">
           <Search size={15} aria-hidden="true" />
-          <Input type="search" aria-label="搜索持续跟踪标的" placeholder="搜索代码或公司" value={search} onChange={e => setSearch(e.target.value)} />
+          <Input type="search" aria-label="搜索标的跟踪标的" placeholder="搜索代码或公司" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
+      <AddAsset open={adding} onOpenChange={setAdding} destination="coverage" />
       {pending && <Loading />}
       {quotes.error && (
         <ErrorState error={quotes.error} retry={() => void quotes.refetch()} />
       )}
-      <CardGrid minWidth={300}>
+      <CardGrid minWidth={300} className="coverage-cards">
         {members
           .filter((c) => c.symbol)
           .map((c) => (
             <CoverageAssetCard
               key={c.id}
               company={c}
+              editing={editing}
               snapshot={c.symbol ? quotes.data?.[c.symbol] : undefined}
             />
           ))}

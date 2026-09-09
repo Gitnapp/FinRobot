@@ -394,3 +394,28 @@
   align-items: center;
   gap: 8px;
 }
+
+/* Arrow motion is opt-in for page navigation, never inferred from an icon. */
+[data-page-link] > :is(.lucide-arrow-right, .lucide-arrow-up-right) {
+  transition: translate 180ms ease;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  [data-page-link]:not([role="dialog"] *):hover > .lucide-arrow-right { translate: 3px 0; }
+  [data-page-link]:not([role="dialog"] *):hover > .lucide-arrow-up-right { translate: 2px -2px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-page-link]:not([role="dialog"] *):focus-visible > .lucide-arrow-right { translate: 3px 0; }
+  [data-page-link]:not([role="dialog"] *):focus-visible > .lucide-arrow-up-right { translate: 2px -2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-page-link] > :is(.lucide-arrow-right, .lucide-arrow-up-right) { transition: none; }
+}
+
+/* Labeled icon actions must have a visible resting surface. */
+[data-slot="button"][data-variant="ghost"]:not([data-size^="icon"]):has(svg),
+[data-slot="button"][data-variant="link"]:not([data-size^="icon"]):has(svg) {
+  background: var(--secondary);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+[data-slot="button"][data-variant="ghost"]:not([data-size^="icon"]):has(svg):hover,
+[data-slot="button"][data-variant="link"]:not([data-size^="icon"]):has(svg):hover { background: var(--accent); }

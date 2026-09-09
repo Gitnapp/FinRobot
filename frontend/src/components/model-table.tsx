@@ -1,3 +1,4 @@
+import { AnimatedSwitcher } from "./animated-switcher";
 import { KeyValueGrid } from "@gitnapp/ui/components/ui/data-layout";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { Fragment, useState, useRef, useEffect } from "react";
@@ -98,7 +99,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
             </Button>
           </div>
         </div>
-        <div className="model-cases" role="group" aria-label="预测情景">
+        <AnimatedSwitcher className="model-cases" role="group" aria-label="预测情景">
           {[
             ["bear", "保守"],
             ["base", "基准"],
@@ -115,7 +116,7 @@ export function ModelTable({ symbol }: { symbol: string }) {
               {name}
             </Button>
           ))}
-        </div>
+        </AnimatedSwitcher>
       </div>
       <KeyValueGrid
         className="model-assumptions"
@@ -251,12 +252,13 @@ export function ModelTable({ symbol }: { symbol: string }) {
           </span>
         </div>
       </div>
-      <AssumptionsPanel
+      {edit && <AssumptionsPanel
         symbol={symbol}
         open={edit}
         onOpenChange={setEdit}
-        onSaved={() => setScenario("base")}
-      />
+        initialScenario={scenario}
+        onSaved={setScenario}
+      />}
     </section>
   );
 }

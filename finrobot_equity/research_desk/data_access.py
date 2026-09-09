@@ -48,14 +48,14 @@ class DataAccess:
             if (context == "coverage" or dataset != "detail") and not coverage:
                 raise LookupError("coverage_required")
             if dataset == "assumptions":
-                return self.assumptions.read(symbol)
+                return self.assumptions.read(symbol, scenario)
             if dataset == "model":
                 base = await self.market.fundamentals(symbol)
                 if base is None:
                     return unavailable_model(scenario)
                 recommendation = self.assumptions.read(symbol)
                 return {
-                    **compute_model(base, store.assumptions(symbol), scenario),
+                    **compute_model(base, store.assumptions(symbol), scenario, self.assumptions.overrides(symbol, scenario) if scenario != "base" else None),
                     "recommendation_state": recommendation["state"],
                 }
             data = await compose(self.market, symbol, store.assumptions(symbol))

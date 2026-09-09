@@ -1,7 +1,7 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import { macroLabels as labels } from "./metrics";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
 import { Link, useParams } from "react-router";
 import {
   DateRange,
@@ -38,17 +38,17 @@ export function MacroPage() {
   const q = useMacro();
   return (
     <div className="page">
-      <PageHeader title="宏观环境" />
+      <PageHeader title="宏观指标" />
       {q.isPending && <Loading />}
       <div className="context-grid">
         {Object.entries(labels).map(([key, label]) => {
           const d = q.data?.[key]?.data;
           const last = d?.points.at(-1);
           return (
-            <Card key={key}>
+            <Card key={key} className="navigation-card">
               <CardHeader>
                 <CardTitle>
-                  <Link to={`/macro/${key}`}>{label} →</Link>
+                  <Link to={`/macro/${key}`} className="navigation-card-link">{label}<ArrowRight size={16} aria-hidden="true" /></Link>
                 </CardTitle>
                 <CardAction>
                   <InfoHint>
@@ -93,7 +93,7 @@ export function MacroDetailPage() {
   return (
     <div className="page">
       <BackLink asChild>
-        <Link to="/macro" aria-label="返回宏观环境">
+        <Link to="/macro" aria-label="返回宏观指标">
           返回
         </Link>
       </BackLink>
@@ -190,7 +190,12 @@ function monthRange(month: string) {
 }
 export function CalendarPage() {
   const [month, setMonth] = useState(() => new Date().toLocaleDateString("sv-SE").slice(0, 7));
+  const [jump, setJump] = useState(0);
   const end = useRef<HTMLDivElement>(null);
+  const start = useRef<HTMLDivElement>(null);
+  const timeline = useRef<HTMLDivElement>(null);
+  const positioned = useRef<string | null>(null);
+  const anchor = useRef<{element: Element; top: number} | null>(null);
   const q = useInfiniteQuery({
     queryKey: ["calendar-months", month],
     initialPageParam: month,
@@ -199,36 +204,76 @@ export function CalendarPage() {
       const snapshot = await api<Snapshot<Calendar>>(`/data/global/calendar?start=${range.from}&end=${range.to}`, {signal});
       return {month: pageParam, snapshot};
     },
+    getPreviousPageParam: first => first.month > "1900-01" ? shiftMonth(first.month, -1) : undefined,
     getNextPageParam: last => last.month < "9999-12" ? shiftMonth(last.month, 1) : undefined,
     refetchInterval: query => query.state.data?.pages.some(p => p.snapshot.state === "pending" || p.snapshot.refreshing) ? 1500 : false,
     retry: false,
   });
+  const futureAt = q.data?.pages.flatMap(p => p.snapshot.data?.events || [])
+    .filter(e => new Date(e.at).getTime() >= Date.now()).sort((a,b) => a.at.localeCompare(b.at))[0]?.at;
+  useLayoutEffect(() => {
+    const root = timeline.current;
+    if (!root) return;
+    const scroller = root.closest<HTMLElement>(".calendar-viewport");
+    if (anchor.current && !q.isFetchingPreviousPage) {
+      const {element, top} = anchor.current;
+      const delta = element.getBoundingClientRect().top - top;
+      if (scroller) scroller.scrollTop += delta;
+      else window.scrollBy(0, delta);
+      anchor.current = null;
+    }
+    const initial = q.data?.pages.find(p => p.month === month)?.snapshot;
+    if (positioned.current === month || !initial?.data?.events.length || initial.state === "pending") return;
+    const frame = requestAnimationFrame(() => {
+      const rows = Array.from(root.querySelectorAll('.macro-event'));
+      const boundary = rows.findIndex(row => row.classList.contains('future-start'));
+      const target = rows[Math.max(0, boundary - 2)] || root;
+      const top = target.getBoundingClientRect().top;
+      if (scroller) scroller.scrollTop += top - scroller.getBoundingClientRect().top - scroller.clientTop;
+      else window.scrollBy(0, top);
+      positioned.current = month;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [q.data, q.isFetchingPreviousPage, month, jump]);
+  useEffect(() => {
+    if (!start.current || positioned.current !== month || q.isFetching || !q.hasPreviousPage || !q.data?.pages[0]?.snapshot.data?.events.length) return;
+    const observer = new IntersectionObserver(entries => {
+      if (!entries[0].isIntersecting) return;
+      const element = timeline.current?.querySelector('.calendar-month-section');
+      if (element) anchor.current = {element, top: element.getBoundingClientRect().top};
+      void q.fetchPreviousPage();
+    }, {root: start.current.closest(".calendar-viewport")});
+    observer.observe(start.current);
+    return () => observer.disconnect();
+  }, [month, q.data, q.isFetching, q.hasPreviousPage, q.fetchPreviousPage]);
   const tail = q.data?.pages.at(-1);
   const canAutoLoad = Boolean(tail?.snapshot.data?.events.length) && !q.isFetching;
   useEffect(() => {
     if (!end.current || !canAutoLoad) return;
     const observer = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && q.hasNextPage) void q.fetchNextPage();
-    }, {root: end.current.closest(".main-scroll"), rootMargin: "160px"});
+    }, {root: end.current.closest(".calendar-viewport"), rootMargin: "160px"});
     observer.observe(end.current);
     return () => observer.disconnect();
   }, [canAutoLoad, q.hasNextPage, q.fetchNextPage, tail?.month]);
-  return <div className="page">
-    <PageHeader title="事件日历" />
+  return <div className="page calendar-page">
+    <PageHeader title="财经日历" />
     <div className="calendar-month-picker">
       <Button variant="ghost" size="icon" aria-label="上一月" onClick={() => setMonth(shiftMonth(month,-1))}><ChevronLeft size={16} /></Button>
       <Input type="month" aria-label="选择月份" value={month} onChange={e => {if (/^\d{4}-\d{2}$/.test(e.target.value)) setMonth(e.target.value);}} />
       <Button variant="ghost" size="icon" aria-label="下一月" onClick={() => setMonth(shiftMonth(month,1))}><ChevronRight size={16} /></Button>
-      <InfoHint>浅底色表示过去的事件，分界线后为即将到来的事件。选择月份快速跳转，向下滚动继续查看后续月份。未公布事件或数据暂不可用时保留真实空状态，不补造事件。</InfoHint>
+      <Button variant="ghost" onClick={() => { positioned.current = null; setMonth(new Date().toLocaleDateString("sv-SE").slice(0, 7)); setJump(value => value + 1); }}>回到现在</Button>
+      <InfoHint>浅底色表示过去的事件，分界线后为即将到来的事件。选择月份快速跳转，上下滚动连续查看相邻月份。未公布事件或数据暂不可用时保留真实空状态，不补造事件。</InfoHint>
     </div>
+    <div className="calendar-viewport" tabIndex={0} role="region" aria-label="财经事件时间线">
     {(q.isPending || tail?.snapshot.state === "pending") && <Loading />}
-    <div className="calendar-months">
+    <div ref={start} className="calendar-scroll-sentinel" />
+    <div ref={timeline} className="calendar-months">
       {q.data?.pages.map(({month: period, snapshot}) => {
         const events = (snapshot.data?.events || []).filter(e => new Date(e.at).toLocaleDateString("sv-SE").startsWith(period)).sort((a,b) => a.at.localeCompare(b.at));
         return <section key={period} className="calendar-month-section">
           <h2>{period.replace("-", " 年 ")} 月</h2>
-          {events.map((e,i) => <div className={`macro-event${new Date(e.at).getTime() < Date.now() ? " is-past" : (i === 0 || new Date(events[i-1].at).getTime() < Date.now()) ? " future-start" : ""}`} key={e.at+e.title+i}>
-            {new Date(e.at).getTime() >= Date.now() && (i === 0 || new Date(events[i-1].at).getTime() < Date.now()) && <span className="calendar-boundary">即将到来</span>}
+          {events.map((e,i) => <div className={`macro-event${new Date(e.at).getTime() < Date.now() ? " is-past" : e.at === futureAt ? " future-start" : ""}`} key={e.at+e.title+i}>
             <time>{new Date(e.at).toLocaleString("zh-CN", {month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})}</time>
             <div><strong>{e.title}</strong><small>
               {e.currency}　{e.impact}　前值 {String(e.previous ?? "—")}　预期 {String(e.forecast ?? "—")}　实际 {e.actual_status === "unverified" ? <InfoLabel label="待核实">零值未经有效公布状态确认，暂不作为实际值。</InfoLabel> : e.actual_status === "scheduled" ? "待公布" : String(e.actual ?? "—")}
@@ -241,6 +286,7 @@ export function CalendarPage() {
     <div ref={end} className="calendar-more">
       {q.isFetchingNextPage && <Loading />}
       {q.isError ? <Button variant="ghost" onClick={() => void q.refetch()}>重新获取</Button> : null}
+    </div>
     </div>
   </div>;
 }

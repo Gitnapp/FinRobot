@@ -12,7 +12,7 @@ import {
 } from "@gitnapp/ui/components/ui/select";
 import { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router";
-import { Plus, Search, ArrowRight, Glasses, X } from "lucide-react";
+import { Search, ArrowRight, Glasses, X } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -68,7 +68,7 @@ export default function MarketPage() {
     );
   return (
     <div className="page market-page">
-      <PageHeader title="市场看板" />
+      <PageHeader title="市场数据" />
       <div className="watchlist-toolbar">
         <div className="actions">
           <Select
@@ -87,19 +87,14 @@ export default function MarketPage() {
               ))}
             </SelectContent>
           </Select>
-          <span className="muted">{data.length} 个标的</span>
-        </div>
-        <div className="actions">
           <AddButton attention="quiet" iconOnly label="添加标的" onClick={() => setAdding(true)} />
           <WatchlistEditor
             list={list}
             onSelect={(id) => setParams(id ? { list: id } : {})}
           />
+          <span className="muted">{data.length} 个标的</span>
         </div>
-      </div>
-      <div className={`market-grid${symbol ? " has-preview" : ""}`}>
-        <section className="watchlist-panel">
-          <div className="search-field table-search">
+          <div className="search-field market-search">
             <Search size={15} />
             <Input
               aria-label="筛选标的"
@@ -108,6 +103,10 @@ export default function MarketPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+
+      </div>
+      <div className={`market-grid${symbol ? " has-preview" : ""}`}>
+        <section className="watchlist-panel">
           <Table className="watchlist-table">
             <TableHeader>
               <TableRow>
@@ -115,7 +114,9 @@ export default function MarketPage() {
                 <TableHead>最新价</TableHead>
                 <TableHead>涨跌幅</TableHead>
                 <TableHead>市值</TableHead>
+                <TableHead>标的跟踪</TableHead>
                 <TableHead>研报</TableHead>
+                <TableHead>研究更新</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -175,6 +176,14 @@ export default function MarketPage() {
                     {compact(a.market_cap)}
                   </TableCell>
                   <TableCell>
+                    {a.coverage ? (
+                      <Link to={"/coverage/" + a.symbol}>
+                        {a.coverage.active ? "跟踪中" : "已暂停"}
+                        <small className="market-cell-meta">{a.coverage.cadence === "daily" ? "每日" : "每周"}</small>
+                      </Link>
+                    ) : <span className="muted">未跟踪</span>}
+                  </TableCell>
+                  <TableCell>
                     {a.active_job ? (
                       <Link to={"/reports/" + a.active_job.id}>研究中</Link>
                     ) : a.latest_report ? (
@@ -188,10 +197,18 @@ export default function MarketPage() {
                           strokeWidth={1.5}
                           aria-hidden="true"
                         />
+                        <span>{a.report_count}</span>
                       </Link>
                     ) : (
                       <span className="muted">—</span>
                     )}
+                  </TableCell>
+                  <TableCell className="market-research-date">
+                    {a.latest_report ? (
+                      <Link to={"/reports/" + a.latest_report.id}>
+                        {(a.latest_report.completed_at || a.latest_report.created_at).slice(0, 10)}
+                      </Link>
+                    ) : <span className="muted">—</span>}
                   </TableCell>
                 </TableRow>
               ))}
@@ -217,7 +234,7 @@ export default function MarketPage() {
               <>
                 <div className="preview-heading">
                   <div>
-                    <Link to={"/stocks/" + symbol} className="symbol-title">
+                    <Link to={"/stocks/" + symbol} className="symbol-title" data-page-link>
                       {detail.data.quote.name}
                       <ArrowRight size={15} />
                     </Link>

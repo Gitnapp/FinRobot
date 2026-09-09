@@ -63,7 +63,7 @@ class YahooMarket:
                     raise ValueError("empty_history")
                 self.store.execute(
                     "INSERT OR REPLACE INTO cache VALUES (?,?,?)",
-                    (key, json.dumps(data), time.time() + 3600),
+                    (key, json.dumps(data), time.time() + 300),
                 )
                 return data
             except (ValueError, TimeoutError):

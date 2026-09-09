@@ -49,7 +49,10 @@ def test_task_progress_tracks_persisted_stages_and_retry(tmp_path):
     )
     assert tasks.read(receipt["id"])["error"] == "连接中断"
     retried = tasks.retry(receipt["id"])
-    assert retried["id"] != receipt["id"] and retried["status"] == "queued"
+    assert retried["id"] == receipt["id"] and retried["status"] == "queued"
+    assert retried["error"] is None
+    assert store.one("SELECT count(*) AS n FROM reports WHERE symbol='AAPL'")["n"] == 1
+    assert store.one("SELECT count(*) AS n FROM reports WHERE status='failed'")["n"] == 0
     # A newly constructed service sees the same durable task.
     assert Tasks(Store(tmp_path)).read(retried["id"])["status"] == "queued"
     store.execute("UPDATE reports SET status='completed' WHERE id=?", (retried["id"],))

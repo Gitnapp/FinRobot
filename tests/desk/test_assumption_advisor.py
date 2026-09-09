@@ -13,7 +13,14 @@ class Market:
         return {**mock_base(symbol), "mock": False}
 
 
-class Store:
+from finrobot_equity.research_desk.store import Store as DatabaseStore
+
+
+class Store(DatabaseStore):
+    def __init__(self, directory):
+        super().__init__(directory)
+        self.init()
+
     def settings(self):
         return {"provider": "openai", "model": "test"}
 
@@ -21,7 +28,7 @@ class Store:
         return Assumptions().model_dump()
 
 
-def test_proposal_is_complete_validated_and_read_only(monkeypatch):
+def test_proposal_is_complete_validated_and_read_only(monkeypatch, tmp_path):
     values = Assumptions(growth=0.12).model_dump()
 
     async def answer(*args):
@@ -30,13 +37,13 @@ def test_proposal_is_complete_validated_and_read_only(monkeypatch):
         )
 
     monkeypatch.setattr(advisor, "call_model", answer)
-    result = asyncio.run(advisor.propose(Market(), Store(), "AAPL"))
+    result = asyncio.run(advisor.propose(Market(), Store(tmp_path), "AAPL"))
     assert result["assumptions"]["growth"] == 0.12
     assert len(result["rationale"]) == 9
 
 
 @pytest.mark.parametrize("change", ["missing", "out_of_range", "missing_reason"])
-def test_invalid_ai_output_is_rejected(monkeypatch, change):
+def test_invalid_ai_output_is_rejected(monkeypatch, change, tmp_path):
     values = Assumptions().model_dump()
     reasons = {k: "基于财务基期的审慎假设" for k in values}
     if change == "missing":
@@ -51,4 +58,4 @@ def test_invalid_ai_output_is_rejected(monkeypatch, change):
 
     monkeypatch.setattr(advisor, "call_model", answer)
     with pytest.raises(ValueError):
-        asyncio.run(advisor.propose(Market(), Store(), "AAPL"))
+        asyncio.run(advisor.propose(Market(), Store(tmp_path), "AAPL"))

@@ -44,10 +44,10 @@ export function LoadingScope({
   );
 }
 
-export function LoadingState({ className }: { className?: string }) {
+export function LoadingState({ className, inline = false }: { className?: string; inline?: boolean }) {
   const register = useContext(LoadingContext);
-  useEffect(() => register?.(), [register]);
-  if (register) return null;
+  useEffect(() => inline ? undefined : register?.(), [register, inline]);
+  if (register && !inline) return null;
   return (
     <div
       role="status"

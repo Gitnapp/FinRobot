@@ -38,6 +38,7 @@ class Store:
                 CREATE TABLE IF NOT EXISTS models (
                     symbol TEXT PRIMARY KEY REFERENCES assets(symbol), assumptions TEXT NOT NULL,
                     updated_at TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS scenario_overrides (symbol TEXT NOT NULL, scenario TEXT NOT NULL, values_json TEXT NOT NULL, PRIMARY KEY(symbol,scenario));
                 CREATE TABLE IF NOT EXISTS assumption_overrides (
                     symbol TEXT PRIMARY KEY, values_json TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS reports (
@@ -47,10 +48,13 @@ class Store:
                     error TEXT, payload TEXT, UNIQUE(symbol,version));
                 CREATE UNIQUE INDEX IF NOT EXISTS one_active_report ON reports(symbol)
                     WHERE status IN ('queued','running');
+                CREATE TABLE IF NOT EXISTS model_filters (service_id TEXT PRIMARY KEY REFERENCES model_services(id) ON DELETE CASCADE, keywords TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS model_services (id TEXT PRIMARY KEY, name TEXT NOT NULL, base_url TEXT NOT NULL, models TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS coverage_companies (id TEXT PRIMARY KEY, payload TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires REAL NOT NULL);
                 CREATE TABLE IF NOT EXISTS watchlists (id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS watchlist_order (list_id TEXT PRIMARY KEY REFERENCES watchlists(id) ON DELETE CASCADE, position INTEGER NOT NULL);
                 CREATE TABLE IF NOT EXISTS watchlist_symbols (
                     list_id TEXT NOT NULL REFERENCES watchlists(id) ON DELETE CASCADE,
                     symbol TEXT NOT NULL REFERENCES assets(symbol), position INTEGER NOT NULL,
@@ -75,6 +79,7 @@ class Store:
                     "data_mode": "auto",
                 }
                 db.execute("INSERT INTO settings VALUES (1,?)", (json.dumps(settings),))
+            db.execute("INSERT OR IGNORE INTO model_services VALUES ('openai', 'OpenAI Compatible', ?, ?)", (os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip('/'), json.dumps([os.getenv("OPENAI_MODEL", "gpt-4o-mini")])))
             if not db.execute("SELECT 1 FROM watchlists").fetchone():
                 db.execute("INSERT INTO watchlists VALUES ('default','自选',?)", (now(),))
                 for i, row in enumerate(

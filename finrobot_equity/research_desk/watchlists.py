@@ -18,6 +18,10 @@ class ListName(StrictModel):
         return value.strip()
 
 
+class GroupOrder(StrictModel):
+    ids: list[str]
+
+
 class ListOrder(StrictModel):
     symbols: list[str]
 
@@ -31,7 +35,7 @@ def routes(store, market):
 
     @router.get("")
     def lists():
-        rows = store.all("SELECT * FROM watchlists ORDER BY created_at,id")
+        rows = store.all("SELECT w.* FROM watchlists w LEFT JOIN watchlist_order o ON w.id=o.list_id ORDER BY o.position IS NULL,o.position,w.created_at,w.id")
         for row in rows:
             row["symbols"] = [
                 s["symbol"]
@@ -47,6 +51,16 @@ def routes(store, market):
         identifier = uuid.uuid4().hex
         store.execute("INSERT INTO watchlists VALUES (?,?,?)", (identifier, body.name, now()))
         return {"id": identifier, "name": body.name, "symbols": []}
+
+    @router.put("/order")
+    def order_groups(body: GroupOrder):
+        with store.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            ids = {r[0] for r in db.execute("SELECT id FROM watchlists")}
+            if len(body.ids) != len(set(body.ids)) or set(body.ids) != ids:
+                raise HTTPException(422, "排序必须包含全部列表")
+            db.executemany("INSERT OR REPLACE INTO watchlist_order VALUES (?,?)", [(identifier, i) for i, identifier in enumerate(body.ids)])
+        return {"ok": True}
 
     @router.put("/{identifier}")
     def rename(identifier: str, body: ListName):

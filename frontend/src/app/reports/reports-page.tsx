@@ -1,3 +1,4 @@
+import { AnimatedSwitcher } from "../../components/animated-switcher";
 import { useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, Download, FileText, Search } from "lucide-react";
@@ -29,29 +30,22 @@ export default function ReportsPage() {
   if (error) return <ErrorState error={error} retry={() => void refetch()} />;
   const latest = data.filter(
     (r, i, a) =>
-      a.findIndex((x) => x.symbol === r.symbol && x.status === r.status) === i,
+      a.findIndex((x) => x.symbol === r.symbol) === i,
   );
   const shown = latest.filter(
     (r) =>
       r.symbol.toLowerCase().includes(search.toLowerCase()) &&
       (filter === "all"
-        ? r.status !== "failed"
+        ? true
         : filter === "completed"
           ? r.status === "completed"
           : r.status === "failed"),
   );
   return (
     <div className="page">
-      <PageHeader title="报告">
-        <Button variant="outline" asChild>
-          <Link to="/">
-            新建研究
-            <ArrowRight size={15} />
-          </Link>
-        </Button>
-      </PageHeader>
+      <PageHeader title="报告" />
       <div className="library-toolbar">
-        <div className="segmented">
+        <AnimatedSwitcher className="segmented">
           {[
             ["all", "全部研报"],
             ["completed", "已完成"],
@@ -65,7 +59,7 @@ export default function ReportsPage() {
               {n}
             </button>
           ))}
-        </div>
+        </AnimatedSwitcher>
         <div className="search-field">
           <Search size={15} />
           <Input
@@ -125,6 +119,7 @@ export default function ReportsPage() {
                   <Button variant="ghost" size="icon" asChild>
                     <Link
                       to={"/reports/" + r.id}
+                      data-page-link
                       aria-label={"查看 " + r.symbol + " 研究"}
                     >
                       <ArrowRight size={16} />

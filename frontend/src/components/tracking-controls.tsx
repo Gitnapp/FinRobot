@@ -20,9 +20,11 @@ import { toast } from "sonner";
 export function TrackingControls({
   symbol,
   coverage,
+  compact = false,
 }: {
   symbol: string;
   coverage?: Coverage | null;
+  compact?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const refresh = useRefresh();
@@ -68,11 +70,12 @@ export function TrackingControls({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="outline"
+            variant={compact ? "ghost" : "outline"}
+            size={compact ? "icon" : "default"}
             disabled={busy}
             aria-label="跟踪设置"
           >
-            {coverage.active ? "跟踪中" : "已暂停"}
+            {!compact && (coverage.active ? "跟踪中" : "已暂停")}
             <MoreHorizontal size={16} />
           </Button>
         </DropdownMenuTrigger>

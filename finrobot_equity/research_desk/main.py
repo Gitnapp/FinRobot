@@ -21,9 +21,11 @@ from .exports import assumption_text, report_date, table_data
 from .intelligence import Intelligence
 from .jobs import Worker, next_due
 from .market import CATALOG, Market
+from .model_services import ModelServices, routes as model_service_routes
 from .model import compute_model, defaults
+from .source_health import SourceHealth
 from .providers import ProviderError
-from .research import call_model, provider_status
+from .research import call_model
 from .schemas import (
     Assumptions,
     CoverageInput,
@@ -312,10 +314,11 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
             "DELETE FROM coverage_companies WHERE json_extract(payload, '$.symbol')=?", (symbol,)
         )
         store.execute("DELETE FROM models WHERE symbol=?", (symbol,))
+        store.execute("DELETE FROM scenario_overrides WHERE symbol=?", (symbol,))
         return {"ok": True}
 
     @app.put("/api/models/{symbol}")
-    async def save_model(symbol: str, body: dict[str, float | None]):
+    async def save_model(symbol: str, body: dict[str, float | None], scenario: Literal["base", "bull", "bear"] = "base"):
         try:
             Assumptions.model_validate(
                 {**Assumptions().model_dump(), **{k: v for k, v in body.items() if v is not None}}
@@ -324,16 +327,16 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
             raise HTTPException(422, "请检查假设数值范围") from None
         symbol = require_coverage(symbol)
         try:
-            effective = assumption_policy.save(symbol, body)
+            effective = assumption_policy.save(symbol, body, scenario)
         except ValueError:
             raise HTTPException(422, "请检查假设数值范围") from None
-        return compute_model(await market.fundamentals(symbol), effective)
+        return {**compute_model(await market.fundamentals(symbol), effective), "scenario": scenario}
 
     @app.get("/api/models/{symbol}/export")
     async def model_export(symbol: str, scenario: Literal["base", "bull", "bear"] = "base"):
         symbol = require_coverage(symbol)
         model = compute_model(
-            await market.fundamentals(symbol), store.assumptions(symbol), scenario
+            await market.fundamentals(symbol), store.assumptions(symbol), scenario, assumption_policy.overrides(symbol, scenario) if scenario != "base" else None
         )
         buf = io.StringIO()
         writer = csv.writer(buf)
@@ -413,13 +416,21 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
     def update_logs(before: int | None = None):
         return Diagnostics(store, market).logs(before)
 
+    app.include_router(model_service_routes(store))
+    model_services = ModelServices(store)
+    source_health = SourceHealth()
+
+    @app.get("/api/settings/sources")
+    async def sources_status():
+        return await source_health.read(settings()["sources"])
+
     @app.get("/api/settings")
     def settings():
         import os
 
         return {
             **store.settings(),
-            "providers": provider_status(),
+            "providers": model_services.list(),
             "sources": [{"name": "Yahoo Finance", "configured": True}]
             + [
                 {"name": name, "configured": bool(os.getenv(key))}
@@ -438,15 +449,19 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
 
     @app.put("/api/settings")
     def save_settings(body: SettingsInput):
+        try:
+            model_services.validate_selection(body.model_dump())
+            for selection in body.llm_routes.values(): model_services.validate_selection(selection.model_dump())
+        except ValueError as error: raise HTTPException(422, str(error)) from None
         store.execute("UPDATE settings SET value=? WHERE id=1", (body.model_dump_json(),))
         return settings()
 
     @app.post("/api/settings/test")
     async def test_settings(body: SettingsInput):
         try:
-            await call_model(body.model_dump(), [{"role": "user", "content": "Reply OK only"}], 12)
+            await call_model(model_services.resolve(body.model_dump()), [{"role": "user", "content": "Reply OK only"}], 12)
             return {"ok": True, "message": "模型连接成功"}
-        except RuntimeError as exc:
+        except (RuntimeError, ValueError) as exc:
             raise HTTPException(502, str(exc)) from None
 
     @app.post("/api/market/refresh")

@@ -1,3 +1,6 @@
+import { TrackingControls } from "./tracking-controls";
+import type { Coverage } from "../types";
+import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
 import { MetricGrid } from "@gitnapp/ui/components/ui/data-layout";
 import { Link } from "react-router";
 import { ArrowRight } from "lucide-react";
@@ -19,7 +22,7 @@ export type CoveredCompany = {
     security_type?: string | null;
     source_url?: string;
   };
-  coverage: { active: number; cadence: string } | null;
+  coverage: Coverage | null;
   report: { id: string } | null;
 };
 export type CoverageQuote = {
@@ -43,9 +46,11 @@ export type CoverageQuote = {
 export function CoverageAssetCard({
   company: c,
   snapshot,
+  editing = false,
 }: {
   company: CoveredCompany;
   snapshot?: Snapshot<CoverageQuote>;
+  editing?: boolean;
 }) {
   const data = snapshot?.data;
   const q = data?.quote;
@@ -53,16 +58,16 @@ export function CoverageAssetCard({
     ? `/${c.coverage ? "coverage" : "stocks"}/${c.symbol}`
     : null;
   return (
-    <article className="coverage-card">
+    <article className="coverage-card navigation-card">
       <div className="coverage-card-head">
         <div>
           {to ? (
-            <Link to={to} className="coverage-company-link">
-              <strong>{q?.name || c.name}</strong>
+            <Link to={to} className="navigation-card-link">
+              <OverflowText text={q?.name || c.name}><strong>{q?.name || c.name}</strong></OverflowText>
               <ArrowRight size={16} aria-hidden="true" />
             </Link>
           ) : (
-            <strong>{c.name}</strong>
+            <OverflowText text={c.name}><strong>{c.name}</strong></OverflowText>
           )}
           <small className="muted">
             {c.symbol ? q?.symbol || c.symbol : c.scene}
@@ -73,6 +78,7 @@ export function CoverageAssetCard({
             )}
           </small>
         </div>
+        {editing && c.symbol && <TrackingControls compact symbol={c.symbol} coverage={c.coverage} />}
         {snapshot?.state === "stale" &&
           (!snapshot.refreshing || snapshot.refresh_failed) && (
             <InfoLabel label="待更新">

@@ -66,6 +66,8 @@ createRoot(document.getElementById("root")!).render(
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="reports" element={<Reports />} />
                   <Route path="reports/:id" element={<Report />} />
+                  <Route path="stocks/:symbol/reports/:id" element={<Report />} />
+                  <Route path="coverage/:symbol/reports/:id" element={<Report />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="settings/debug" element={<Debug />} />
                   <Route

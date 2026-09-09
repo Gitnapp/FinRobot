@@ -13,7 +13,7 @@ class CoverageMarket:
         results = {}
         for symbol in sorted({r["symbol"] for r in companies if r.get("symbol")}):
             snapshot = self.snapshots.read(
-                "coverage-market:" + symbol, lambda s=symbol: self.collect(s), 3600, 2 * 86400
+                "coverage-market:" + symbol, lambda s=symbol: self.collect(s), 60, 2 * 86400
             )
             financial = self.market.financial_data.read(symbol)
             if snapshot["data"]:

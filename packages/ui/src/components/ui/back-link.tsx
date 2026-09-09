@@ -16,8 +16,8 @@ export function BackLink({
     <Comp
       data-slot="back-link"
       className={cn(
-        buttonVariants({ variant: "ghost", size: "sm" }),
-        "mb-4 -ml-2.5 text-muted-foreground hover:text-foreground cursor-default pointer-coarse:min-h-11",
+        buttonVariants({ variant: "outline", size: "sm" }),
+        "mb-4 text-muted-foreground hover:text-foreground cursor-default pointer-coarse:min-h-11",
         className,
       )}
       {...props}

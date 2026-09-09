@@ -428,3 +428,8 @@ Suggestion / Error / AuiIf），**不为凑数重写**。新增交互优先复�
 - AddButton按注意力分为primary（一个区域唯一主操作，如空状态添加）、secondary（页面级辅助添加）、quiet（工具栏图标选项）。AddMenuItem用于菜单中的添加入口，不在菜单内嵌Button。相同操作不临时拼装图标与不同尺寸。
 - control、task、focus token分别管理控件、任务卡片和焦点；改变字号或padding不改变已有交互结构。
 - 日历过去事件使用calendar-past-background；时间分界线明确标示即将到来的事件。无数据直接显示空状态，不要求用户不断点击翻空页。
+
+- 图标＋文字的操作按钮必须有可见背景或边框；ghost只用于纯图标或纯文字操作。AddButton的quiet仅在iconOnly时透明，其余使用outline。返回动作同样保留按钮外形；菜单条目仍使用菜单原生样式。
+- 列表管理弹窗的工具栏与列表仅使用12px容器gap，列表不再叠加顶部margin。
+
+- 箭头悬停位移仅用于明确标记data-page-link的新页面跳转入口，以及导航卡片。禁止用全局图标名选择器为下拉菜单、折叠、分页、排序、返回按钮或模态框添加位移动画。

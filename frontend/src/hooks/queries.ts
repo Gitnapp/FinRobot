@@ -75,6 +75,7 @@ export const usePriceHistory = (symbol: string) =>
       if (!result.data) throw new Error("历史行情暂不可用");
       return result.data;
     },
-    staleTime: 21600000,
+    staleTime: 60000,
+    refetchInterval: 60000,
     retry: false,
   });

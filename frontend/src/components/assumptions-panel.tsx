@@ -1,6 +1,7 @@
+import { AnimatedSwitcher } from "./animated-switcher";
 import { EditableValue } from "@gitnapp/ui/components/ui/editable-value";
 import { ValueOrigin } from "@gitnapp/ui/components/ui/value-origin";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
@@ -42,44 +43,40 @@ export function AssumptionsPanel({
   open,
   onOpenChange,
   onSaved,
+  initialScenario,
 }: {
   symbol: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaved: () => void;
+  onSaved: (scenario: string) => void;
+  initialScenario: string;
 }) {
+  const [scenario, setScenario] = useState(initialScenario);
+  const title = useRef<HTMLHeadingElement>(null);
   const query = useQuery({
-    queryKey: ["assumptions", symbol],
+    queryKey: ["assumptions", symbol, scenario],
     enabled: open,
-    queryFn: () => api<Recommendation>(`/data/${symbol}/assumptions`),
+    queryFn: () => api<Recommendation>(`/data/${symbol}/assumptions?scenario=${scenario}`),
     refetchInterval: (q) => (q.state.data?.state === "pending" ? 1500 : 30000),
   });
-  const [draft, setDraft] = useState<Assumptions | null>(null);
-  const [changes, setChanges] = useState<
-    Partial<Record<keyof Assumptions, number | null>>
-  >({});
+  type Changes = Partial<Record<keyof Assumptions, number | null>>;
+  const [caseChanges, setCaseChanges] = useState<Record<string, Changes>>({});
+  const changes = caseChanges[scenario] || {};
+  const setChanges = (update: (previous: Changes) => Changes) => setCaseChanges(previous => ({...previous, [scenario]: update(previous[scenario] || {})}));
+  const draft = query.data?.effective ? {...query.data.effective} : null;
+  if (draft) for (const key of Object.keys(changes) as (keyof Assumptions)[]) draft[key] = changes[key] ?? query.data!.data!.assumptions[key];
   const [busy, setBusy] = useState(false);
   const refresh = useRefresh();
-  useEffect(() => {
-    if (open && query.data?.effective) {
-      const values = { ...query.data.effective };
-      for (const key of Object.keys(changes) as (keyof Assumptions)[]) {
-        values[key] = changes[key] ?? query.data.data!.assumptions[key];
-      }
-      setDraft(values);
-    }
-    if (!open) {
-      setDraft(null);
-      setChanges({});
-    }
-  }, [open, query.data]);
   async function save() {
     if (!draft) return;
     setBusy(true);
     try {
-      await write(`/models/${symbol}`, changes, "PUT");
+      for (const [current, patch] of Object.entries(caseChanges)) {
+        await write(`/models/${symbol}?scenario=${current}`, patch, "PUT");
+        setCaseChanges(previous => { const next = {...previous}; delete next[current]; return next; });
+      }
       await refresh();
-      onSaved();
+      onSaved(scenario);
       onOpenChange(false);
       toast.success("假设已更新");
     } catch (e) {
@@ -98,10 +95,14 @@ export function AssumptionsPanel({
       <DialogContent
         className="assumptions-dialog sm:max-w-lg"
         aria-describedby={undefined}
+        onOpenAutoFocus={event => { event.preventDefault(); title.current?.focus({preventScroll: true}); }}
       >
         <DialogHeader>
-          <DialogTitle>预测假设</DialogTitle>
+          <DialogTitle ref={title} tabIndex={-1}>预测假设</DialogTitle>
         </DialogHeader>
+        <AnimatedSwitcher className="segmented" role="group" aria-label="假设情景">
+          {[["bear", "保守"], ["base", "基准"], ["bull", "乐观"]].map(([key, label]) => <button key={key} disabled={busy} className={scenario === key ? "selected" : ""} aria-pressed={scenario === key} onClick={() => setScenario(key)}>{label}</button>)}
+        </AnimatedSwitcher>
         {busy && <Loading />}
         {!draft ? (
           query.error || query.data?.state === "unavailable" ? (
@@ -115,7 +116,7 @@ export function AssumptionsPanel({
         ) : (
           <>
             <div className="assumptions-tools">
-              <InfoLabel label="基准情景">
+              <InfoLabel label={{bear:"保守情景",base:"基准情景",bull:"乐观情景"}[scenario] || "预测情景"}>
                 AI 推荐随跟踪周期更新；你修改的字段会保留。
                 {query.data?.state === "stale" ? "当前保留上次推荐。" : ""}
               </InfoLabel>
@@ -160,7 +161,6 @@ export function AssumptionsPanel({
                             const value =
                               Number(text) /
                               (key === "exit_multiple" ? 1 : 100);
-                            setDraft({ ...draft, [key]: value });
                             setChanges((previous) => ({
                               ...previous,
                               [key]: value,
@@ -180,10 +180,7 @@ export function AssumptionsPanel({
                               ...previous,
                               [key]: null,
                             }));
-                            setDraft({
-                              ...draft,
-                              [key]: query.data!.data!.assumptions[key],
-                            });
+
                           }}
                         />
                       </span>

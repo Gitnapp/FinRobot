@@ -44,7 +44,13 @@ class Assumptions(StrictModel):
     exit_multiple: float = Field(default=15, ge=1, le=100)
 
 
+class ModelSelection(StrictModel):
+    provider: str = Field(min_length=1, max_length=80)
+    model: str = Field(min_length=1, max_length=150)
+
+
 class SettingsInput(StrictModel):
-    provider: Literal["openai", "siliconflow", "kimi"] = "openai"
+    provider: str = Field(default="openai", min_length=1, max_length=80)
+    llm_routes: dict[Literal["report", "assumptions"], ModelSelection] = Field(default_factory=dict)
     model: str = Field(min_length=1, max_length=150)
     data_mode: Literal["auto"] = "auto"

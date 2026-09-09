@@ -75,12 +75,8 @@ def defaults(base):
     return values
 
 
-def compute_model(base, assumptions=None, scenario="base"):
-    if base is None:
-        from .providers import ProviderError
-
-        raise ProviderError("financials_unavailable")
-    a = Assumptions(**(assumptions or defaults(base))).model_dump()
+def scenario_assumptions(assumptions, scenario="base", overrides=None):
+    a = dict(assumptions)
     if scenario == "bull":
         a.update(
             growth=min(2, a["growth"] + 0.05),
@@ -93,6 +89,16 @@ def compute_model(base, assumptions=None, scenario="base"):
         )
     elif scenario != "base":
         raise ValueError("Unknown scenario")
+    return Assumptions.model_validate({**a, **(overrides or {})}).model_dump()
+
+
+def compute_model(base, assumptions=None, scenario="base", overrides=None):
+    if base is None:
+        from .providers import ProviderError
+
+        raise ProviderError("financials_unavailable")
+    a = Assumptions(**(assumptions or defaults(base))).model_dump()
+    a = scenario_assumptions(a, scenario, overrides)
     history = {key: base.get(key) for key, *_ in ROWS}
     rev = base["revenue"]
     if rev <= 0:

@@ -7,7 +7,7 @@ import { ReportContents } from "../../components/report-contents";
 import { useActiveSection } from "../../hooks/use-active-section";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useState } from "react";
-import { Link, useParams, useNavigate } from "react-router";
+import { Link, useParams, useNavigate, useLocation } from "react-router";
 import { Download, FileText, ExternalLink } from "lucide-react";
 import {
   DropdownMenu,
@@ -46,7 +46,10 @@ function ReportFigure({
   );
 }
 export default function ReportPage() {
-  const { id = "" } = useParams();
+  const { id = "", symbol } = useParams();
+  const { pathname } = useLocation();
+  const assetPath = symbol ? `/${pathname.startsWith("/coverage/") ? "coverage" : "stocks"}/${symbol}` : null;
+  const backPath = assetPath ? `${assetPath}?tab=reports` : "/reports";
   const task = useTask(id);
   const receive = useTaskReceipt();
   const { data, error, isLoading, refetch } = useReport(
@@ -62,7 +65,7 @@ export default function ReportPage() {
     try {
       const next = await write<Task>(`/tasks/${id}/retry`, {});
       receive(next);
-      navigate(`/reports/${next.id}`);
+      navigate(`${assetPath || ""}/reports/${next.id}`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -76,7 +79,7 @@ export default function ReportPage() {
     return (
       <div className="page report-page">
         <BackLink asChild>
-          <Link to="/reports">返回</Link>
+          <Link to={backPath}>返回</Link>
         </BackLink>
         <PageHeader title={task.data.subject.name} />
         <div className="report-task">
@@ -95,7 +98,7 @@ export default function ReportPage() {
                   </Button>
                 )}
                 <Button variant="outline" asChild>
-                  <Link to={`/stocks/${task.data.subject.symbol}`}>
+                  <Link to={assetPath || `/stocks/${task.data.subject.symbol}`}>
                     继续浏览
                   </Link>
                 </Button>
@@ -112,7 +115,7 @@ export default function ReportPage() {
   return (
     <div className="page report-page">
       <BackLink asChild>
-        <Link to="/reports" aria-label="返回报告">
+        <Link to={backPath} aria-label="返回报告">
           返回
         </Link>
       </BackLink>
@@ -143,7 +146,7 @@ export default function ReportPage() {
           </DropdownMenu>
         )}
         <Button variant="outline" asChild>
-          <Link to={"/stocks/" + data.symbol}>标的详情</Link>
+          <Link to={assetPath || "/stocks/" + data.symbol}>标的详情</Link>
         </Button>
       </PageHeader>
       {!p ? (

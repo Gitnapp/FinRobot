@@ -153,3 +153,35 @@ def test_market_preserves_canonical_security_name(tmp_path):
     result = asyncio.run(market.quote("AAPL"))
     assert result["name"] == "Apple Inc."
     assert result["symbol"] == "AAPL"
+
+
+def test_daily_prices_refresh_after_five_minutes(tmp_path, monkeypatch):
+    """A newer close must replace cached bars without an hour-long wait."""
+    monkeypatch.delenv("TICKFLOW_API_KEY", raising=False)
+    clock = [1000.0]
+    monkeypatch.setattr("finrobot_equity.research_desk.tickflow.time.time", lambda: clock[0])
+
+    class UpdatingPrices:
+        def __init__(self):
+            self.day = 8
+
+        async def get(self, provider, endpoint, params):
+            if endpoint == "instruments":
+                return {"data": [{"symbol": "AAPL.US", "name": "Apple", "exchange": "US", "ext": {}}]}
+            stamp = datetime(2026, 9, self.day, 4, tzinfo=timezone.utc)
+            return {"data": columnar([int(stamp.timestamp() * 1000)])}
+
+    store = Store(tmp_path)
+    store.init()
+    source = UpdatingPrices()
+    market = TickFlowMarket(store, source)
+
+    async def run():
+        assert (await market.quote("AAPL"))["as_of"] == "2026-09-08"
+        source.day = 9
+        clock[0] += 301
+        quote = await market.quote("AAPL")
+        history = await market.history("AAPL")
+        assert quote["as_of"] == history["as_of"] == "2026-09-09"
+
+    asyncio.run(run())

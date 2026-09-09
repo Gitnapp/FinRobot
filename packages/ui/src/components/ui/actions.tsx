@@ -20,7 +20,7 @@ export function AddButton({
       {...props}
       data-attention={attention}
       variant={
-        { primary: "default", secondary: "outline", quiet: "ghost" }[attention] as
+        { primary: "default", secondary: "outline", quiet: iconOnly ? "ghost" : "outline" }[attention] as
           | "default"
           | "outline"
           | "ghost"

@@ -1,215 +1,58 @@
-import { AddMenuItem, AddButton } from "@gitnapp/ui/components/ui/actions";
-import { useState } from "react";
-import {
-  ArrowUp,
-  ArrowDown,
-  Trash2,
-  Plus,
-  Pencil,
-  MoreHorizontal,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@gitnapp/ui/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@gitnapp/ui/components/ui/dropdown-menu";
+import { useMemo, useState } from "react";
+import { MoreHorizontal, ArrowLeft } from "lucide-react";
+import { AddButton } from "@gitnapp/ui/components/ui/actions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@gitnapp/ui/components/ui/dialog";
 import { Label } from "@gitnapp/ui/components/ui/label";
+import { SortableMembers } from "./sortable-members";
+import { AddAsset } from "./add-asset";
 import { Button, Input } from "./ui";
 import { api, write } from "../api/client";
-import { useRefresh } from "../hooks/queries";
+import { useRefresh, useWatchlists } from "../hooks/queries";
 import type { Watchlist } from "../types";
 import { toast } from "sonner";
 
-export function WatchlistEditor({
-  list,
-  onSelect,
-}: {
-  list?: Watchlist;
-  onSelect: (id: string) => void;
-}) {
-  const [mode, setMode] = useState<"create" | "edit" | null>(null);
-  const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
-  const refresh = useRefresh();
-  async function save() {
+export function WatchlistEditor({ list, onSelect }: {list?: Watchlist; onSelect:(id:string)=>void}) {
+  const lists = useWatchlists();
+  const [open,setOpen]=useState(false);
+  const [selected,setSelected]=useState<string|null>(null);
+  const [form,setForm]=useState<{id?:string;name:string}|null>(null);
+  const [adding,setAdding]=useState(false);
+  const [busy,setBusy]=useState(false);
+  const refresh=useRefresh();
+  const current=lists.data?.find(row=>row.id===selected);
+  const ids=useMemo(()=>lists.data?.map(row=>row.id)||[],[lists.data]);
+  const labels=useMemo(()=>Object.fromEntries((lists.data||[]).map(row=>[row.id,row.name])),[lists.data]);
+  async function mutate(action:()=>Promise<unknown>) {
+    if (busy) return false;
     setBusy(true);
-    try {
-      if (mode === "create") {
-        const created = await write<Watchlist>("/watchlists", { name });
-        onSelect(created.id);
-      } else if (list) await write("/watchlists/" + list.id, { name }, "PUT");
-      await refresh();
-      setMode(null);
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
+    try {await action(); await refresh(); return true;}
+    catch(e){toast.error((e as Error).message);return false;}
+    finally{setBusy(false);}
   }
-  async function remove() {
-    if (!list) return;
-    setBusy(true);
-    try {
-      await api("/watchlists/" + list.id, { method: "DELETE" });
-      onSelect("");
-      await refresh();
-      setMode(null);
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function member(symbol: string, direction: number) {
-    if (!list) return;
-    setBusy(true);
-    try {
-      if (direction === 0)
-        await api("/watchlists/" + list.id + "/symbols/" + symbol, {
-          method: "DELETE",
-        });
-      else {
-        const order = [...list.symbols];
-        const i = order.indexOf(symbol);
-        [order[i], order[i + direction]] = [order[i + direction], order[i]];
-        await write(
-          "/watchlists/" + list.id + "/order",
-          { symbols: order },
-          "PUT",
-        );
-      }
-      await refresh();
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="管理列表">
-            <MoreHorizontal size={18} />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <AddMenuItem
-            onSelect={() => {
-              setName("");
-              setMode("create");
-            }}
-          >
-            新建列表
-          </AddMenuItem>
-          <DropdownMenuItem
-            onSelect={() => {
-              setName(list?.name || "");
-              setMode("edit");
-            }}
-          >
-            <Pencil size={16} />
-            编辑列表
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <Dialog
-        open={!!mode}
-        onOpenChange={(v) => {
-          if (!v) setMode(null);
-        }}
-      >
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle>
-              {mode === "create" ? "新建列表" : "编辑列表"}
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              修改列表名称、成员及排列顺序
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void save();
-            }}
-          >
-            <Label htmlFor="list-name" className="mb-2">
-              列表名称
-            </Label>
-            <Input
-              id="list-name"
-              value={name}
-              required
-              maxLength={40}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="例如：科技股"
-            />
-            {mode === "edit" && (
-              <div className="list-members">
-                {list?.symbols.map((s, i) => (
-                  <div key={s}>
-                    <strong>{s}</strong>
-                    <div className="actions">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        disabled={busy || i === 0}
-                        aria-label={"上移 " + s}
-                        onClick={() => void member(s, -1)}
-                      >
-                        <ArrowUp size={14} />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        disabled={busy || i === list.symbols.length - 1}
-                        aria-label={"下移 " + s}
-                        onClick={() => void member(s, 1)}
-                      >
-                        <ArrowDown size={14} />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        disabled={busy}
-                        aria-label={"移出 " + s}
-                        onClick={() => void member(s, 0)}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="dialog-footer">
-              {mode === "edit" && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={busy}
-                  onClick={() => void remove()}
-                >
-                  删除列表
-                </Button>
-              )}
-              {mode === "create" ? <AddButton attention="primary" label="创建列表" type="submit" disabled={busy || !name.trim()} /> : <Button type="submit" disabled={busy || !name.trim()}>保存</Button>}
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
+  return <>
+    <Button variant="ghost" size="icon" aria-label="管理列表" onClick={()=>{setSelected(null);setForm(null);setOpen(true);}}><MoreHorizontal size={18}/></Button>
+    <Dialog open={open} onOpenChange={value=>{if(!busy)setOpen(value);}}>
+      <DialogContent className="list-manager-dialog sm:max-w-[460px]">
+        <DialogHeader><DialogTitle>{current ? current.name : "编辑列表"}</DialogTitle><DialogDescription className="sr-only">拖动手柄排序，点击列表编辑标的</DialogDescription></DialogHeader>
+        <div className="actions">
+          {current ? <><Button variant="ghost" disabled={busy} onClick={()=>setSelected(null)}><ArrowLeft size={14}/>全部列表</Button><AddButton attention="quiet" label="添加标的" disabled={busy} onClick={()=>setAdding(true)}/></> : <AddButton attention="quiet" label="新建列表" disabled={busy} onClick={()=>setForm({name:""})}/>}
+        </div>
+        {form && <form className="list-name-editor" onSubmit={event=>{event.preventDefault();const value=form;void mutate(async()=>{if(value.id)await write(`/watchlists/${value.id}`,{name:value.name},"PUT");else await write("/watchlists",{name:value.name});setForm(null);});}}>
+          <Label htmlFor="list-name">{form.id ? "重命名列表" : "列表名称"}</Label>
+          <Input id="list-name" autoFocus required maxLength={40} value={form.name} onChange={event=>setForm({...form,name:event.target.value})}/>
+          <Button type="submit" disabled={busy || !form.name.trim()}>保存</Button><Button type="button" variant="ghost" disabled={busy} onClick={()=>setForm(null)}>取消</Button>
+        </form>}
+        {current ? <SortableMembers key={current.id} symbols={current.symbols} disabled={busy}
+          onReorder={symbols=>mutate(()=>write(`/watchlists/${current.id}/order`,{symbols},"PUT"))}
+          onRemove={symbol=>void mutate(()=>api(`/watchlists/${current.id}/symbols/${symbol}`,{method:"DELETE"}))}/>
+          : <SortableMembers key="lists" symbols={ids} labels={labels} disabled={busy}
+            onOpen={id=>{setSelected(id);setForm(null);}}
+            onRename={id=>setForm({id,name:labels[id]})}
+            onReorder={order=>mutate(()=>write("/watchlists/order",{ids:order},"PUT"))}
+            onRemove={id=>void mutate(async()=>{await api(`/watchlists/${id}`,{method:"DELETE"});if(list?.id===id)onSelect("");})}/>
+        }
+      </DialogContent>
+    </Dialog>
+    {current && <AddAsset open={adding} onOpenChange={setAdding} listId={current.id} stayOnPage />}
+  </>;
 }

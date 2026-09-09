@@ -156,7 +156,7 @@ class TickFlowMarket:
             }
 
         try:
-            return await self.cached("history:forward:" + wire_symbol(symbol), fetch, 3600)
+            return await self.cached("history:forward:" + wire_symbol(symbol), fetch, 300)
         except (KeyError, TypeError, ValueError):
             raise ProviderError("invalid_history") from None
 

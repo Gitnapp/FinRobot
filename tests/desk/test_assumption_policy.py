@@ -66,3 +66,37 @@ def test_recommendations_preserve_edits_across_refresh_and_restart(tmp_path, mon
         await cache.close()
 
     asyncio.run(run())
+
+
+def test_scenarios_keep_independent_edits_and_reset(tmp_path, monkeypatch):
+    from finrobot_equity.research_desk.model import scenario_assumptions
+    store = Store(tmp_path)
+    store.init()
+    cache = SnapshotCache(store)
+    cache.init()
+    policy = AssumptionPolicy(store, None, cache)
+    values = Assumptions().model_dump()
+
+    async def proposal(*args):
+        return {"assumptions": values.copy(), "rationale": {}}
+
+    monkeypatch.setattr("finrobot_equity.research_desk.assumption_policy.propose", proposal)
+
+    async def run():
+        await policy.refresh("NVDA")
+        for case, growth in [("base", .2), ("bear", .1), ("bull", .4)]:
+            policy.save("NVDA", {"growth": growth}, case)
+        restarted = AssumptionPolicy(store, None, cache)
+        for case, growth in [("base", .2), ("bear", .1), ("bull", .4)]:
+            assert restarted.read("NVDA", case)["effective"]["growth"] == growth
+            effective = scenario_assumptions(store.assumptions("NVDA"), case, restarted.overrides("NVDA", case))
+            assert effective["growth"] == growth
+        await restarted.refresh("NVDA")
+        assert restarted.read("NVDA", "bull")["effective"]["growth"] == .4
+        restarted.save("NVDA", {"growth": None}, "bear")
+        assert restarted.read("NVDA", "bear")["effective"]["growth"] == .2 - .08
+        assert restarted.read("NVDA", "base")["effective"]["growth"] == .2
+        assert restarted.read("NVDA", "bull")["effective"]["growth"] == .4
+        await cache.close()
+
+    asyncio.run(run())

@@ -19,9 +19,13 @@ export function AddAsset({
   open,
   onOpenChange,
   listId,
+  stayOnPage = false,
+  destination = "watchlist",
 }: {
   open: boolean;
   listId?: string;
+  stayOnPage?: boolean;
+  destination?: "watchlist" | "coverage";
   onOpenChange: (open: boolean) => void;
 }) {
   const [search, setSearch] = useState("");
@@ -47,14 +51,16 @@ export function AddAsset({
   async function add(symbol: string) {
     setBusy(true);
     try {
-      const added = await write<{ symbol: string }>(
+      const added = destination === "coverage"
+        ? await write<{ symbol: string }>(`/coverage/${symbol}`, {active: true, cadence: "weekly"}, "PUT")
+        : await write<{ symbol: string }>(
         "/watchlists/" + (listId || lists.data?.[0]?.id) + "/symbols",
         { symbol },
       );
       await refresh();
       onOpenChange(false);
       setSearch("");
-      navigate(`/stocks/${added.symbol}`);
+      if (destination === "watchlist" && !stayOnPage) navigate(`/stocks/${added.symbol}`);
       toast.success(`已添加 ${symbol.toUpperCase()}`);
     } catch (e) {
       toast.error((e as Error).message);
@@ -68,7 +74,7 @@ export function AddAsset({
         <DialogHeader>
           <DialogTitle>添加标的</DialogTitle>
           <DialogDescription className="sr-only">
-            搜索中、美、港公司或输入完整交易代码加入自选
+            搜索公司或输入完整交易代码添加标的
           </DialogDescription>
         </DialogHeader>
         <div className="search-field">

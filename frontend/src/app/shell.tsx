@@ -29,10 +29,10 @@ import {
 } from "@gitnapp/ui/components/ui/sheet";
 import { Button } from "../components/ui";
 const navigation = [
-  { href: "/", label: "市场看板", icon: ChartNoAxesCombined },
-  { href: "/coverage", label: "持续跟踪", icon: Telescope },
-  { href: "/macro", label: "宏观环境", icon: Globe },
-  { href: "/calendar", label: "事件日历", icon: CalendarDays },
+  { href: "/", label: "市场数据", icon: ChartNoAxesCombined },
+  { href: "/coverage", label: "标的跟踪", icon: Telescope },
+  { href: "/macro", label: "宏观指标", icon: Globe },
+  { href: "/calendar", label: "财经日历", icon: CalendarDays },
   { href: "/reports", label: "报告", icon: FileText },
   { href: "/settings", label: "设置", icon: Settings2 },
 ];

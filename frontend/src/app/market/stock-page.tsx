@@ -1,3 +1,4 @@
+import { AnimatedSwitcher } from "../../components/animated-switcher";
 import { PeersPanel } from "../../components/peers-panel";
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import { TrackingControls } from "../../components/tracking-controls";
@@ -16,10 +17,9 @@ import {
   CardTitle,
   CardAction,
   CardContent,
-  CardFooter,
 } from "@gitnapp/ui/components/ui/card";
 import { useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import {
   ArrowRight,
   BookmarkPlus,
@@ -93,14 +93,7 @@ function ResearchSummary({ id, symbol }: { id: string; symbol: string }) {
           )}
         </div>
       </CardContent>
-      <CardFooter>
-        <Button className="w-full" variant="outline" asChild>
-          <Link to={"/reports/" + id}>
-            阅读
-            <ArrowRight size={15} />
-          </Link>
-        </Button>
-      </CardFooter>
+
     </>
   );
 }
@@ -109,8 +102,11 @@ export default function StockPage() {
   const { symbol = "NVDA" } = useParams();
   const coverageMode = useLocation().pathname.startsWith("/coverage/");
   const { data, error, isLoading, refetch } = useDetail(symbol);
-  const [tab, setTab] = useState("overview");
-  const [researchOpened, setResearchOpened] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") || "overview";
+  const setTab = (value: string) => setParams(value === "overview" ? {} : {tab: value}, {replace: true});
+  const [researchOpened, setResearchOpened] = useState(tab === "research");
+  const assetPath = `/${coverageMode ? "coverage" : "stocks"}/${symbol}`;
   if (isLoading) return <Loading />;
   if (error) return <ErrorState error={error} retry={() => void refetch()} />;
   if (!data) return null;
@@ -124,7 +120,7 @@ export default function StockPage() {
       <BackLink asChild>
         <Link
           to={coverageMode ? "/coverage" : "/"}
-          aria-label={coverageMode ? "返回持续跟踪" : "返回市场看板"}
+          aria-label={coverageMode ? "返回标的跟踪" : "返回市场数据"}
         >
           返回
         </Link>
@@ -151,7 +147,7 @@ export default function StockPage() {
         </div>
         <span className="stock-sector">{quote.sector}</span>
       </div>
-      <div className="detail-tabs" role="tablist" aria-label="标的详情">
+      <AnimatedSwitcher className="detail-tabs" data-active={tab} role="tablist" aria-label="标的详情">
         <button
           role="tab"
           aria-selected={tab === "overview"}
@@ -169,10 +165,30 @@ export default function StockPage() {
         >
           研究
         </button>
-      </div>
+        <button role="tab" aria-selected={tab === "reports"} onClick={() => setTab("reports")}>报告</button>
+      </AnimatedSwitcher>
+      {tab === "reports" && <div className="detail-tab-panel">
+            <Card className="research-reports">
+              <CardHeader><CardTitle>报告</CardTitle></CardHeader>
+              <CardContent>
+                {reports.length ? <div className="research-report-list">
+                  {reports.map(report => (
+                    <Link key={report.id} to={assetPath + "/reports/" + report.id} className="research-report-link" data-page-link>
+                      <div><strong>{`${quote.name}研究报告`}</strong><small>{(report.completed_at || report.created_at).slice(0, 10)} · 第 {report.version} 版</small></div>
+                      <span className="muted">{{completed:"已完成", running:"研究中", queued:"排队中", failed:"未完成"}[report.status]}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </Link>
+                  ))}
+                </div> : <span className="muted">尚无报告</span>}
+              </CardContent>
+            </Card>
+      </div>}
       {researchOpened && (
-        <div hidden={tab !== "research"}>
+        <div className="detail-tab-panel" hidden={tab !== "research"}>
           <div className="research-content">
+            <div className="research-top-grid">
+            <ValuationPanel data={data} />
+            <div className="research-sidebar">
             <Card className="research-opinion">
               {latest ? (
                 <ResearchSummary id={latest.id} symbol={symbol} />
@@ -187,36 +203,42 @@ export default function StockPage() {
                     </span>
                     {active && (
                       <Button variant="outline" asChild>
-                        <Link to={"/reports/" + active.id}>查看进度</Link>
+                        <Link to={assetPath + "/reports/" + active.id}>查看进度</Link>
                       </Button>
                     )}
                   </CardContent>
                 </>
               )}
             </Card>
+
+            </div>
+            </div>
             {coverage ? (
               <ModelTable symbol={symbol} />
             ) : (
               <div className="research-enroll">
-                <span className="muted">加入持续跟踪后建立模型</span>
+                <span className="muted">加入标的跟踪后建立模型</span>
                 <TrackingControls symbol={symbol} coverage={coverage} />
               </div>
             )}
-            <ValuationPanel data={data} />
           </div>
         </div>
       )}
-      <div hidden={tab !== "overview"}>
+      <div className="detail-tab-panel" hidden={tab !== "overview"}>
         <div className="coverage-detail-grid">
-          <PriceChart key={symbol} symbol={symbol} />
-          <CatalystCalendar key={`calendar-${symbol}`} symbol={symbol} />
-          <FinancialPanel data={data} />
-          <PeersPanel symbol={symbol} />
-          <TechnicalPanel data={data} />
-          <RetailSentiment key={`sentiment-${symbol}`} symbol={symbol} />
-          <EvidenceCard symbol={symbol} />
-          <ResearchLeads symbol={symbol} />
-          <CatalystPanel data={data} />
+          <div className="detail-column">
+            <PriceChart key={symbol} symbol={symbol} />
+            <FinancialPanel data={data} />
+            <TechnicalPanel data={data} />
+            <EvidenceCard symbol={symbol} />
+          </div>
+          <div className="detail-column">
+            <CatalystCalendar key={`calendar-${symbol}`} symbol={symbol} />
+            <PeersPanel symbol={symbol} />
+            <RetailSentiment key={`sentiment-${symbol}`} symbol={symbol} />
+            <ResearchLeads symbol={symbol} />
+            <CatalystPanel data={data} />
+          </div>
         </div>
       </div>
     </div>

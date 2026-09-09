@@ -3,6 +3,7 @@
 import json
 
 from .jobs import enqueue
+from .store import now
 
 STEPS = ("准备数据", "计算模型", "撰写报告", "整理文件")
 STAGES = {"收集行情与财务": 0, "计算预测模型": 1, "撰写研究报告": 2, "生成报告文件": 3}
@@ -68,9 +69,15 @@ class Tasks:
         return self.read(enqueue(self.store, symbol, focus)["id"])
 
     def retry(self, identifier):
-        row = self.store.one("SELECT symbol,focus,status FROM reports WHERE id=?", (identifier,))
-        if not row:
-            raise LookupError("task_not_found")
-        if row["status"] != "failed":
-            raise ValueError("task_not_failed")
-        return self.submit(row["symbol"], row["focus"])
+        with self.store.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT symbol,status FROM reports WHERE id=?", (identifier,)).fetchone()
+            if not row:
+                raise LookupError("task_not_found")
+            if row["status"] != "failed":
+                raise ValueError("task_not_failed")
+            active = db.execute("SELECT id FROM reports WHERE symbol=? AND status IN ('queued','running')", (row["symbol"],)).fetchone()
+            if active:
+                raise ValueError("research_already_active")
+            db.execute("UPDATE reports SET status='queued',stage='排队中',trigger='manual',created_at=?,completed_at=NULL,error=NULL,payload=NULL WHERE id=?", (now(), identifier))
+        return self.read(identifier)

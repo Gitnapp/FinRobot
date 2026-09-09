@@ -1,3 +1,4 @@
+import { AnimatedSwitcher } from "./animated-switcher";
 import { ArrowUpRight } from "lucide-react";
 import type { Snapshot } from "./intelligence";
 import { LoadingState } from "@gitnapp/ui/components/ui/loading";
@@ -61,7 +62,7 @@ function State({ loading, retry }: { loading: boolean; retry: () => void }) {
   return (
     <div className="signal-empty" role="status">
       {loading ? (
-        <LoadingState className="w-full min-h-14" />
+        <LoadingState inline className="w-full min-h-14" />
       ) : (
         <>
           暂时无法获取
@@ -98,7 +99,7 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
     queryKey: ["disclosures", symbol],
     enabled: period === "recent",
     queryFn: () => api<Snapshot<Disclosures>>(`/data/${symbol}/disclosures`),
-    refetchInterval: (q) => (q.state.data?.state === "pending" ? 1500 : false),
+    refetchInterval: (q) => (q.state.data?.state === "pending" || q.state.data?.refreshing ? 1500 : false),
     retry: false,
   });
   const upcoming = query.data?.data?.events.filter((e) => e.upcoming);
@@ -139,7 +140,7 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
         </CardAction>
       </CardHeader>
       <CardContent>
-        <div className="disclosure-tabs" role="group" aria-label="事件时间范围">
+        <AnimatedSwitcher className="disclosure-tabs" role="group" aria-label="事件时间范围">
           {[
             ["upcoming", "即将到来"],
             ["recent", "历史记录"],
@@ -158,16 +159,17 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
             </Button>
           ))}
           <Freshness value={query.data} />
-        </div>
+        </AnimatedSwitcher>
+        <div className="disclosure-events" key={period} aria-busy={period === "recent" && (history.isPending || history.isFetching)}>
         {period === "recent" &&
-          (history.isPending || history.data?.state === "pending") && (
-            <LoadingState />
+          (history.isPending || history.data?.state === "pending" || history.isFetching) && (
+            <LoadingState inline className="calendar-loading" />
           )}
         {!events ? (
           <State loading={query.isPending} retry={() => void query.refetch()} />
         ) : events.length === 0 ? (
           period === "recent" &&
-          (history.isPending || history.data?.state === "pending") ? null : (
+          (history.isPending || history.data?.state === "pending" || history.isFetching) ? null : (
             <p className="signal-empty">
               {period === "upcoming"
                 ? "暂无已公布日程"
@@ -184,7 +186,7 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
               <div>
                 <strong>
                   {e.url ? (
-                    <a href={e.url} target="_blank" rel="noreferrer" title={"link_kind" in e && e.link_kind === "calendar_source" ? "查看财报日历" : "查看原文"}>
+                    <a data-page-link href={e.url} target="_blank" rel="noreferrer" title={"link_kind" in e && e.link_kind === "calendar_source" ? "查看财报日历" : "查看原文"}>
                       {e.title}<ArrowUpRight size={14} aria-hidden="true" />
                     </a>
                   ) : (
@@ -232,6 +234,7 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
             </Button>
           </div>
         )}
+        </div>
       </CardContent>
     </Card>
   );
