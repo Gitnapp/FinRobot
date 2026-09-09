@@ -2,6 +2,7 @@
 
 import json
 
+from .cache_policy import tracking_ttl
 from .assumption_advisor import propose
 from .schemas import Assumptions
 from .model import scenario_assumptions
@@ -23,7 +24,7 @@ class AssumptionPolicy:
 
     def ttl(self, symbol):
         row = self.store.one("SELECT cadence FROM coverage WHERE symbol=?", (symbol,))
-        return 86400 if row and row["cadence"] == "daily" else 7 * 86400
+        return tracking_ttl(row["cadence"] if row else "weekly")
 
     async def collect(self, symbol):
         proposal = await propose(self.market, self.store, symbol)

@@ -1,14 +1,12 @@
-import { TrackingControls } from "./tracking-controls";
-import type { Coverage } from "../types";
-import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
 import { MetricGrid } from "@gitnapp/ui/components/ui/data-layout";
-import { Link } from "react-router";
-import { ArrowRight } from "lucide-react";
-import { InfoLabel, InfoHint } from "@gitnapp/ui/components/ui/tooltip";
-import { Change, compact, Empty, money } from "./ui";
+import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
+import { InfoHint, InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
+import type { Coverage, History, Quote } from "../types";
 import { Sparkline } from "./coverage-insights";
-import type { Quote, History } from "../types";
 import type { Snapshot } from "./intelligence";
+import { NavigationLink } from "./navigation-link";
+import { TrackingControls } from "./tracking-controls";
+import { Change, compact, Empty, money } from "./ui";
 export type CoveredCompany = {
   id: string;
   name: string;
@@ -62,12 +60,15 @@ export function CoverageAssetCard({
       <div className="coverage-card-head">
         <div>
           {to ? (
-            <Link to={to} className="navigation-card-link">
-              <OverflowText text={q?.name || c.name}><strong>{q?.name || c.name}</strong></OverflowText>
-              <ArrowRight size={16} aria-hidden="true" />
-            </Link>
+            <NavigationLink
+              to={to}
+              label={q?.name || c.name}
+              className="navigation-card-link"
+            />
           ) : (
-            <OverflowText text={c.name}><strong>{c.name}</strong></OverflowText>
+            <OverflowText text={c.name}>
+              <strong>{c.name}</strong>
+            </OverflowText>
           )}
           <small className="muted">
             {c.symbol ? q?.symbol || c.symbol : c.scene}
@@ -78,7 +79,9 @@ export function CoverageAssetCard({
             )}
           </small>
         </div>
-        {editing && c.symbol && <TrackingControls compact symbol={c.symbol} coverage={c.coverage} />}
+        {editing && c.symbol && (
+          <TrackingControls compact symbol={c.symbol} coverage={c.coverage} />
+        )}
         {snapshot?.state === "stale" &&
           (!snapshot.refreshing || snapshot.refresh_failed) && (
             <InfoLabel label="待更新">

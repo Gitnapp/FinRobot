@@ -1,0 +1,11 @@
+.async-content {
+  min-width: 0;
+}
+.async-refresh-error {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}

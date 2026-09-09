@@ -1,18 +1,18 @@
-import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
-import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router";
-import { SlidersHorizontal, Undo2, X } from "lucide-react";
-import { InfoHint, InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@gitnapp/ui/components/ui/dialog";
-import { Button, Input, Loading, compact, money } from "./ui";
-import { api, write } from "../api/client";
+import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
+import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { SlidersHorizontal, Undo2, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
+import { api, write } from "../api/client";
+import { Button, Input, Loading, compact, money } from "./ui";
 
 type Peer = {
   symbol: string;
@@ -47,8 +47,8 @@ export function PeersPanel({ symbol }: { symbol: string }) {
   const client = useQueryClient();
   const query = useQuery({
     queryKey: ["peers", symbol],
-    queryFn: () => api<Comparison>(`/data/${symbol}/peers`),
-    refetchInterval: (q) => (q.state.data?.refreshing ? 2000 : 60000),
+    queryFn: ({ signal }) =>
+      api<Comparison>(`/data/${symbol}/peers`, { signal }),
   });
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<{ symbol: string; name: string }[]>([]);

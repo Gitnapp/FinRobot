@@ -1,0 +1,125 @@
+/* Indicator geometry is owned by AnimatedSwitcher; never add a second underline. */
+.animated-switcher {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+}
+.animated-switcher > button {
+  position: relative;
+  z-index: 1;
+  transition:
+    color var(--navigation-motion-duration) ease,
+    background-color var(--navigation-motion-duration) ease;
+}
+.segmented {
+  gap: 3px;
+}
+.segmented > button {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 11px;
+  border-radius: 5px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.segmented button.selected {
+  color: var(--foreground);
+  font-weight: 500;
+}
+.segmented button:hover {
+  background: var(--muted);
+}
+.segmented button span {
+  font-size: 11px;
+  opacity: 0.6;
+}
+.detail-tabs {
+  font-size: 12px;
+  gap: 28px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 26px;
+}
+.detail-tabs button {
+  padding: 10px 0 14px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  border-bottom: 2px solid transparent;
+}
+.detail-tabs button[aria-selected="true"] {
+  color: var(--foreground);
+}
+.model-cases {
+  gap: 4px;
+}
+.model-cases [aria-pressed="true"] {
+  font-weight: 600;
+  color: var(--foreground);
+}
+.disclosure-tabs {
+  gap: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.disclosure-tabs button {
+  border-radius: 0;
+  padding-inline: 0;
+  min-height: 34px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+.disclosure-tabs button:hover {
+  color: var(--foreground);
+  background: transparent;
+}
+.disclosure-tabs button[aria-pressed="true"] {
+  color: var(--foreground);
+  font-weight: 600;
+}
+.switcher-indicator {
+  position: absolute;
+  pointer-events: none;
+  left: 0;
+  top: 0;
+  width: var(--switch-width, 0px);
+  height: var(--switch-height, 0px);
+  transform: translate(var(--switch-x, 0px), var(--switch-y, 0px));
+  border-radius: 5px;
+  background: var(--muted);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.animated-switcher.segmented > button.selected,
+.animated-switcher.model-cases > button[aria-pressed="true"] {
+  background: transparent;
+}
+:is(.detail-tabs, .disclosure-tabs) > .switcher-indicator {
+  top: auto;
+  bottom: 0;
+  height: 2px;
+  border-radius: 0;
+  transform: translateX(var(--switch-x, 0px));
+  background: var(--foreground);
+}
+@media (max-width: 767px) {
+  .detail-tabs {
+    gap: 23px;
+  }
+  .segmented > button {
+    font-size: 13px;
+    min-height: 34px;
+  }
+  .model-cases > button {
+    flex: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .switcher-indicator,
+  .animated-switcher > button {
+    transition: none;
+  }
+}

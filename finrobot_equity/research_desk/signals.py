@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
+from .cache_policy import SIGNALS, UPSTREAM_RETRY_SECONDS
 from .providers import ProviderError
 from .yahoo import yahoo_symbol
 
@@ -57,7 +58,7 @@ class TrackingSignals:
     async def refresh(self, key, cached, symbol, kind, mode):
         stamp = datetime.now(timezone.utc).isoformat()
         result = {"status": "ready", "as_of": stamp, "data": None, "reason": None}
-        ttl = 21600  # Four reads per symbol/day at most; protects free sentiment quotas.
+        ttl = SIGNALS.ttl  # Four reads per symbol/day at most; protects free sentiment quotas.
         try:
             async with asyncio.timeout(12):
                 result["data"] = await getattr(self, kind)(symbol)
@@ -75,9 +76,9 @@ class TrackingSignals:
                 age = (
                     datetime.now(timezone.utc) - datetime.fromisoformat(old["as_of"])
                 ).total_seconds()
-                if old.get("data") is not None and age < 7 * 86400:
+                if old.get("data") is not None and age < SIGNALS.max_stale:
                     result = {**old, "status": "stale", "reason": "temporarily_unavailable"}
-            ttl = 900
+            ttl = UPSTREAM_RETRY_SECONDS
         self.store.execute(
             "INSERT OR REPLACE INTO cache VALUES (?,?,?)",
             (key, json.dumps(result, allow_nan=False), time.time() + ttl),

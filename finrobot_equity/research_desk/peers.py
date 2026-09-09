@@ -7,6 +7,7 @@ import math
 import re
 import time
 
+from .cache_policy import PEER_DISCOVERY, PEER_QUOTE
 from .intelligence.cache import SnapshotCache
 from .schemas import SymbolInput
 
@@ -109,12 +110,12 @@ class Peers:
         self.cache.gate = asyncio.Semaphore(2)
         self.last_tick = None
 
-    async def reference(self, key, loader, ttl=7 * 86400):
+    async def reference(self, key, loader, ttl=PEER_DISCOVERY.ttl):
         cache = self.market.data_cache
-        snapshot = cache.read(key, loader, ttl, 30 * 86400)
+        snapshot = cache.read(key, loader, ttl, PEER_DISCOVERY.max_stale)
         if snapshot["data"] is None and key in cache.tasks:
             await asyncio.shield(cache.tasks[key])
-            snapshot = cache.read(key, loader, ttl, 30 * 86400)
+            snapshot = cache.read(key, loader, ttl, PEER_DISCOVERY.max_stale)
         if snapshot["data"] is None:
             raise ValueError("peer_reference_unavailable")
         return snapshot["data"]
@@ -150,7 +151,7 @@ class Peers:
 
     def read(self, symbol):
         automatic = self.cache.read(
-            "peer-list:" + symbol, lambda: self.discover(symbol), 7 * 86400, 30 * 86400
+            "peer-list:" + symbol, lambda: self.discover(symbol), PEER_DISCOVERY.ttl, PEER_DISCOVERY.max_stale
         )
         override = self.store.one("SELECT symbols FROM peer_selections WHERE symbol=?", (symbol,))
         members = (
@@ -163,7 +164,7 @@ class Peers:
         for member in members:
             peer = member["symbol"]
             snapshot = self.cache.read(
-                "peer-row:" + peer, lambda s=peer: self.collect_row(s), 900, 7 * 86400
+                "peer-row:" + peer, lambda s=peer: self.collect_row(s), PEER_QUOTE.ttl, PEER_QUOTE.max_stale
             )
             finance = self.market.financial_data.read(peer)
             refreshing = refreshing or snapshot["refreshing"] or finance["refreshing"]

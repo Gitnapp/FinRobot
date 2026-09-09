@@ -1,4 +1,12 @@
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@gitnapp/ui/components/ui/popover";
+import { TaskProgress } from "@gitnapp/ui/components/ui/task-progress";
+import { useQueryClient } from "@tanstack/react-query";
+import { ListTodo } from "lucide-react";
+import {
   createContext,
   useContext,
   useEffect,
@@ -6,19 +14,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import { ListTodo } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@gitnapp/ui/components/ui/popover";
-import { TaskProgress } from "@gitnapp/ui/components/ui/task-progress";
-import { Button } from "./ui";
-import { useTasks, type Task } from "../hooks/tasks";
-import { write } from "../api/client";
 import { toast } from "sonner";
+import { write } from "../api/client";
+import { useTasks, type Task } from "../hooks/tasks";
+import { Button } from "./ui";
 const TaskContext = createContext<(task: Task) => void>(() => {});
 export const useTaskReceipt = () => useContext(TaskContext);
 export function TasksProvider({ children }: { children: ReactNode }) {
@@ -79,7 +79,16 @@ export function TasksProvider({ children }: { children: ReactNode }) {
       <div className={`task-center${active.length ? " is-active" : ""}`}>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label={active.length ? `任务中心，${active.length} 个进行中` : "任务中心"} title="任务中心">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={
+                active.length
+                  ? `任务中心，${active.length} 个进行中`
+                  : "任务中心"
+              }
+              title="任务中心"
+            >
               <ListTodo size={16} />
             </Button>
           </PopoverTrigger>

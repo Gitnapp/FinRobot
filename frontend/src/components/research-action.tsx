@@ -1,21 +1,21 @@
-import { useTaskReceipt } from "./task-center";
-import type { Task } from "../hooks/tasks";
-import { useState } from "react";
-import { useNavigate } from "react-router";
-import { FileText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@gitnapp/ui/components/ui/dialog";
-import { Textarea } from "@gitnapp/ui/components/ui/textarea";
 import { Label } from "@gitnapp/ui/components/ui/label";
+import { Textarea } from "@gitnapp/ui/components/ui/textarea";
+import { FileText } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { write } from "../api/client";
 import { useRefresh } from "../hooks/queries";
+import type { Task } from "../hooks/tasks";
 import type { Report } from "../types";
+import { useTaskReceipt } from "./task-center";
 import { Button } from "./ui";
 
 export function ResearchAction({
@@ -28,7 +28,7 @@ export function ResearchAction({
   const [open, setOpen] = useState(false);
   const [focus, setFocus] = useState("");
   const [busy, setBusy] = useState(false);
-  const refresh = useRefresh();
+  const refresh = useRefresh("research");
   const receive = useTaskReceipt();
   const navigate = useNavigate();
 

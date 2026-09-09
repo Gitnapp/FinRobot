@@ -271,3 +271,26 @@ def test_a_share_disclosures_route_without_sec_calls(tmp_path):
         assert service.company("005930.KS")["data"] is None
         await service.cache.close()
     asyncio.run(run())
+
+
+def test_shorter_ttl_refreshes_existing_snapshot_without_changing_last_good(tmp_path):
+    c = cache(tmp_path)
+
+    async def good():
+        return {"value": 42}
+
+    async def unavailable():
+        raise RuntimeError("offline")
+
+    async def run():
+        await c.refresh("metric", good, 3600)
+        c.store.execute("UPDATE intelligence_snapshots SET fetched=? WHERE key='metric'", (time.time() - 120,))
+        first = c.read("metric", unavailable, ttl=60)
+        assert first["state"] == "stale" and first["data"] == {"value": 42}
+        await asyncio.gather(*list(c.tasks.values()))
+        after = c.read("metric", unavailable, ttl=60)
+        assert after["updated_at"] == first["updated_at"]
+        assert after["refresh_failed"] and after["data"] == first["data"]
+        await c.close()
+
+    asyncio.run(run())

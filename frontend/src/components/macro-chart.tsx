@@ -1,14 +1,14 @@
-import { useLayoutEffect, useRef, useState } from "react";
 import {
+  ColorType,
   createChart,
   LineSeries,
-  ColorType,
-  type Time,
   type IChartApi,
   type ISeriesApi,
+  type Time,
 } from "lightweight-charts";
-import type { MacroSeries } from "./intelligence";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { DateWindow } from "./date-range";
+import type { MacroSeries } from "./intelligence";
 import { observationChanges } from "./macro-observation";
 export function MacroChart({
   points,
@@ -115,26 +115,51 @@ export function MacroChart({
         .setVisibleLogicalRange({ from: first - 0.5, to: last + 0.5 });
     }
   }, [points, compact, range?.from, range?.to]);
-  const current =
-    hoverDate ? points.find((p) => p.date === hoverDate) : undefined;
-  const original = current && (comparisonPoints || points).find(p => p.date === current.date);
-  const changes = original ? observationChanges(comparisonPoints || points, original, unit) : null;
+  const current = hoverDate
+    ? points.find((p) => p.date === hoverDate)
+    : undefined;
+  const original =
+    current &&
+    (comparisonPoints || points).find((p) => p.date === current.date);
+  const changes = original
+    ? observationChanges(comparisonPoints || points, original, unit)
+    : null;
   const displayed = current || visible.at(-1);
   const format = (value: number | null | undefined) =>
     value == null ? "—" : value.toFixed(2);
   return (
     <div className="macro-chart" onPointerLeave={() => setHoverDate(null)}>
       <div className="macro-headline">
-        <div className="context-value" aria-live="polite">{displayed ? displayed.value.toFixed(2) : "—"}<small>{unit}</small></div>
-        <dl className="macro-hover-changes" data-visible={Boolean(current)} aria-hidden={!current}>
-          <div><dt>同比{changes?.direct ? "" : "变化"}</dt><dd>{format(changes?.yoy)} {changes?.unit}</dd></div>
-          <div><dt>环比{changes?.direct ? "" : "变化"}</dt><dd>{format(changes?.mom)} {changes?.unit}</dd></div>
+        <div className="context-value" aria-live="polite">
+          {displayed ? displayed.value.toFixed(2) : "—"}
+          <small>{unit}</small>
+        </div>
+        <dl
+          className="macro-hover-changes"
+          data-visible={Boolean(current)}
+          aria-hidden={!current}
+        >
+          <div>
+            <dt>同比{changes?.direct ? "" : "变化"}</dt>
+            <dd>
+              {format(changes?.yoy)} {changes?.unit}
+            </dd>
+          </div>
+          <div>
+            <dt>环比{changes?.direct ? "" : "变化"}</dt>
+            <dd>
+              {format(changes?.mom)} {changes?.unit}
+            </dd>
+          </div>
         </dl>
       </div>
       <div
         ref={root}
         className="macro-chart-frame"
-        style={{ height: compact ? 150 : 300, visibility: visible.length ? "visible" : "hidden" }}
+        style={{
+          height: compact ? 150 : 300,
+          visibility: visible.length ? "visible" : "hidden",
+        }}
         aria-label="指标历史走势图"
       />
     </div>

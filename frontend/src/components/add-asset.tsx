@@ -1,19 +1,19 @@
 import { AddButton } from "@gitnapp/ui/components/ui/actions";
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
-import { Plus, Search, ArrowRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@gitnapp/ui/components/ui/dialog";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { toast } from "sonner";
 import { api, write } from "../api/client";
 import { useRefresh, useWatchlists } from "../hooks/queries";
-import { Button, Input } from "./ui";
-import { toast } from "sonner";
+import { Input } from "./ui";
 
 export function AddAsset({
   open,
@@ -36,7 +36,9 @@ export function AddAsset({
     return () => clearTimeout(timer);
   }, [search]);
   const navigate = useNavigate();
-  const refresh = useRefresh();
+  const refresh = useRefresh(
+    destination === "coverage" ? "tracking" : "watchlists",
+  );
   const lists = useWatchlists();
   const { data = [] } = useQuery({
     queryKey: ["catalog", term],
@@ -51,16 +53,22 @@ export function AddAsset({
   async function add(symbol: string) {
     setBusy(true);
     try {
-      const added = destination === "coverage"
-        ? await write<{ symbol: string }>(`/coverage/${symbol}`, {active: true, cadence: "weekly"}, "PUT")
-        : await write<{ symbol: string }>(
-        "/watchlists/" + (listId || lists.data?.[0]?.id) + "/symbols",
-        { symbol },
-      );
+      const added =
+        destination === "coverage"
+          ? await write<{ symbol: string }>(
+              `/coverage/${symbol}`,
+              { active: true, cadence: "weekly" },
+              "PUT",
+            )
+          : await write<{ symbol: string }>(
+              "/watchlists/" + (listId || lists.data?.[0]?.id) + "/symbols",
+              { symbol },
+            );
       await refresh();
       onOpenChange(false);
       setSearch("");
-      if (destination === "watchlist" && !stayOnPage) navigate(`/stocks/${added.symbol}`);
+      if (destination === "watchlist" && !stayOnPage)
+        navigate(`/stocks/${added.symbol}`);
       toast.success(`已添加 ${symbol.toUpperCase()}`);
     } catch (e) {
       toast.error((e as Error).message);
@@ -112,7 +120,15 @@ export function AddAsset({
           ))}
           {search.trim() &&
             !filtered.some((a) => a.symbol === search.trim().toUpperCase()) && (
-              <AddButton attention="primary" label={`添加 ${search.toUpperCase()}`} disabled={busy || !/^[A-Za-z0-9][A-Za-z0-9.\-^=]{0,14}$/.test(search.trim())} onClick={() => void add(search.trim())} />
+              <AddButton
+                attention="primary"
+                label={`添加 ${search.toUpperCase()}`}
+                disabled={
+                  busy ||
+                  !/^[A-Za-z0-9][A-Za-z0-9.\-^=]{0,14}$/.test(search.trim())
+                }
+                onClick={() => void add(search.trim())}
+              />
             )}
         </div>
       </DialogContent>

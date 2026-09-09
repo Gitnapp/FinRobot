@@ -1,0 +1,199 @@
+@media (max-width: 767px) {
+  .coverage-card-head small {
+    max-width: 180px;
+  }
+}
+.coverage-card-head small {
+  display: block;
+  color: var(--muted-foreground);
+  margin-top: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  max-width: 210px;
+}
+.coverage-price {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 12px 0 4px;
+}
+.coverage-price > strong {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  font-size: 24px;
+}
+.coverage-chart {
+  padding: 4px 0 8px;
+}
+.coverage-chart .sparkline {
+  height: 52px;
+}
+.coverage-chart > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.coverage-chart > div > span {
+  display: flex;
+  align-items: center;
+}
+.coverage-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px 12px;
+  margin: 0;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.coverage-metrics dt {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  white-space: nowrap;
+  margin-bottom: 6px;
+}
+.coverage-metrics dd {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 767px) {
+  .coverage-metrics dt {
+    font-size: 12px;
+  }
+}
+@media (max-width: 767px) {
+  .coverage-metrics dd {
+    font-size: 16px;
+  }
+}
+.coverage-card-head > div > small {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+}
+.coverage-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--compact-card-padding);
+}
+.coverage-card > * {
+  flex-shrink: 0;
+}
+.coverage-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+}
+.coverage-card-head > a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.coverage-card-head > div {
+  min-width: 0;
+  flex: 1;
+}
+.coverage-card-head strong,
+.coverage-card-head .navigation-card-link {
+  font-size: 18px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.coverage-card .coverage-research-copy {
+  flex: 1 0 auto;
+  min-height: auto;
+}
+
+.coverage-card > .rui-metric-grid {
+  margin-top: 12px;
+}
+
+.rui-card-grid.coverage-cards {
+  grid-auto-rows: auto;
+  align-items: start;
+  gap: var(--card-grid-gap);
+}
+.rui-card-grid.coverage-cards > .coverage-card {
+  height: auto;
+  align-self: start;
+}
+
+.navigation-card {
+  transition: border-color var(--navigation-motion-duration) ease;
+}
+.navigation-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+.navigation-card-link > svg {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  transition:
+    translate var(--navigation-motion-duration) ease,
+    color var(--navigation-motion-duration) ease;
+}
+.navigation-card:focus-within {
+  border-color: var(--ring);
+}
+.navigation-card:focus-within .navigation-card-link > svg {
+  translate: 3px 0;
+  color: var(--foreground);
+}
+@media (hover: hover) {
+  .navigation-card:hover {
+    border-color: var(--ring);
+  }
+}
+@media (hover: hover) {
+  .navigation-card:hover .navigation-card-link > svg {
+    translate: 3px 0;
+    color: var(--foreground);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .navigation-card {
+    transition: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .navigation-card-link > svg {
+    transition: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .navigation-card:hover .navigation-card-link > svg {
+    translate: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .navigation-card:focus-within .navigation-card-link > svg {
+    translate: none;
+  }
+}

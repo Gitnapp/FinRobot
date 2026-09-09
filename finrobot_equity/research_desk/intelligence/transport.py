@@ -2,6 +2,7 @@ import asyncio
 import time
 
 import httpx
+from ..cache_policy import UPSTREAM_RETRY_SECONDS
 
 
 class SourceTransport:
@@ -28,7 +29,7 @@ class SourceTransport:
                     )
                 self.next_allowed[source] = time.monotonic() + 1.1
                 if response.status_code == 429:
-                    self.next_allowed[source] = time.monotonic() + 900
+                    self.next_allowed[source] = time.monotonic() + UPSTREAM_RETRY_SECONDS
                     raise RuntimeError("rate limited")
                 if response.status_code in (502, 503, 504) and attempt == 0:
                     await asyncio.sleep(0.5)

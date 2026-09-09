@@ -1,9 +1,4 @@
-import { AnimatedSwitcher } from "./animated-switcher";
 import { KeyValueGrid } from "@gitnapp/ui/components/ui/data-layout";
-import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import { Fragment, useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Download, SlidersHorizontal } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -12,11 +7,16 @@ import {
   TableHeader,
   TableRow,
 } from "@gitnapp/ui/components/ui/table";
+import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
+import { useQuery } from "@tanstack/react-query";
+import { Download, SlidersHorizontal } from "lucide-react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../api/client";
-import { AssumptionsPanel } from "./assumptions-panel";
 import type { FinancialModel } from "../types";
-import { Button, Loading, ErrorState } from "./ui";
+import { AnimatedSwitcher } from "./animated-switcher";
+import { AssumptionsPanel } from "./assumptions-panel";
+import { Button, ErrorState, Loading } from "./ui";
 
 export function modelValue(
   value: number | null,
@@ -39,14 +39,15 @@ export function modelValue(
 export function ModelTable({ symbol }: { symbol: string }) {
   const [scenario, setScenario] = useState("base");
   const [edit, setEdit] = useState(false);
-  const query = useQuery({
+  const query = useQuery<FinancialModel>({
     queryKey: ["model", symbol, scenario],
-    refetchInterval: (q) =>
-      q.state.data?.recommendation_state === "pending" ? 1500 : 30000,
+
     placeholderData: (previous, previousQuery) =>
       previousQuery?.queryKey[1] === symbol ? previous : undefined,
-    queryFn: () =>
-      api<FinancialModel>(`/data/${symbol}/model?scenario=${scenario}`),
+    queryFn: ({ signal }) =>
+      api<FinancialModel>(`/data/${symbol}/model?scenario=${scenario}`, {
+        signal,
+      }),
   });
   const previous = useRef<{ symbol: string; model: FinancialModel } | null>(
     null,
@@ -99,7 +100,11 @@ export function ModelTable({ symbol }: { symbol: string }) {
             </Button>
           </div>
         </div>
-        <AnimatedSwitcher className="model-cases" role="group" aria-label="预测情景">
+        <AnimatedSwitcher
+          className="model-cases"
+          role="group"
+          aria-label="预测情景"
+        >
           {[
             ["bear", "保守"],
             ["base", "基准"],
@@ -252,13 +257,15 @@ export function ModelTable({ symbol }: { symbol: string }) {
           </span>
         </div>
       </div>
-      {edit && <AssumptionsPanel
-        symbol={symbol}
-        open={edit}
-        onOpenChange={setEdit}
-        initialScenario={scenario}
-        onSaved={setScenario}
-      />}
+      {edit && (
+        <AssumptionsPanel
+          symbol={symbol}
+          open={edit}
+          onOpenChange={setEdit}
+          initialScenario={scenario}
+          onSaved={setScenario}
+        />
+      )}
     </section>
   );
 }

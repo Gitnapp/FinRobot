@@ -1,23 +1,20 @@
-import { TaskProgress } from "@gitnapp/ui/components/ui/task-progress";
-import { useTask, type Task } from "../../hooks/tasks";
-import { useTaskReceipt } from "../../components/task-center";
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import { ReadingLayout } from "@gitnapp/ui/components/ui/data-layout";
-import { ReportContents } from "../../components/report-contents";
-import { useActiveSection } from "../../hooks/use-active-section";
-import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import { useState } from "react";
-import { Link, useParams, useNavigate, useLocation } from "react-router";
-import { Download, FileText, ExternalLink } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@gitnapp/ui/components/ui/dropdown-menu";
+import { TaskProgress } from "@gitnapp/ui/components/ui/task-progress";
+import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
+import { Download, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { useReport } from "../../hooks/queries";
 import { write } from "../../api/client";
+import { ReportContents } from "../../components/report-contents";
+import { useTaskReceipt } from "../../components/task-center";
 import {
   Button,
   dateText,
@@ -25,6 +22,9 @@ import {
   Loading,
   PageHeader,
 } from "../../components/ui";
+import { useReport } from "../../hooks/queries";
+import { useTask, type Task } from "../../hooks/tasks";
+import { useActiveSection } from "../../hooks/use-active-section";
 const FIGURE_INDEX: Record<number, number> = {
   0: 0,
   2: 5,
@@ -48,7 +48,9 @@ function ReportFigure({
 export default function ReportPage() {
   const { id = "", symbol } = useParams();
   const { pathname } = useLocation();
-  const assetPath = symbol ? `/${pathname.startsWith("/coverage/") ? "coverage" : "stocks"}/${symbol}` : null;
+  const assetPath = symbol
+    ? `/${pathname.startsWith("/coverage/") ? "coverage" : "stocks"}/${symbol}`
+    : null;
   const backPath = assetPath ? `${assetPath}?tab=reports` : "/reports";
   const task = useTask(id);
   const receive = useTaskReceipt();

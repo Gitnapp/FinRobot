@@ -5,6 +5,7 @@ import os
 import time
 
 import httpx
+from .cache_policy import UPSTREAM_RETRY_SECONDS
 
 
 class ProviderError(Exception):
@@ -44,7 +45,7 @@ class ProviderClient:
                     async with httpx.AsyncClient(timeout=8) as client:
                         response = await client.get(root + endpoint, params=query, headers=headers)
             if response.status_code == 429:
-                self.cooldown[provider] = time.time() + 900
+                self.cooldown[provider] = time.time() + UPSTREAM_RETRY_SECONDS
                 raise ProviderError("rate_limited")
             if response.status_code == 402:
                 raise ProviderError("subscription_required")

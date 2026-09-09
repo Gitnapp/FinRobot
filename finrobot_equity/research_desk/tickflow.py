@@ -8,6 +8,7 @@ import time
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
+from .cache_policy import PRICE_SOURCE
 from .providers import ProviderError
 
 
@@ -156,7 +157,7 @@ class TickFlowMarket:
             }
 
         try:
-            return await self.cached("history:forward:" + wire_symbol(symbol), fetch, 300)
+            return await self.cached("history:forward:" + wire_symbol(symbol), fetch, PRICE_SOURCE.ttl)
         except (KeyError, TypeError, ValueError):
             raise ProviderError("invalid_history") from None
 

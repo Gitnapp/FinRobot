@@ -1,7 +1,3 @@
-import { AnimatedSwitcher } from "../../components/animated-switcher";
-import { useState } from "react";
-import { Link } from "react-router";
-import { ArrowRight, Download, FileText, Search } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,27 +6,32 @@ import {
   TableHeader,
   TableRow,
 } from "@gitnapp/ui/components/ui/table";
-import { useReports } from "../../hooks/queries";
+import { ArrowRight, Download, FileText } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router";
+import { AnimatedSwitcher } from "../../components/animated-switcher";
+import { RefreshNotice } from "../../components/layout/async-content";
+import { FilterToolbar } from "../../components/layout/filter-toolbar";
 import {
   Button,
   dateText,
   Empty,
   ErrorState,
-  Input,
   Loading,
   PageHeader,
-  Hint,
 } from "../../components/ui";
+import { useReports } from "../../hooks/queries";
 
 export default function ReportsPage() {
-  const { data = [], error, isLoading, refetch } = useReports();
+  const reports = useReports();
+  const { data = [], error, isLoading, refetch } = reports;
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   if (isLoading) return <Loading />;
-  if (error) return <ErrorState error={error} retry={() => void refetch()} />;
+  if (error && !reports.data)
+    return <ErrorState error={error} retry={() => void refetch()} />;
   const latest = data.filter(
-    (r, i, a) =>
-      a.findIndex((x) => x.symbol === r.symbol) === i,
+    (r, i, a) => a.findIndex((x) => x.symbol === r.symbol) === i,
   );
   const shown = latest.filter(
     (r) =>
@@ -44,32 +45,32 @@ export default function ReportsPage() {
   return (
     <div className="page">
       <PageHeader title="报告" />
-      <div className="library-toolbar">
-        <AnimatedSwitcher className="segmented">
-          {[
-            ["all", "全部研报"],
-            ["completed", "已完成"],
-            ["failed", "需要重试"],
-          ].map(([k, n]) => (
-            <button
-              key={k}
-              className={k === filter ? "selected" : ""}
-              onClick={() => setFilter(k)}
-            >
-              {n}
-            </button>
-          ))}
-        </AnimatedSwitcher>
-        <div className="search-field">
-          <Search size={15} />
-          <Input
-            aria-label="搜索研报"
-            placeholder="搜索标的"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
+      <RefreshNotice error={error} retry={() => void refetch()} />
+      <FilterToolbar
+        leading={
+          <AnimatedSwitcher className="segmented">
+            {[
+              ["all", "全部研报"],
+              ["completed", "已完成"],
+              ["failed", "需要重试"],
+            ].map(([k, n]) => (
+              <button
+                key={k}
+                className={k === filter ? "selected" : ""}
+                onClick={() => setFilter(k)}
+              >
+                {n}
+              </button>
+            ))}
+          </AnimatedSwitcher>
+        }
+        search={{
+          value: search,
+          onChange: setSearch,
+          label: "搜索研报",
+          placeholder: "搜索标的",
+        }}
+      />
       <Table className="reports-table">
         <TableHeader>
           <TableRow>

@@ -1,5 +1,6 @@
 """Coverage quotes are independent of financial-research enrollment."""
 
+from .cache_policy import COVERAGE_QUOTE
 from .providers import ProviderError
 
 
@@ -13,7 +14,7 @@ class CoverageMarket:
         results = {}
         for symbol in sorted({r["symbol"] for r in companies if r.get("symbol")}):
             snapshot = self.snapshots.read(
-                "coverage-market:" + symbol, lambda s=symbol: self.collect(s), 60, 2 * 86400
+                "coverage-market:" + symbol, lambda s=symbol: self.collect(s), COVERAGE_QUOTE.ttl, COVERAGE_QUOTE.max_stale
             )
             financial = self.market.financial_data.read(symbol)
             if snapshot["data"]:
@@ -35,6 +36,7 @@ class CoverageMarket:
                 snapshot = {
                     **snapshot,
                     "data": data,
+                    "state": "stale" if data["quote"].get("stale") else snapshot["state"],
                     "refreshing": snapshot["refreshing"] or financial["refreshing"],
                 }
             results[symbol] = snapshot

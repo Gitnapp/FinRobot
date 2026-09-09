@@ -1,0 +1,131 @@
+.market-side {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 320px;
+  height: 100%;
+  min-height: 0;
+  padding: 0 0 24px 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+.market-side .preview-close {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+.preview-heading {
+  display: flex;
+  align-items: flex-start;
+  padding-right: 40px;
+}
+.preview-heading > div {
+  min-width: 0;
+  width: 100%;
+}
+.preview-heading > div > span {
+  display: block;
+  font-size: 11px;
+  margin-top: 5px;
+}
+.symbol-title {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding-right: 4px;
+  font-size: 30px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.symbol-title .title-ending {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.symbol-title svg {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+.preview-quote-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 0 16px;
+}
+.preview-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+.preview-price > strong {
+  font-weight: 500;
+}
+.preview-price .change {
+  letter-spacing: 0;
+  font-size: 12px;
+}
+.preview-quote-facts {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  flex-shrink: 0;
+}
+.preview-quote-facts dt {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  margin-bottom: 4px;
+}
+.preview-quote-facts dd {
+  margin: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.market-side .chart-section > .section-toolbar {
+  margin-bottom: 8px;
+  gap: 8px;
+}
+.market-side .chart-caption {
+  margin-top: 4px;
+  font-size: 10px;
+}
+.market-side .price-chart {
+  margin-top: 0;
+}
+.preview-data .dense-panel {
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 12px 0 0;
+  margin-top: 12px;
+}
+.preview-data .dense-panel h2 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.market-side .metric-grid {
+  gap: 12px 8px;
+}
+.market-side .metric-grid dt {
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+.market-side .metric-grid dd {
+  font-size: 13px;
+  margin: 0;
+}
+.market-side .price-range {
+  margin-top: 12px;
+  font-size: 10px;
+}

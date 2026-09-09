@@ -3,6 +3,7 @@ import asyncio
 import os
 import time
 import httpx
+from .cache_policy import SOURCE_HEALTH_TTL
 
 
 def classify(code, data):
@@ -31,7 +32,7 @@ class SourceHealth:
             if self.result is not None and self.expires > time.time():
                 return self.result
             self.result = await asyncio.gather(*(self.probe(s) for s in sources))
-            self.expires = time.time() + 300
+            self.expires = time.time() + SOURCE_HEALTH_TTL
             return self.result
 
     async def probe(self, source):

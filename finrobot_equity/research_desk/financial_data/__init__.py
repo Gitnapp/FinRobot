@@ -6,6 +6,7 @@ import logging
 import time
 from datetime import date
 
+from ..cache_policy import FINANCIAL_MAX_STALE, tracking_ttl
 from .normalize import derive
 from .registry import METRICS
 
@@ -17,16 +18,12 @@ class FinancialData:
 
     def read(self, symbol):
         coverage = self.store.one("SELECT cadence FROM coverage WHERE symbol=?", (symbol,))
-        ttl = (86400 if coverage["cadence"] == "daily" else 7 * 86400) if coverage else 21600
+        ttl = tracking_ttl(coverage["cadence"] if coverage else None)
         # Shortening the tracking cadence takes effect on existing snapshots too.
         if not self.cache.initialized:
             self.cache.init()
-        self.store.execute(
-            "UPDATE intelligence_snapshots SET expires=fetched+? WHERE key=? AND expires>fetched+?",
-            (ttl, "financial-metrics:" + symbol, ttl),
-        )
         return self.cache.read(
-            "financial-metrics:" + symbol, lambda: self.collect(symbol), ttl, 366 * 86400
+            "financial-metrics:" + symbol, lambda: self.collect(symbol), ttl, FINANCIAL_MAX_STALE
         )
 
     async def run(self):

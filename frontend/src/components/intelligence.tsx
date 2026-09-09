@@ -1,13 +1,13 @@
-import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
-import { useQuery } from "@tanstack/react-query";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardAction,
   CardContent,
+  CardHeader,
+  CardTitle,
 } from "@gitnapp/ui/components/ui/card";
+import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
 import { InfoHint } from "@gitnapp/ui/components/ui/tooltip";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { compact } from "./ui";
 export type Snapshot<T> = {
@@ -45,8 +45,6 @@ export function useEvidence(symbol: string, enabled = true) {
     enabled,
     queryFn: ({ signal }) =>
       api<Snapshot<Evidence>>(`/data/${symbol}/company`, { signal }),
-    refetchInterval: (q) => (q.state.data?.state === "pending" ? 1500 : 60000),
-    retry: false,
   });
 }
 export function EvidenceCard({ symbol }: { symbol: string }) {
@@ -123,9 +121,8 @@ type Leads = {
 export function useResearchLeads(symbol: string) {
   return useQuery({
     queryKey: ["research-leads", symbol],
-    queryFn: () => api<Snapshot<Leads>>(`/data/${symbol}/research`),
-    refetchInterval: (q) => (q.state.data?.state === "pending" ? 1500 : 60000),
-    retry: false,
+    queryFn: ({ signal }) =>
+      api<Snapshot<Leads>>(`/data/${symbol}/research`, { signal }),
   });
 }
 export function ResearchLeads({ symbol }: { symbol: string }) {

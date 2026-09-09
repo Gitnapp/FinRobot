@@ -1,9 +1,8 @@
-import { useEvidence } from "./intelligence";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import { Link } from "react-router";
 import { ExternalLink } from "lucide-react";
 import type { Detail, History } from "../types";
-import { Hint, Source, compact, money } from "./ui";
+import { useEvidence } from "./intelligence";
+import { compact, money } from "./ui";
 
 export function Sparkline({ history }: { history: History }) {
   const values = history.points.slice(-90).map((p) => p.close);
@@ -141,7 +140,9 @@ export function ValuationPanel({ data }: { data: Detail }) {
         </div>
       </div>
       <table className="sensitivity-table">
-        <caption>估值敏感性{v ? `（十亿 ${v.unit.split(" ")[0]}）` : ""}</caption>
+        <caption>
+          估值敏感性{v ? `（十亿 ${v.unit.split(" ")[0]}）` : ""}
+        </caption>
         <thead>
           <tr>
             <th>折现率 / 增长</th>
@@ -177,13 +178,19 @@ export function ValuationPanel({ data }: { data: Detail }) {
   );
 }
 export function CatalystPanel({ data }: { data: Detail }) {
-  const items = data.news.items.filter(n => n.url && n.title).slice(0, 4);
+  const items = data.news.items.filter((n) => n.url && n.title).slice(0, 4);
   if (!items.length) return null;
   return (
     <section className="dense-panel">
       <h2>近期催化</h2>
       {items.map((n) => (
-        <a className="catalyst-row" key={n.url} href={n.url} target="_blank" rel="noreferrer">
+        <a
+          className="catalyst-row"
+          key={n.url}
+          href={n.url}
+          target="_blank"
+          rel="noreferrer"
+        >
           <span>{n.title}</span>
           <ExternalLink size={13} />
         </a>

@@ -101,7 +101,7 @@ class DataAccess:
                 data.get("price") is not None if dataset == "quote" else bool(data.get("points"))
             )
             return {
-                "state": "ready" if available else "unavailable",
+                "state": ("stale" if data.get("stale") else "ready") if available else "unavailable",
                 "data": data if available else None,
                 "updated_at": data.get("as_of"),
             }

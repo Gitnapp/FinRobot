@@ -9,7 +9,10 @@ export function withinDates(date: string, range: DateWindow) {
 const iso = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const parse = (s: string) => new Date(s + "T12:00:00");
-export function seriesWindow(anchor: string | undefined, months = 12): DateWindow {
+export function seriesWindow(
+  anchor: string | undefined,
+  months = 12,
+): DateWindow {
   const reference = anchor ? parse(anchor) : new Date();
   const from = new Date(reference);
   from.setDate(1);

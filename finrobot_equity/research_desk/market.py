@@ -5,6 +5,7 @@ import json
 import time
 from datetime import date, datetime, timedelta, timezone
 
+from .cache_policy import PRICE_BUNDLE
 from .financial_data import FinancialData
 from .financial_data.providers import (
     ChinaReports,
@@ -98,7 +99,7 @@ class Market:
                     with self.store.connection() as db:
                         db.execute(
                             "INSERT OR REPLACE INTO cache VALUES (?,?,?)",
-                            (key, json.dumps(bundle), time.time() + 60),
+                            (key, json.dumps(bundle), time.time() + PRICE_BUNDLE.ttl),
                         )
                         if source is self.yahoo:
                             # Keep the successful source across reads/restarts; never flap between adjustment bases.
@@ -109,7 +110,7 @@ class Market:
                     return bundle
                 except (ProviderError, KeyError, TypeError, ValueError, TimeoutError):
                     continue
-            if previous and previous["expires"] > time.time() - 86400:
+            if previous and previous["expires"] > time.time() - PRICE_BUNDLE.max_stale:
                 bundle = json.loads(previous["value"])
                 bundle["quote"]["note"] = "显示最近一次有效行情"
                 bundle["quote"]["stale"] = True

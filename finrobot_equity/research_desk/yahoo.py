@@ -6,6 +6,7 @@ import sys
 import time
 from pathlib import Path
 
+from .cache_policy import PRICE_SOURCE, UPSTREAM_RETRY_SECONDS
 from .providers import ProviderError
 
 YAHOO_MARKETS = {
@@ -41,7 +42,7 @@ class YahooMarket:
         async def fetch():
             blocked = self.store.one("SELECT expires FROM cache WHERE key=?", (key + ":retry",))
             if blocked and blocked["expires"] > time.time():
-                if row and row["expires"] > time.time() - 2 * 86400:
+                if row and row["expires"] > time.time() - PRICE_SOURCE.max_stale:
                     return {**json.loads(row["value"]), "stale": True}
                 raise ProviderError("yahoo_unavailable")
             process = None
@@ -63,15 +64,15 @@ class YahooMarket:
                     raise ValueError("empty_history")
                 self.store.execute(
                     "INSERT OR REPLACE INTO cache VALUES (?,?,?)",
-                    (key, json.dumps(data), time.time() + 300),
+                    (key, json.dumps(data), time.time() + PRICE_SOURCE.ttl),
                 )
                 return data
             except (ValueError, TimeoutError):
                 self.store.execute(
                     "INSERT OR REPLACE INTO cache VALUES (?,?,?)",
-                    (key + ":retry", "null", time.time() + 900),
+                    (key + ":retry", "null", time.time() + UPSTREAM_RETRY_SECONDS),
                 )
-                if row and row["expires"] > time.time() - 2 * 86400:
+                if row and row["expires"] > time.time() - PRICE_SOURCE.max_stale:
                     return {**json.loads(row["value"]), "stale": True}
                 raise ProviderError("yahoo_unavailable") from None
             finally:
@@ -89,6 +90,7 @@ class YahooMarket:
         data = await self.snapshot(symbol)
         points = data["points"]
         return {
+            "stale": bool(data.get("stale")),
             "points": points,
             "source": "Yahoo Finance",
             "mock": False,
@@ -109,6 +111,7 @@ class YahooMarket:
         except (ProviderError, ValueError, TimeoutError):
             statistics = {}
         return {
+            "stale": bool(data.get("stale")),
             "symbol": symbol,
             "name": data["name"],
             "sector": data.get("exchange") or "",

@@ -1,20 +1,20 @@
-import { AnimatedSwitcher } from "./animated-switcher";
-import { EditableValue } from "@gitnapp/ui/components/ui/editable-value";
-import { ValueOrigin } from "@gitnapp/ui/components/ui/value-origin";
-import { useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@gitnapp/ui/components/ui/dialog";
+import { EditableValue } from "@gitnapp/ui/components/ui/editable-value";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import { Button, Input, Loading, ErrorState } from "./ui";
+import { ValueOrigin } from "@gitnapp/ui/components/ui/value-origin";
+import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { api, write } from "../api/client";
 import { useRefresh } from "../hooks/queries";
 import type { Assumptions } from "../types";
-import { toast } from "sonner";
+import { AnimatedSwitcher } from "./animated-switcher";
+import { Button, ErrorState, Loading } from "./ui";
 
 const fields: [keyof Assumptions, string][] = [
   ["growth", "收入增速"],
@@ -56,24 +56,36 @@ export function AssumptionsPanel({
   const query = useQuery({
     queryKey: ["assumptions", symbol, scenario],
     enabled: open,
-    queryFn: () => api<Recommendation>(`/data/${symbol}/assumptions?scenario=${scenario}`),
-    refetchInterval: (q) => (q.state.data?.state === "pending" ? 1500 : 30000),
+    queryFn: ({ signal }) =>
+      api<Recommendation>(`/data/${symbol}/assumptions?scenario=${scenario}`, {
+        signal,
+      }),
   });
   type Changes = Partial<Record<keyof Assumptions, number | null>>;
   const [caseChanges, setCaseChanges] = useState<Record<string, Changes>>({});
   const changes = caseChanges[scenario] || {};
-  const setChanges = (update: (previous: Changes) => Changes) => setCaseChanges(previous => ({...previous, [scenario]: update(previous[scenario] || {})}));
-  const draft = query.data?.effective ? {...query.data.effective} : null;
-  if (draft) for (const key of Object.keys(changes) as (keyof Assumptions)[]) draft[key] = changes[key] ?? query.data!.data!.assumptions[key];
+  const setChanges = (update: (previous: Changes) => Changes) =>
+    setCaseChanges((previous) => ({
+      ...previous,
+      [scenario]: update(previous[scenario] || {}),
+    }));
+  const draft = query.data?.effective ? { ...query.data.effective } : null;
+  if (draft)
+    for (const key of Object.keys(changes) as (keyof Assumptions)[])
+      draft[key] = changes[key] ?? query.data!.data!.assumptions[key];
   const [busy, setBusy] = useState(false);
-  const refresh = useRefresh();
+  const refresh = useRefresh("assumptions");
   async function save() {
     if (!draft) return;
     setBusy(true);
     try {
       for (const [current, patch] of Object.entries(caseChanges)) {
         await write(`/models/${symbol}?scenario=${current}`, patch, "PUT");
-        setCaseChanges(previous => { const next = {...previous}; delete next[current]; return next; });
+        setCaseChanges((previous) => {
+          const next = { ...previous };
+          delete next[current];
+          return next;
+        });
       }
       await refresh();
       onSaved(scenario);
@@ -95,13 +107,36 @@ export function AssumptionsPanel({
       <DialogContent
         className="assumptions-dialog sm:max-w-lg"
         aria-describedby={undefined}
-        onOpenAutoFocus={event => { event.preventDefault(); title.current?.focus({preventScroll: true}); }}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          title.current?.focus({ preventScroll: true });
+        }}
       >
         <DialogHeader>
-          <DialogTitle ref={title} tabIndex={-1}>预测假设</DialogTitle>
+          <DialogTitle ref={title} tabIndex={-1}>
+            预测假设
+          </DialogTitle>
         </DialogHeader>
-        <AnimatedSwitcher className="segmented" role="group" aria-label="假设情景">
-          {[["bear", "保守"], ["base", "基准"], ["bull", "乐观"]].map(([key, label]) => <button key={key} disabled={busy} className={scenario === key ? "selected" : ""} aria-pressed={scenario === key} onClick={() => setScenario(key)}>{label}</button>)}
+        <AnimatedSwitcher
+          className="segmented"
+          role="group"
+          aria-label="假设情景"
+        >
+          {[
+            ["bear", "保守"],
+            ["base", "基准"],
+            ["bull", "乐观"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              disabled={busy}
+              className={scenario === key ? "selected" : ""}
+              aria-pressed={scenario === key}
+              onClick={() => setScenario(key)}
+            >
+              {label}
+            </button>
+          ))}
         </AnimatedSwitcher>
         {busy && <Loading />}
         {!draft ? (
@@ -116,7 +151,13 @@ export function AssumptionsPanel({
         ) : (
           <>
             <div className="assumptions-tools">
-              <InfoLabel label={{bear:"保守情景",base:"基准情景",bull:"乐观情景"}[scenario] || "预测情景"}>
+              <InfoLabel
+                label={
+                  { bear: "保守情景", base: "基准情景", bull: "乐观情景" }[
+                    scenario
+                  ] || "预测情景"
+                }
+              >
                 AI 推荐随跟踪周期更新；你修改的字段会保留。
                 {query.data?.state === "stale" ? "当前保留上次推荐。" : ""}
               </InfoLabel>
@@ -180,7 +221,6 @@ export function AssumptionsPanel({
                               ...previous,
                               [key]: null,
                             }));
-
                           }}
                         />
                       </span>

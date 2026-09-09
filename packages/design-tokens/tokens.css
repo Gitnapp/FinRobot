@@ -57,6 +57,11 @@
 }
 
 :root {
+  --search-control-width: 320px;
+  --navigation-motion-duration: 180ms;
+  --panel-motion-duration: 240ms;
+  --card-grid-gap: 24px;
+  --compact-card-padding: 16px;
   color-scheme: light;
   /* 浮层高度：大扩散低不透明，靠柔和衰减而不是深压边表达抬升（design.md 阴影克制）。 */
   --overlay-shadow: 0 6px 24px -8px rgb(0 0 0 / 0.12), 0 1px 2px rgb(0 0 0 / 0.04);

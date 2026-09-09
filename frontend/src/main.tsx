@@ -1,20 +1,19 @@
-import { TasksProvider } from "./components/task-center";
-import { LoadingScope } from "@gitnapp/ui/components/ui/loading";
+import { Toaster } from "@gitnapp/ui/components/ui/sonner";
+import { TooltipProvider } from "@gitnapp/ui/components/ui/tooltip";
+import "@gitnapp/ui/patterns.css";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Route, Routes, Link } from "react-router";
-import {
-  QueryClient,
-  QueryClientProvider,
-  useIsFetching,
-} from "@tanstack/react-query";
-import { TooltipProvider } from "@gitnapp/ui/components/ui/tooltip";
-import { Toaster } from "@gitnapp/ui/components/ui/sonner";
+import { BrowserRouter, Link, Route, Routes } from "react-router";
+import { createQueryClient } from "./api/query-policy";
 import Shell from "./app/shell";
 import { ErrorBoundary } from "./components/error-boundary";
+import { TasksProvider } from "./components/task-center";
 import { Loading } from "./components/ui";
 import "./styles.css";
-import "@gitnapp/ui/patterns.css";
+import "./styles/cards.css";
+import "./styles/navigation.css";
+import "./styles/switcher.css";
 
 const MacroPage = lazy(() =>
   import("./app/context/context-page").then((m) => ({ default: m.MacroPage })),
@@ -36,23 +35,13 @@ const Reports = lazy(() => import("./app/reports/reports-page"));
 const Report = lazy(() => import("./app/reports/report-page"));
 const Debug = lazy(() => import("./app/settings/debug-page"));
 const Settings = lazy(() => import("./app/settings/settings-page"));
-const client = new QueryClient({
-  defaultOptions: {
-    queries: { staleTime: 10000, retry: 1, refetchOnWindowFocus: false },
-  },
-});
-function ProjectLoading({ children }: { children: React.ReactNode }) {
-  const pending = useIsFetching({
-    predicate: (query) => query.state.data === undefined,
-  });
-  return <LoadingScope active={pending > 0}>{children}</LoadingScope>;
-}
+const client = createQueryClient();
+
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={client}>
-    <ProjectLoading>
-      <TooltipProvider>
-        <BrowserRouter>
-          <TasksProvider>
+    <TooltipProvider>
+      <BrowserRouter>
+        <TasksProvider>
           <ErrorBoundary>
             <Suspense fallback={<Loading />}>
               <Routes>
@@ -66,8 +55,14 @@ createRoot(document.getElementById("root")!).render(
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="reports" element={<Reports />} />
                   <Route path="reports/:id" element={<Report />} />
-                  <Route path="stocks/:symbol/reports/:id" element={<Report />} />
-                  <Route path="coverage/:symbol/reports/:id" element={<Report />} />
+                  <Route
+                    path="stocks/:symbol/reports/:id"
+                    element={<Report />}
+                  />
+                  <Route
+                    path="coverage/:symbol/reports/:id"
+                    element={<Report />}
+                  />
                   <Route path="settings" element={<Settings />} />
                   <Route path="settings/debug" element={<Debug />} />
                   <Route
@@ -82,10 +77,9 @@ createRoot(document.getElementById("root")!).render(
               </Routes>
             </Suspense>
           </ErrorBoundary>
-          </TasksProvider>
-        </BrowserRouter>
-        <Toaster position="bottom-right" />
-      </TooltipProvider>
-    </ProjectLoading>
+        </TasksProvider>
+      </BrowserRouter>
+      <Toaster position="bottom-right" />
+    </TooltipProvider>
   </QueryClientProvider>,
 );

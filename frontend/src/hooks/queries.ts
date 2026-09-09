@@ -1,66 +1,61 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { invalidateDomain, type INVALIDATE } from "../api/query-policy";
 import type { Asset, Detail, FullReport, Report, Settings } from "../types";
 
 export const useAssets = (listId?: string) =>
   useQuery({
     queryKey: ["assets", listId],
-    queryFn: () =>
-      api<Asset[]>(listId ? "/assets?list_id=" + listId : "/assets"),
-    refetchInterval: 10000,
+    queryFn: ({ signal }) =>
+      api<Asset[]>(listId ? "/assets?list_id=" + listId : "/assets", {
+        signal,
+      }),
   });
 export const useDetail = (symbol: string, coverage = false) =>
   useQuery({
     queryKey: ["detail", symbol, coverage],
     enabled: Boolean(symbol),
-    queryFn: () =>
-      api<Detail>(`/data/${symbol}/detail?context=${coverage ? "coverage" : "stocks"}`),
-    refetchInterval: (query) =>
-      query.state.data?.reports.some(
-        (r) => r.status === "running" || r.status === "queued",
-      )
-        ? 2500
-        : 15000,
+    queryFn: ({ signal }) =>
+      api<Detail>(
+        `/data/${symbol}/detail?context=${coverage ? "coverage" : "stocks"}`,
+        { signal },
+      ),
   });
 export const useReports = () =>
   useQuery({
     queryKey: ["reports"],
-    queryFn: () => api<Report[]>("/reports"),
-    refetchInterval: 3000,
+    queryFn: ({ signal }) => api<Report[]>("/reports", { signal }),
   });
 export const useReport = (id: string, symbol?: string, enabled = true) =>
   useQuery({
     queryKey: ["report", id],
     enabled: Boolean(id) && enabled,
-    queryFn: () => api<FullReport>(symbol ? `/data/${symbol}/report?report_id=${id}` : `/reports/${id}`, { cache: "no-store" }),
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: "always",
-    refetchOnReconnect: "always",
-    refetchInterval: (q) =>
-      q.state.data?.status === "completed" || q.state.data?.status === "failed"
-        ? false
-        : 2500,
+    queryFn: ({ signal }) =>
+      api<FullReport>(
+        symbol ? `/data/${symbol}/report?report_id=${id}` : `/reports/${id}`,
+        { signal, cache: "no-store" },
+      ),
   });
 export const useSettings = () =>
   useQuery({
     queryKey: ["settings"],
-    queryFn: () => api<Settings>("/settings"),
+    queryFn: ({ signal }) => api<Settings>("/settings", { signal }),
   });
-export function useRefresh() {
+export function useRefresh(domain: keyof typeof INVALIDATE) {
   const client = useQueryClient();
-  return () => client.invalidateQueries();
+  return () => invalidateDomain(client, domain);
 }
 
 export const useWatchlists = () =>
   useQuery({
     queryKey: ["watchlists"],
-    queryFn: () => api<import("../types").Watchlist[]>("/watchlists"),
+    queryFn: ({ signal }) =>
+      api<import("../types").Watchlist[]>("/watchlists", { signal }),
   });
 export const useCoverage = () =>
   useQuery({
     queryKey: ["coverage"],
-    queryFn: () => api<Detail[]>("/coverage"),
-    refetchInterval: 10000,
+    queryFn: ({ signal }) => api<Detail[]>("/coverage", { signal }),
   });
 
 export const usePriceHistory = (symbol: string) =>
@@ -75,7 +70,4 @@ export const usePriceHistory = (symbol: string) =>
       if (!result.data) throw new Error("历史行情暂不可用");
       return result.data;
     },
-    staleTime: 60000,
-    refetchInterval: 60000,
-    retry: false,
   });

@@ -1,65 +1,44 @@
-import { AnimatedSwitcher } from "../../components/animated-switcher";
-import { PeersPanel } from "../../components/peers-panel";
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
-import { TrackingControls } from "../../components/tracking-controls";
 import {
-  EvidenceCard,
-  ResearchLeads,
-} from "../../components/intelligence";
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@gitnapp/ui/components/ui/card";
+import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
+import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { Link, useLocation, useParams, useSearchParams } from "react-router";
+import { AnimatedSwitcher } from "../../components/animated-switcher";
+import {
+  CatalystPanel,
+  FinancialPanel,
+  TechnicalPanel,
+  ValuationPanel,
+} from "../../components/coverage-insights";
+import { EvidenceCard, ResearchLeads } from "../../components/intelligence";
+import { RefreshNotice } from "../../components/layout/async-content";
+import { ModelTable } from "../../components/model-table";
+import { PeersPanel } from "../../components/peers-panel";
+import { PriceChart } from "../../components/price-chart";
+import { ResearchAction } from "../../components/research-action";
+import { TrackingControls } from "../../components/tracking-controls";
 import {
   CatalystCalendar,
   RetailSentiment,
 } from "../../components/tracking-signals";
-import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardAction,
-  CardContent,
-} from "@gitnapp/ui/components/ui/card";
-import { useState } from "react";
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
-import {
-  ArrowRight,
-  BookmarkPlus,
-  Pause,
-  Play,
-  MoreHorizontal,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@gitnapp/ui/components/ui/dropdown-menu";
-import { toast } from "sonner";
-import { api, write } from "../../api/client";
-import {
-  useDetail,
-  useReport,
-} from "../../hooks/queries";
-import { PriceChart } from "../../components/price-chart";
-import { ModelTable } from "../../components/model-table";
-import { ResearchAction } from "../../components/research-action";
-import {
-  TechnicalPanel,
-  FinancialPanel,
-  ValuationPanel,
-  CatalystPanel,
-} from "../../components/coverage-insights";
 import {
   Button,
   Change,
-  compact,
-  Empty,
   ErrorState,
   Loading,
   money,
   PageHeader,
-  Updated,
   researchBrief,
+  Updated,
 } from "../../components/ui";
+import { useDetail, useReport } from "../../hooks/queries";
 
 function ResearchSummary({ id, symbol }: { id: string; symbol: string }) {
   const { data, error, refetch } = useReport(id, symbol);
@@ -93,7 +72,6 @@ function ResearchSummary({ id, symbol }: { id: string; symbol: string }) {
           )}
         </div>
       </CardContent>
-
     </>
   );
 }
@@ -104,11 +82,13 @@ export default function StockPage() {
   const { data, error, isLoading, refetch } = useDetail(symbol);
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") || "overview";
-  const setTab = (value: string) => setParams(value === "overview" ? {} : {tab: value}, {replace: true});
+  const setTab = (value: string) =>
+    setParams(value === "overview" ? {} : { tab: value }, { replace: true });
   const [researchOpened, setResearchOpened] = useState(tab === "research");
   const assetPath = `/${coverageMode ? "coverage" : "stocks"}/${symbol}`;
   if (isLoading) return <Loading />;
-  if (error) return <ErrorState error={error} retry={() => void refetch()} />;
+  if (error && !data)
+    return <ErrorState error={error} retry={() => void refetch()} />;
   if (!data) return null;
   const { quote, coverage, reports } = data;
   const active = reports.find(
@@ -117,6 +97,7 @@ export default function StockPage() {
   const latest = reports.find((r) => r.status === "completed");
   return (
     <div className="page stock-page">
+      <RefreshNotice error={error} retry={() => void refetch()} />
       <BackLink asChild>
         <Link
           to={coverageMode ? "/coverage" : "/"}
@@ -147,7 +128,12 @@ export default function StockPage() {
         </div>
         <span className="stock-sector">{quote.sector}</span>
       </div>
-      <AnimatedSwitcher className="detail-tabs" data-active={tab} role="tablist" aria-label="标的详情">
+      <AnimatedSwitcher
+        className="detail-tabs"
+        data-active={tab}
+        role="tablist"
+        aria-label="标的详情"
+      >
         <button
           role="tab"
           aria-selected={tab === "overview"}
@@ -165,53 +151,91 @@ export default function StockPage() {
         >
           研究
         </button>
-        <button role="tab" aria-selected={tab === "reports"} onClick={() => setTab("reports")}>报告</button>
+        <button
+          role="tab"
+          aria-selected={tab === "reports"}
+          onClick={() => setTab("reports")}
+        >
+          报告
+        </button>
       </AnimatedSwitcher>
-      {tab === "reports" && <div className="detail-tab-panel">
-            <Card className="research-reports">
-              <CardHeader><CardTitle>报告</CardTitle></CardHeader>
-              <CardContent>
-                {reports.length ? <div className="research-report-list">
-                  {reports.map(report => (
-                    <Link key={report.id} to={assetPath + "/reports/" + report.id} className="research-report-link" data-page-link>
-                      <div><strong>{`${quote.name}研究报告`}</strong><small>{(report.completed_at || report.created_at).slice(0, 10)} · 第 {report.version} 版</small></div>
-                      <span className="muted">{{completed:"已完成", running:"研究中", queued:"排队中", failed:"未完成"}[report.status]}</span>
+      {tab === "reports" && (
+        <div className="detail-tab-panel">
+          <Card className="research-reports">
+            <CardHeader>
+              <CardTitle>报告</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {reports.length ? (
+                <div className="research-report-list">
+                  {reports.map((report) => (
+                    <Link
+                      key={report.id}
+                      to={assetPath + "/reports/" + report.id}
+                      className="research-report-link"
+                      data-page-link
+                    >
+                      <div>
+                        <strong>{`${quote.name}研究报告`}</strong>
+                        <small>
+                          {(report.completed_at || report.created_at).slice(
+                            0,
+                            10,
+                          )}{" "}
+                          · 第 {report.version} 版
+                        </small>
+                      </div>
+                      <span className="muted">
+                        {
+                          {
+                            completed: "已完成",
+                            running: "研究中",
+                            queued: "排队中",
+                            failed: "未完成",
+                          }[report.status]
+                        }
+                      </span>
                       <ArrowRight size={16} aria-hidden="true" />
                     </Link>
                   ))}
-                </div> : <span className="muted">尚无报告</span>}
-              </CardContent>
-            </Card>
-      </div>}
+                </div>
+              ) : (
+                <span className="muted">尚无报告</span>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
       {researchOpened && (
         <div className="detail-tab-panel" hidden={tab !== "research"}>
           <div className="research-content">
             <div className="research-top-grid">
-            <ValuationPanel data={data} />
-            <div className="research-sidebar">
-            <Card className="research-opinion">
-              {latest ? (
-                <ResearchSummary id={latest.id} symbol={symbol} />
-              ) : (
-                <>
-                  <CardHeader>
-                    <CardTitle>研究观点</CardTitle>
-                  </CardHeader>
-                  <CardContent className="research-empty">
-                    <span className="muted">
-                      {active ? "正在研究" : "尚无研报"}
-                    </span>
-                    {active && (
-                      <Button variant="outline" asChild>
-                        <Link to={assetPath + "/reports/" + active.id}>查看进度</Link>
-                      </Button>
-                    )}
-                  </CardContent>
-                </>
-              )}
-            </Card>
-
-            </div>
+              <ValuationPanel data={data} />
+              <div className="research-sidebar">
+                <Card className="research-opinion">
+                  {latest ? (
+                    <ResearchSummary id={latest.id} symbol={symbol} />
+                  ) : (
+                    <>
+                      <CardHeader>
+                        <CardTitle>研究观点</CardTitle>
+                      </CardHeader>
+                      <CardContent className="research-empty">
+                        <span className="muted">
+                          {active ? "正在研究" : "尚无研报"}
+                        </span>
+                        {active && (
+                          <Button variant="outline" asChild>
+                            <Link to={assetPath + "/reports/" + active.id}>
+                              查看进度
+                            </Link>
+                          </Button>
+                        )}
+                      </CardContent>
+                    </>
+                  )}
+                </Card>
+              </div>
             </div>
             {coverage ? (
               <ModelTable symbol={symbol} />

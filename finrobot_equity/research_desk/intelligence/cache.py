@@ -6,6 +6,9 @@ import time
 from datetime import datetime, timezone
 
 
+from ..cache_policy import REFERENCE, UPSTREAM_RETRY_SECONDS, SNAPSHOT_TIMEOUT_SECONDS
+
+
 class SnapshotCache:
     def __init__(self, store):
         self.store = store
@@ -27,7 +30,7 @@ class SnapshotCache:
             "UPDATE intelligence_snapshots SET retry_after=0 WHERE error='configuration'"
         )
 
-    def read(self, key, loader, ttl=21600, max_stale=7 * 86400):
+    def read(self, key, loader, ttl=REFERENCE.ttl, max_stale=REFERENCE.max_stale):
         if not self.initialized:
             self.init()
         row = self.store.one("SELECT * FROM intelligence_snapshots WHERE key=?", (key,))
@@ -37,6 +40,7 @@ class SnapshotCache:
             and row["payload"] is not None
             and row["expires"] > now
             and row["fetched"] is not None
+            and row["fetched"] + ttl > now
             and now - row["fetched"] <= max_stale
         )
         if (
@@ -89,7 +93,7 @@ class SnapshotCache:
                     "UPDATE data_update_runs SET status='running',started=? WHERE id=?",
                     (time.time(), run_id),
                 )
-                async with asyncio.timeout(40):
+                async with asyncio.timeout(SNAPSHOT_TIMEOUT_SECONDS):
                     payload = await loader()
             encoded = json.dumps(payload, ensure_ascii=False, allow_nan=False)
             now = time.time()
@@ -120,7 +124,7 @@ class SnapshotCache:
                 """INSERT INTO intelligence_snapshots(key,retry_after,failures,error) VALUES (?,?,1,?)
                 ON CONFLICT(key) DO UPDATE SET retry_after=excluded.retry_after,
                 failures=failures+1,error=excluded.error""",
-                (key, time.time() + max(900, ttl if code == "configuration" else 0), code),
+                (key, time.time() + max(UPSTREAM_RETRY_SECONDS, ttl if code == "configuration" else 0), code),
             )
 
     async def close(self):

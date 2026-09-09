@@ -1,19 +1,19 @@
-import { AnimatedSwitcher } from "./animated-switcher";
-import { ArrowUpRight } from "lucide-react";
-import type { Snapshot } from "./intelligence";
-import { LoadingState } from "@gitnapp/ui/components/ui/loading";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardAction,
   CardContent,
+  CardHeader,
+  CardTitle,
 } from "@gitnapp/ui/components/ui/card";
+import { LoadingState } from "@gitnapp/ui/components/ui/loading";
 import { InfoHint, InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import { Button } from "./ui";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowUpRight } from "lucide-react";
+import { useState } from "react";
 import { api } from "../api/client";
+import { AnimatedSwitcher } from "./animated-switcher";
+import type { Snapshot } from "./intelligence";
+import { Button } from "./ui";
 
 type Result<T> = {
   status: "ready" | "empty" | "stale" | "unavailable";
@@ -53,9 +53,6 @@ export function useSignal<T>(symbol: string, kind: string, enabled = true) {
     enabled,
     queryFn: ({ signal }) =>
       api<Result<T>>(`/data/${symbol}/${kind}`, { signal }),
-    staleTime: 15 * 60 * 1000,
-    retry: 1,
-    refetchOnWindowFocus: false,
   });
 }
 function State({ loading, retry }: { loading: boolean; retry: () => void }) {
@@ -98,22 +95,21 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
   const history = useQuery({
     queryKey: ["disclosures", symbol],
     enabled: period === "recent",
-    queryFn: () => api<Snapshot<Disclosures>>(`/data/${symbol}/disclosures`),
-    refetchInterval: (q) => (q.state.data?.state === "pending" || q.state.data?.refreshing ? 1500 : false),
-    retry: false,
+    queryFn: ({ signal }) =>
+      api<Snapshot<Disclosures>>(`/data/${symbol}/disclosures`, { signal }),
   });
   const upcoming = query.data?.data?.events.filter((e) => e.upcoming);
   const past = query.data?.data?.events.filter((e) => !e.upcoming) || [];
   const disclosureEvents = (history.data?.data?.filings || []).map((f) => ({
     date: f.date,
     title:
-      ({
+      {
         "10-K": "年度报告",
         "10-Q": "季度报告",
         "8-K": "临时公告",
         "20-F": "年度报告",
         "6-K": "发行人公告",
-      }[f.form.split("/")[0]] || "披露文件"),
+      }[f.form.split("/")[0]] || "披露文件",
     timing: "披露日期",
     url: f.url,
     eps_estimate: null,
@@ -126,21 +122,27 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
     | undefined =
     period === "upcoming"
       ? upcoming
-      : [...past, ...disclosureEvents]
-          .sort((a, b) => b.date.localeCompare(a.date));
+      : [...past, ...disclosureEvents].sort((a, b) =>
+          b.date.localeCompare(a.date),
+        );
   return (
     <Card className="disclosure-calendar">
       <CardHeader>
         <CardTitle>披露日历</CardTitle>
         <CardAction>
           <InfoHint>
-            预计日期以公司公告为准。未来财报日程与历史公告按市场接入；美股历史包含 EDGAR
+            预计日期以公司公告为准。未来财报日程与历史公告按市场接入；美股历史包含
+            EDGAR
             的年报、季报、临时公告和修订文件。披露日期不等于财报发布或事件发生日期。披露记录打开原文；未提供原文链接的财报日程打开日历查询页。A股公告来自巨潮资讯，当前查询最近一年；其他市场未接入时保留栏目。
           </InfoHint>
         </CardAction>
       </CardHeader>
       <CardContent>
-        <AnimatedSwitcher className="disclosure-tabs" role="group" aria-label="事件时间范围">
+        <AnimatedSwitcher
+          className="disclosure-tabs"
+          role="group"
+          aria-label="事件时间范围"
+        >
           {[
             ["upcoming", "即将到来"],
             ["recent", "历史记录"],
@@ -160,80 +162,102 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
           ))}
           <Freshness value={query.data} />
         </AnimatedSwitcher>
-        <div className="disclosure-events" key={period} aria-busy={period === "recent" && (history.isPending || history.isFetching)}>
-        {period === "recent" &&
-          (history.isPending || history.data?.state === "pending" || history.isFetching) && (
-            <LoadingState inline className="calendar-loading" />
-          )}
-        {!events ? (
-          <State loading={query.isPending} retry={() => void query.refetch()} />
-        ) : events.length === 0 ? (
-          period === "recent" &&
-          (history.isPending || history.data?.state === "pending" || history.isFetching) ? null : (
-            <p className="signal-empty">
-              {period === "upcoming"
-                ? "暂无已公布日程"
-                : "暂无已取得的历史记录"}
-            </p>
-          )
-        ) : (
-          events.slice(page * 5, (page + 1) * 5).map((e) => (
-            <article className="signal-event" key={e.url || e.date + e.title}>
-              <time dateTime={e.date}>
-                <strong>{e.date.slice(5)}</strong>
-                <small>{e.date.slice(0, 4)}</small>
-              </time>
-              <div>
-                <strong>
-                  {e.url ? (
-                    <a data-page-link href={e.url} target="_blank" rel="noreferrer" title={"link_kind" in e && e.link_kind === "calendar_source" ? "查看财报日历" : "查看原文"}>
-                      {e.title}<ArrowUpRight size={14} aria-hidden="true" />
-                    </a>
-                  ) : (
-                    e.title
-                  )}
-                </strong>
-                <div className="signal-meta">
-                  {e.timing !== "日期以公司公告为准" && e.timing}
-                  {e.eps_estimate !== null && (
-                    <span>预期 EPS ${fmt(e.eps_estimate)}</span>
-                  )}
-                  {e.revenue_estimate !== null && (
-                    <span>
-                      预期收入 ${(e.revenue_estimate / 1e9).toFixed(2)}B
-                    </span>
-                  )}
-                  {e.eps_actual !== null && (
-                    <span>实际 EPS ${fmt(e.eps_actual)}</span>
-                  )}
+        <div
+          className="disclosure-events"
+          key={period}
+          aria-busy={
+            period === "recent" && (history.isPending)
+          }
+        >
+          {period === "recent" &&
+            (history.isPending ||
+              history.data?.state === "pending") && (
+              <LoadingState inline className="calendar-loading" />
+            )}
+          {!events ? (
+            <State
+              loading={query.isPending}
+              retry={() => void query.refetch()}
+            />
+          ) : events.length === 0 ? (
+            period === "recent" &&
+            (history.isPending ||
+              history.data?.state === "pending") ? null : (
+              <p className="signal-empty">
+                {period === "upcoming"
+                  ? "暂无已公布日程"
+                  : "暂无已取得的历史记录"}
+              </p>
+            )
+          ) : (
+            events.slice(page * 5, (page + 1) * 5).map((e) => (
+              <article className="signal-event" key={e.url || e.date + e.title}>
+                <time dateTime={e.date}>
+                  <strong>{e.date.slice(5)}</strong>
+                  <small>{e.date.slice(0, 4)}</small>
+                </time>
+                <div>
+                  <strong>
+                    {e.url ? (
+                      <a
+                        data-page-link
+                        href={e.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={
+                          "link_kind" in e && e.link_kind === "calendar_source"
+                            ? "查看财报日历"
+                            : "查看原文"
+                        }
+                      >
+                        {e.title}
+                        <ArrowUpRight size={14} aria-hidden="true" />
+                      </a>
+                    ) : (
+                      e.title
+                    )}
+                  </strong>
+                  <div className="signal-meta">
+                    {e.timing !== "日期以公司公告为准" && e.timing}
+                    {e.eps_estimate !== null && (
+                      <span>预期 EPS ${fmt(e.eps_estimate)}</span>
+                    )}
+                    {e.revenue_estimate !== null && (
+                      <span>
+                        预期收入 ${(e.revenue_estimate / 1e9).toFixed(2)}B
+                      </span>
+                    )}
+                    {e.eps_actual !== null && (
+                      <span>实际 EPS ${fmt(e.eps_actual)}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))
-        )}
-        {events && events.length > 5 && (
-          <div className="calendar-pagination">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => setPage(page - 1)}
-            >
-              上一页
-            </Button>
-            <span>
-              {page + 1} / {Math.ceil(events.length / 5)}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={(page + 1) * 5 >= events.length}
-              onClick={() => setPage(page + 1)}
-            >
-              下一页
-            </Button>
-          </div>
-        )}
+              </article>
+            ))
+          )}
+          {events && events.length > 5 && (
+            <div className="calendar-pagination">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page === 0}
+                onClick={() => setPage(page - 1)}
+              >
+                上一页
+              </Button>
+              <span>
+                {page + 1} / {Math.ceil(events.length / 5)}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={(page + 1) * 5 >= events.length}
+                onClick={() => setPage(page + 1)}
+              >
+                下一页
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -249,9 +273,14 @@ export function RetailSentiment({ symbol }: { symbol: string }) {
         <CardTitle>散户情绪</CardTitle>
         <CardAction>
           <InfoHint>
-            {query.data?.reason === "asset_not_supported" ? "供应商尚未匹配到当前上市证券，不用其他上市地的证券替代。" : query.data?.status === "empty" ? "当前证券已接入，但本期没有有效讨论样本。" : ""}
-            最近 7 个 UTC 自然日的 Reddit 讨论，来源：Adanos。样本较少时分数波动较大。情绪分 -1 至
-            +1，热度 0 至
+            {query.data?.reason === "asset_not_supported"
+              ? "供应商尚未匹配到当前上市证券，不用其他上市地的证券替代。"
+              : query.data?.status === "empty"
+                ? "当前证券已接入，但本期没有有效讨论样本。"
+                : ""}
+            最近 7 个 UTC 自然日的 Reddit
+            讨论，来源：Adanos。样本较少时分数波动较大。情绪分 -1 至 +1，热度 0
+            至
             100；热度变化不等于股价方向，空值表示信号不足。看多、看空比例采用供应商原始口径。
           </InfoHint>
         </CardAction>

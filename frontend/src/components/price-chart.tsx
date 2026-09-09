@@ -1,6 +1,4 @@
-import { usePriceHistory } from "../hooks/queries";
 import { LoadingState } from "@gitnapp/ui/components/ui/loading";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   AreaSeries,
   CandlestickSeries,
@@ -9,6 +7,8 @@ import {
   type Time,
 } from "lightweight-charts";
 import { ChartCandlestick, ChartNoAxesCombined } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { usePriceHistory } from "../hooks/queries";
 import { Button, Source } from "./ui";
 
 export function PriceChart({
@@ -129,7 +129,7 @@ export function PriceChart({
           </Button>
         </div>
       </div>
-      {archive.isPending && <LoadingState />}
+      {archive.isPending && <LoadingState inline />}
       {archive.isError && (
         <div role="status" className="actions">
           <span className="muted">完整历史暂不可用</span>
@@ -144,7 +144,9 @@ export function PriceChart({
       )}
       <div
         className="price-chart"
-        style={{ height: small ? "clamp(60px, calc(100dvh - 600px), 180px)" : 290 }}
+        style={{
+          height: small ? "clamp(60px, calc(100dvh - 600px), 180px)" : 290,
+        }}
         ref={container}
         role="img"
         aria-label={`${shownHistory?.mock ? "模拟" : "历史"}${candles ? "K线" : "价格"}走势，截至 ${shownHistory?.as_of ?? ""}`}

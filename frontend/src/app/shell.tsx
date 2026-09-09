@@ -1,25 +1,3 @@
-import { AppBreadcrumb } from "../components/app-breadcrumb";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link, Outlet, useLocation } from "react-router";
-import {
-  Activity,
-  Globe,
-  CalendarDays,
-  ChartNoAxesCombined,
-  FileText,
-  PanelLeft,
-  PanelLeftClose,
-  Settings2,
-  Telescope,
-} from "lucide-react";
-import {
-  RailShell,
-  RailSidebar,
-  RailBrand,
-  RailNavLink,
-  RailCollapseButton,
-  ShellLinkProvider,
-} from "@gitnapp/web-shell";
 import {
   Sheet,
   SheetClose,
@@ -27,15 +5,20 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@gitnapp/ui/components/ui/sheet";
+import {
+  RailBrand,
+  RailCollapseButton,
+  RailNavLink,
+  RailShell,
+  RailSidebar,
+  ShellLinkProvider,
+} from "@gitnapp/web-shell";
+import { Activity, PanelLeft, PanelLeftClose } from "lucide-react";
+import { useLayoutEffect, useRef, useState } from "react";
+import { Link, Outlet, useLocation } from "react-router";
+import { AppBreadcrumb } from "../components/app-breadcrumb";
 import { Button } from "../components/ui";
-const navigation = [
-  { href: "/", label: "市场数据", icon: ChartNoAxesCombined },
-  { href: "/coverage", label: "标的跟踪", icon: Telescope },
-  { href: "/macro", label: "宏观指标", icon: Globe },
-  { href: "/calendar", label: "财经日历", icon: CalendarDays },
-  { href: "/reports", label: "报告", icon: FileText },
-  { href: "/settings", label: "设置", icon: Settings2 },
-];
+import { activeNavigation, navigation } from "./navigation";
 const AppLink = ({
   href,
   ...p
@@ -52,11 +35,7 @@ export default function Shell() {
   useLayoutEffect(() => {
     scroll.current?.scrollTo({ top: 0, behavior: "instant" });
   }, [location.pathname]);
-  const active = navigation.find((n) =>
-    n.href === "/"
-      ? location.pathname === "/" || location.pathname.startsWith("/stocks/")
-      : location.pathname.startsWith(n.href),
-  );
+  const active = activeNavigation(location.pathname);
   function nav(compact = false) {
     return (
       <>

@@ -1,5 +1,6 @@
 """Small domain interface. Provider mechanics never become frontend dependencies."""
 
+from ..cache_policy import MACRO_DAILY, CALENDAR_HISTORY, CALENDAR_WEEK, DISCLOSURES, RESEARCH_LEADS
 from .cache import SnapshotCache
 from .sources import Sources
 from .transport import SourceTransport
@@ -28,10 +29,10 @@ class Intelligence:
             for metric, code, label, unit in self.FRED
         }
         values["cn_manufacturing_pmi"] = self.cache.read(
-            "akshare:pmi", lambda: self.sources.akshare("pmi"), 86400
+            "akshare:pmi", lambda: self.sources.akshare("pmi"), MACRO_DAILY.ttl, MACRO_DAILY.max_stale
         )
         values["cn_cpi"] = self.cache.read(
-            "akshare:cpi", lambda: self.sources.akshare("cpi"), 86400
+            "akshare:cpi", lambda: self.sources.akshare("cpi"), MACRO_DAILY.ttl, MACRO_DAILY.max_stale
         )
         return values
 
@@ -48,10 +49,10 @@ class Intelligence:
                 return self.cache.read(
                     f"calendar:macro:{lower}:{upper}",
                     lambda: self.sources.calendar(lower.isoformat(), upper.isoformat()),
-                    86400,
-                    30 * 86400,
+                    CALENDAR_HISTORY.ttl,
+                    CALENDAR_HISTORY.max_stale,
                 )
-        return self.cache.read("calendar:macro", self.sources.calendar, 86400, 2 * 86400)
+        return self.cache.read("calendar:macro", self.sources.calendar, CALENDAR_WEEK.ttl, CALENDAR_WEEK.max_stale)
 
     def company(self, symbol):
         from ..financial_data.views import evidence_view
@@ -79,7 +80,7 @@ class Intelligence:
             (r["name"] for r in companies if r.get("symbol") == symbol or r["id"] == symbol), symbol
         )
         return self.cache.read(
-            "research:" + symbol, lambda: self.sources.research(company), 7 * 86400, 30 * 86400
+            "research:" + symbol, lambda: self.sources.research(company), RESEARCH_LEADS.ttl, RESEARCH_LEADS.max_stale
         )
 
     def disclosures(self, symbol):
@@ -87,11 +88,11 @@ class Intelligence:
             return self.cache.read(
                 "cn-disclosures:" + symbol,
                 lambda: self.sources.china(symbol, "filings"),
-                86400,
-                30 * 86400,
+                DISCLOSURES.ttl,
+                DISCLOSURES.max_stale,
             )
         if symbol.endswith((".HK", ".KS", ".KQ", ".T", ".AS", ".PA")):
             return {"state": "unavailable", "data": None, "updated_at": None}
         return self.cache.read(
-            "disclosures:" + symbol, lambda: self.sources.disclosures(symbol), 86400, 30 * 86400
+            "disclosures:" + symbol, lambda: self.sources.disclosures(symbol), DISCLOSURES.ttl, DISCLOSURES.max_stale
         )

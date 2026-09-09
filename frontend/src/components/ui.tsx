@@ -1,9 +1,11 @@
-import type { ReactNode } from "react";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { LoadingState } from "@gitnapp/ui/components/ui/loading";
 import { InfoHint, InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import type { ReactNode } from "react";
+export { Badge } from "@gitnapp/ui/components/ui/badge";
 export { Button } from "@gitnapp/ui/components/ui/button";
 export { Input } from "@gitnapp/ui/components/ui/input";
-export { Badge } from "@gitnapp/ui/components/ui/badge";
+export { PageHeader } from "@gitnapp/ui/components/ui/page-header";
 
 export const Hint = InfoHint;
 export function Source({
@@ -56,7 +58,9 @@ export const dateText = (v: string | null | undefined) =>
         year: "numeric",
       })
     : "—";
-export { LoadingState as Loading } from "@gitnapp/ui/components/ui/loading";
+export function Loading() {
+  return <LoadingState inline />;
+}
 export function ErrorState({
   error,
   retry,
@@ -93,7 +97,6 @@ export function Empty({
     </div>
   );
 }
-export { PageHeader } from "@gitnapp/ui/components/ui/page-header";
 
 export function Updated({
   report,
