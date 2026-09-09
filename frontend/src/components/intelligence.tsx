@@ -1,3 +1,4 @@
+import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -150,7 +151,7 @@ export function ResearchLeads({ symbol }: { symbol: string }) {
               rel="noreferrer"
             >
               <span>[{i + 1}]</span>
-              <span>{r.title}</span>
+              <OverflowText text={r.title} />
             </a>
           ))
         ) : (

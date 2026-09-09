@@ -144,6 +144,7 @@ export function PriceChart({
       )}
       <div
         className="price-chart"
+        style={{ height: small ? 218 : 290 }}
         ref={container}
         role="img"
         aria-label={`${shownHistory?.mock ? "模拟" : "历史"}${candles ? "K线" : "价格"}走势，截至 ${shownHistory?.as_of ?? ""}`}

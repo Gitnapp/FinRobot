@@ -86,9 +86,7 @@ function ResearchSummary({ id, symbol }: { id: string; symbol: string }) {
         </CardAction>
       </CardHeader>
       <CardContent>
-        <h3 className="text-xl leading-7 font-semibold">
-          基本面与估值
-        </h3>
+        <h3 className="text-xl leading-7 font-semibold">基本面与估值</h3>
         <p className="text-sm leading-7 text-muted-foreground line-clamp-5">
           {researchBrief(p.sections[0]?.content)}
         </p>
@@ -115,7 +113,7 @@ function ResearchSummary({ id, symbol }: { id: string; symbol: string }) {
 export default function StockPage() {
   const { symbol = "NVDA" } = useParams();
   const coverageMode = useLocation().pathname.startsWith("/coverage/");
-  const { data, error, isLoading, refetch } = useDetail(symbol, coverageMode);
+  const { data, error, isLoading, refetch } = useDetail(symbol);
   const history = usePriceHistory(symbol);
   const leads = useResearchLeads(symbol);
   const evidence = useEvidence(symbol);
@@ -140,6 +138,7 @@ export default function StockPage() {
   }, [initialPending, symbol]);
   const refresh = useRefresh();
   const [tab, setTab] = useState("overview");
+  const [researchOpened, setResearchOpened] = useState(false);
   if (isLoading) return <Loading />;
   if (error) return <ErrorState error={error} retry={() => void refetch()} />;
   if (!data) return null;
@@ -152,7 +151,12 @@ export default function StockPage() {
   return (
     <div className="page stock-page">
       <BackLink asChild>
-        <Link to={coverageMode ? "/coverage" : "/"} aria-label={coverageMode ? "返回持续跟踪" : "返回市场看板"}>返回</Link>
+        <Link
+          to={coverageMode ? "/coverage" : "/"}
+          aria-label={coverageMode ? "返回持续跟踪" : "返回市场看板"}
+        >
+          返回
+        </Link>
       </BackLink>
       <PageHeader
         title={
@@ -176,65 +180,78 @@ export default function StockPage() {
         </div>
         <span className="stock-sector">{quote.sector}</span>
       </div>
-      {coverageMode && (
-        <div className="detail-tabs" role="tablist" aria-label="持续跟踪详情">
-          <button
-            role="tab"
-            aria-selected={tab === "overview"}
-            onClick={() => setTab("overview")}
-          >
-            研究概览
-          </button>
-          <button
-            role="tab"
-            aria-selected={tab === "model"}
-            onClick={() => setTab("model")}
-          >
-            简单模型
-          </button>
+      <div className="detail-tabs" role="tablist" aria-label="标的详情">
+        <button
+          role="tab"
+          aria-selected={tab === "overview"}
+          onClick={() => setTab("overview")}
+        >
+          概览
+        </button>
+        <button
+          role="tab"
+          aria-selected={tab === "research"}
+          onClick={() => {
+            setResearchOpened(true);
+            setTab("research");
+          }}
+        >
+          研究
+        </button>
+      </div>
+      {researchOpened && (
+        <div hidden={tab !== "research"}>
+          <div className="research-content">
+            <Card className="research-opinion">
+              {latest ? (
+                <ResearchSummary id={latest.id} symbol={symbol} />
+              ) : (
+                <>
+                  <CardHeader>
+                    <CardTitle>研究观点</CardTitle>
+                  </CardHeader>
+                  <CardContent className="research-empty">
+                    <span className="muted">
+                      {active ? "正在研究" : "尚无研报"}
+                    </span>
+                    {active && (
+                      <Button variant="outline" asChild>
+                        <Link to={"/reports/" + active.id}>查看进度</Link>
+                      </Button>
+                    )}
+                  </CardContent>
+                </>
+              )}
+            </Card>
+            {coverage ? (
+              <ModelTable symbol={symbol} />
+            ) : (
+              <div className="research-enroll">
+                <span className="muted">加入持续跟踪后建立模型</span>
+                <TrackingControls symbol={symbol} coverage={coverage} />
+              </div>
+            )}
+            <ValuationPanel data={data} />
+          </div>
         </div>
       )}
-      {coverageMode && tab === "model" ? (
-        <ModelTable symbol={symbol} />
-      ) : (
-        <>
-          <div className="coverage-detail-grid">
-            <div className="insights-column">
-              <PriceChart key={symbol} symbol={symbol} />
-              <TechnicalPanel data={data} />
-              <FinancialPanel data={data} />
-              <PeersPanel symbol={symbol} />
-              <EvidenceCard symbol={symbol} />
-              <ResearchLeads symbol={symbol} />
-            </div>
-            <div className="insights-column">
-              <CatalystCalendar key={`calendar-${symbol}`} symbol={symbol} />
-              <RetailSentiment key={`sentiment-${symbol}`} symbol={symbol} />
-              <Card>
-                {latest ? (
-                  <ResearchSummary id={latest.id} symbol={symbol} />
-                ) : (
-                  <>
-                    <CardHeader>
-                      <CardTitle>研究观点</CardTitle>
-                    </CardHeader>
-                    <Empty>
-                      <strong>{active ? "正在研究" : "尚无研报"}</strong>
-                      {active && (
-                        <Button variant="outline" asChild>
-                          <Link to={"/reports/" + active.id}>查看进度</Link>
-                        </Button>
-                      )}
-                    </Empty>
-                  </>
-                )}
-              </Card>
-              <ValuationPanel data={data} />
-              <CatalystPanel data={data} />
-            </div>
+      <div hidden={tab !== "overview"}>
+        <div className="coverage-detail-grid">
+          <div className="insights-column">
+            <PriceChart key={symbol} symbol={symbol} />
+            <TechnicalPanel data={data} />
+            <FinancialPanel data={data} />
+            <PeersPanel symbol={symbol} />
+            <EvidenceCard symbol={symbol} />
+            <ResearchLeads symbol={symbol} />
           </div>
-        </>
-      )}
+          <div className="insights-column">
+            <CatalystCalendar key={`calendar-${symbol}`} symbol={symbol} />
+            <RetailSentiment key={`sentiment-${symbol}`} symbol={symbol} />
+            <CatalystPanel data={data} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

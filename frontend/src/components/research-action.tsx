@@ -1,4 +1,5 @@
-import { LoadingState } from "@gitnapp/ui/components/ui/loading";
+import { useTaskReceipt } from "./task-center";
+import type { Task } from "../hooks/tasks";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { FileText } from "lucide-react";
@@ -28,15 +29,20 @@ export function ResearchAction({
   const [focus, setFocus] = useState("");
   const [busy, setBusy] = useState(false);
   const refresh = useRefresh();
+  const receive = useTaskReceipt();
   const navigate = useNavigate();
 
   async function run() {
     setBusy(true);
     try {
-      const job = await write<Report>("/research", { symbol, focus });
-      await refresh();
+      const job = await write<Task>("/tasks", {
+        kind: "research",
+        symbol,
+        focus,
+      });
+      receive(job);
       setOpen(false);
-      navigate(`/reports/${job.id}`);
+      void refresh();
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -51,8 +57,7 @@ export function ResearchAction({
           active ? navigate(`/reports/${active.id}`) : setOpen(true)
         }
       >
-        {active ? <LoadingState /> : <FileText size={15} />}{" "}
-        {active ? "查看进度" : "生成研报"}
+        <FileText size={15} /> {active ? "查看进度" : "生成研报"}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

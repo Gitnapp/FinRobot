@@ -2,7 +2,7 @@ import { CardGrid } from "@gitnapp/ui/components/ui/data-layout";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
-import { toast } from "sonner";
+import { Search } from "lucide-react";
 import {
   Select,
   SelectTrigger,
@@ -10,10 +10,10 @@ import {
   SelectContent,
   SelectItem,
 } from "@gitnapp/ui/components/ui/select";
-import { api, write } from "../../api/client";
-import { useRefresh } from "../../hooks/queries";
+import { api } from "../../api/client";
 import {
   Button,
+  Input,
   Loading,
   ErrorState,
   PageHeader,
@@ -45,6 +45,8 @@ export default function CoveragePage() {
   });
   const [list, setList] = useState("all");
   const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const term = search.trim().toLocaleLowerCase();
   if (directory.isPending) return <Loading />;
   if (directory.error)
     return (
@@ -57,6 +59,7 @@ export default function CoveragePage() {
   const members = companies.filter(
     (c) =>
       (list === "all" || c.scene === list) &&
+      [c.name, c.symbol, c.listing?.ticker, c.symbol ? quotes.data?.[c.symbol]?.data?.quote.name : ""].some(value => value?.toLocaleLowerCase().includes(term)) &&
       (filter === "all" ||
         (filter === "active"
           ? !!c.coverage?.active
@@ -105,6 +108,10 @@ export default function CoveragePage() {
               {label}
             </button>
           ))}
+        </div>
+        <div className="search-field coverage-search">
+          <Search size={15} aria-hidden="true" />
+          <Input type="search" aria-label="搜索持续跟踪标的" placeholder="搜索代码或公司" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
       {pending && <Loading />}

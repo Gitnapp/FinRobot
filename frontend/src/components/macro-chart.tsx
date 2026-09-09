@@ -134,7 +134,7 @@ export function MacroChart({
       </div>
       <div
         ref={root}
-        style={{ visibility: visible.length ? "visible" : "hidden" }}
+        style={{ height: compact ? 150 : 300, visibility: visible.length ? "visible" : "hidden" }}
         aria-label="指标历史走势图"
       />
     </div>

@@ -83,11 +83,11 @@ function InfoLabel({
     <span
       data-slot="info-label"
       className={cn(
-        "inline-flex items-center gap-1 align-middle text-[inherit] leading-[inherit]",
+        "inline-flex min-w-0 max-w-full items-center gap-1 align-middle text-[inherit] leading-[inherit]",
         className,
       )}
     >
-      <span>{label}</span>
+      <span className="min-w-0">{label}</span>
       {children && <InfoHint>{children}</InfoHint>}
     </span>
   );

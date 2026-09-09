@@ -28,11 +28,14 @@ export const useReports = () =>
     queryFn: () => api<Report[]>("/reports"),
     refetchInterval: 3000,
   });
-export const useReport = (id: string, symbol?: string) =>
+export const useReport = (id: string, symbol?: string, enabled = true) =>
   useQuery({
     queryKey: ["report", id],
-    enabled: Boolean(id),
-    queryFn: () => api<FullReport>(symbol ? `/data/${symbol}/report?report_id=${id}` : `/reports/${id}`),
+    enabled: Boolean(id) && enabled,
+    queryFn: () => api<FullReport>(symbol ? `/data/${symbol}/report?report_id=${id}` : `/reports/${id}`, { cache: "no-store" }),
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: "always",
     refetchInterval: (q) =>
       q.state.data?.status === "completed" || q.state.data?.status === "failed"
         ? false

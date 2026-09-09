@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 from .dossier import compose
 from .exports import export_files
+from .providers import ProviderError
 from .research import write_narrative
 from .store import now
 
@@ -102,7 +103,7 @@ class Worker:
         with self.store.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute(
-                "SELECT * FROM reports WHERE status='queued' ORDER BY created_at LIMIT 1"
+                "SELECT * FROM reports WHERE status='queued' ORDER BY CASE WHEN trigger='manual' THEN 0 ELSE 1 END,created_at LIMIT 1"
             ).fetchone()
             if not row:
                 return False
@@ -112,56 +113,67 @@ class Worker:
                 (job["id"],),
             )
         try:
-            symbol = job["symbol"]
-            settings = self.store.settings()
-            if self.assumption_policy:
-                await self.assumption_policy.refresh(symbol)
-            dossier = await compose(self.market, symbol, self.store.assumptions(symbol))
-            if dossier.get("market_only"):
-                raise RuntimeError("财务数据尚未接入，暂不能生成研究报告")
-            quote, base, news = dossier["quote"], dossier["fundamentals"], dossier["news"]
-            self.store.execute("UPDATE reports SET stage='计算预测模型' WHERE id=?", (job["id"],))
-            model = dossier["model"]
-            self.store.execute("UPDATE reports SET stage='撰写研究报告' WHERE id=?", (job["id"],))
-            narrative = await self.narrative_writer(
-                symbol, quote, base, model, news, settings, job["focus"], dossier
-            )
-            payload = {
-                "id": job["id"],
-                "symbol": symbol,
-                "version": job["version"],
-                "created_at": now(),
-                "quote": quote,
-                "financial_base": base,
-                "history": dossier["history"],
-                "technical": dossier["technical"],
-                "valuation": dossier["valuation"],
-                "peers": dossier["peers"],
-                "model": model,
-                "focus": job["focus"],
-                "trigger": job["trigger"],
-                **narrative,
-            }
-            self.store.execute("UPDATE reports SET stage='生成报告文件' WHERE id=?", (job["id"],))
-            await asyncio.to_thread(export_files, payload, self.store.reports_dir / job["id"])
-            with self.store.connection() as db:
-                db.execute(
-                    "UPDATE reports SET status='completed',stage='已完成',payload=?,completed_at=? WHERE id=?",
-                    (json.dumps(payload, ensure_ascii=False), now(), job["id"]),
+            async with asyncio.timeout(300):
+                symbol = job["symbol"]
+                settings = self.store.settings()
+                if self.assumption_policy:
+                    await self.assumption_policy.refresh(symbol)
+                dossier = await compose(self.market, symbol, self.store.assumptions(symbol))
+                if dossier.get("market_only"):
+                    raise RuntimeError("财务数据尚未接入，暂不能生成研究报告")
+                quote, base, news = dossier["quote"], dossier["fundamentals"], dossier["news"]
+                self.store.execute(
+                    "UPDATE reports SET stage='计算预测模型' WHERE id=?", (job["id"],)
                 )
-                db.execute("UPDATE coverage SET last_run=? WHERE symbol=?", (now(), symbol))
+                model = dossier["model"]
+                self.store.execute(
+                    "UPDATE reports SET stage='撰写研究报告' WHERE id=?", (job["id"],)
+                )
+                narrative = await self.narrative_writer(
+                    symbol, quote, base, model, news, settings, job["focus"], dossier
+                )
+                payload = {
+                    "id": job["id"],
+                    "symbol": symbol,
+                    "version": job["version"],
+                    "created_at": now(),
+                    "quote": quote,
+                    "financial_base": base,
+                    "history": dossier["history"],
+                    "technical": dossier["technical"],
+                    "valuation": dossier["valuation"],
+                    "peers": dossier["peers"],
+                    "model": model,
+                    "focus": job["focus"],
+                    "trigger": job["trigger"],
+                    **narrative,
+                }
+                self.store.execute(
+                    "UPDATE reports SET stage='生成报告文件' WHERE id=?", (job["id"],)
+                )
+                await asyncio.to_thread(export_files, payload, self.store.reports_dir / job["id"])
+                with self.store.connection() as db:
+                    db.execute(
+                        "UPDATE reports SET status='completed',stage='已完成',payload=?,completed_at=? WHERE id=?",
+                        (json.dumps(payload, ensure_ascii=False), now(), job["id"]),
+                    )
+                    db.execute("UPDATE coverage SET last_run=? WHERE symbol=?", (now(), symbol))
         except asyncio.CancelledError:
             self.store.execute(
-                "UPDATE reports SET status='failed',stage='已中断',error='服务关闭时任务被中断，可手动重试' WHERE id=?",
+                "UPDATE reports SET status='failed',error='服务关闭时任务被中断，可手动重试' WHERE id=?",
                 (job["id"],),
             )
             raise
         except Exception as exc:
             message = (
-                str(exc) if isinstance(exc, RuntimeError) else "研究任务未完成，请检查数据或重试"
+                "任务执行超时，请重试"
+                if isinstance(exc, TimeoutError)
+                else str(exc)
+                if isinstance(exc, RuntimeError)
+                else "研究任务未完成，请检查数据或重试"
             )
             self.store.execute(
-                "UPDATE reports SET status='failed',stage='生成失败',error=? WHERE id=?",
+                "UPDATE reports SET status='failed',error=? WHERE id=?",
                 (message, job["id"]),
             )
         return True
@@ -184,17 +196,21 @@ class Worker:
                     "UPDATE coverage SET last_run=?,next_run=? WHERE symbol=? AND active=1",
                     (now(), next_due(row["cadence"]), symbol),
                 )
-            except (RuntimeError, ValueError, TimeoutError):
+            except (RuntimeError, ValueError, TimeoutError, ProviderError):
                 retry = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
                 self.store.execute("UPDATE coverage SET next_run=? WHERE symbol=?", (retry, symbol))
+
+    async def maintain(self):
+        while True:
+            await self.refresh_market_due()
+            await asyncio.sleep(30)
 
     async def run(self):
         # A process restart never leaves a phantom running job. Queued jobs resume normally.
         self.store.execute(
-            "UPDATE reports SET status='failed',stage='已中断',error='上次运行被中断，可手动重试' WHERE status='running'"
+            "UPDATE reports SET status='failed',error='上次运行被中断，可手动重试' WHERE status='running'"
         )
         while True:
-            await self.refresh_market_due()
             self.schedule_due()
             if not await self.process_one():
                 await asyncio.sleep(2)

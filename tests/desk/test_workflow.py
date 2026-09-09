@@ -130,7 +130,7 @@ def test_api_validation_settings_and_recoverable_removal(tmp_path):
             ]
             == "AVGO"
         )
-        assert client.post("/api/research", json={"symbol": "UNTRACKED"}).status_code == 404
+        assert client.post("/api/tasks", json={"symbol": "UNTRACKED"}).status_code == 404
         assert client.put("/api/models/NVDA", json={"gross_margin": 2}).status_code == 422
         assert client.get("/api/data/NVDA/model").status_code == 404
         assert "model" not in client.get("/api/data/NVDA/detail").json()

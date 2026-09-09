@@ -17,7 +17,7 @@ from .coverage_market import CoverageMarket
 from .data_access import DataAccess
 from .exports import assumption_text, report_date, table_data
 from .intelligence import Intelligence
-from .jobs import Worker, enqueue, next_due
+from .jobs import Worker, next_due
 from .market import CATALOG, Market
 from .model import compute_model, defaults
 from .providers import ProviderError
@@ -31,6 +31,7 @@ from .schemas import (
 )
 from .signals import TrackingSignals
 from .store import Store, now
+from .tasks import Tasks
 from .watchlists import routes as watchlist_routes
 
 # FinRobot's report module configures root logging. HTTP clients must never log
@@ -41,6 +42,7 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
     store = Store(directory)
+    tasks = Tasks(store)
     market = market_factory(store)
     signals = TrackingSignals(store, market.providers, market.yahoo)
     intelligence = Intelligence(store, market.financial_data, market.sources)
@@ -54,6 +56,7 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
         store.init()
         intelligence.cache.init()
         task = asyncio.create_task(worker.run())
+        maintenance_task = asyncio.create_task(worker.maintain())
         financial_task = asyncio.create_task(market.financial_data.run())
         peer_task = asyncio.create_task(market.peers.run())
         app.state.peer_task = peer_task
@@ -62,9 +65,9 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
         try:
             yield
         finally:
-            for running in (task, financial_task, peer_task):
+            for running in (task, financial_task, peer_task, maintenance_task):
                 running.cancel()
-            for running in (task, financial_task, peer_task):
+            for running in (task, financial_task, peer_task, maintenance_task):
                 with suppress(asyncio.CancelledError):
                     await running
             await market.peers.cache.close()
@@ -344,12 +347,33 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
             },
         )
 
-    @app.post("/api/research", status_code=202)
-    def research(body: ResearchInput):
+    class TaskInput(ResearchInput):
+        kind: Literal["research"] = "research"
+
+    @app.post("/api/tasks", status_code=202)
+    def submit_task(body: TaskInput):
         require_asset(body.symbol)
-        row = enqueue(store, body.symbol, body.focus)
-        row.pop("payload", None)
-        return row
+        return tasks.submit(body.symbol, body.focus)
+
+    @app.get("/api/tasks")
+    def list_tasks():
+        return tasks.list()
+
+    @app.get("/api/tasks/{identifier}")
+    def read_task(identifier: str):
+        try:
+            return tasks.read(identifier)
+        except LookupError:
+            raise HTTPException(404, "任务不存在") from None
+
+    @app.post("/api/tasks/{identifier}/retry", status_code=202)
+    def retry_task(identifier: str):
+        try:
+            return tasks.retry(identifier)
+        except LookupError:
+            raise HTTPException(404, "任务不存在") from None
+        except ValueError:
+            raise HTTPException(409, "当前任务无需重试") from None
 
     @app.get("/api/reports")
     def reports(symbol: str | None = None):

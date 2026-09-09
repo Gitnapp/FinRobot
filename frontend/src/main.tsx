@@ -1,3 +1,4 @@
+import { TasksProvider } from "./components/task-center";
 import { LoadingScope } from "@gitnapp/ui/components/ui/loading";
 import { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
@@ -50,6 +51,7 @@ createRoot(document.getElementById("root")!).render(
     <ProjectLoading>
       <TooltipProvider>
         <BrowserRouter>
+          <TasksProvider>
           <ErrorBoundary>
             <Suspense fallback={<Loading />}>
               <Routes>
@@ -76,6 +78,7 @@ createRoot(document.getElementById("root")!).render(
               </Routes>
             </Suspense>
           </ErrorBoundary>
+          </TasksProvider>
         </BrowserRouter>
         <Toaster position="bottom-right" />
       </TooltipProvider>

@@ -1,3 +1,6 @@
+import { TaskProgress } from "@gitnapp/ui/components/ui/task-progress";
+import { useTask, type Task } from "../../hooks/tasks";
+import { useTaskReceipt } from "../../components/task-center";
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import { ReadingLayout } from "@gitnapp/ui/components/ui/data-layout";
 import { ReportContents } from "../../components/report-contents";
@@ -5,12 +8,7 @@ import { useActiveSection } from "../../hooks/use-active-section";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router";
-import {
-  Download,
-  RotateCcw,
-  FileText,
-  ExternalLink,
-} from "lucide-react";
+import { Download, FileText, ExternalLink } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,9 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@gitnapp/ui/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { useReport, useRefresh } from "../../hooks/queries";
+import { useReport } from "../../hooks/queries";
 import { write } from "../../api/client";
-import type { Report } from "../../types";
 import {
   Button,
   dateText,
@@ -50,34 +47,74 @@ function ReportFigure({
 }
 export default function ReportPage() {
   const { id = "" } = useParams();
-  const { data, error, isLoading, refetch } = useReport(id);
+  const task = useTask(id);
+  const receive = useTaskReceipt();
+  const { data, error, isLoading, refetch } = useReport(
+    id,
+    undefined,
+    task.data?.status === "completed",
+  );
   const navigate = useNavigate();
-  const refresh = useRefresh();
   const [busy, setBusy] = useState(false);
   const activeSection = useActiveSection(Boolean(data?.payload), id);
-  if (isLoading) return <Loading />;
-  if (error) return <ErrorState error={error} retry={() => void refetch()} />;
-  if (!data) return null;
-  const p = data.payload;
   async function retry() {
     setBusy(true);
     try {
-      const r = await write<Report>("/research", {
-        symbol: data!.symbol,
-        focus: data!.focus,
-      });
-      void refresh();
-      navigate("/reports/" + r.id);
+      const next = await write<Task>(`/tasks/${id}/retry`, {});
+      receive(next);
+      navigate(`/reports/${next.id}`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setBusy(false);
     }
   }
+  if (task.isPending) return <Loading />;
+  if (task.error)
+    return <ErrorState error={task.error} retry={() => void task.refetch()} />;
+  if (task.data && task.data.status !== "completed")
+    return (
+      <div className="page report-page">
+        <BackLink asChild>
+          <Link to="/reports">返回</Link>
+        </BackLink>
+        <PageHeader title={task.data.subject.name} />
+        <div className="report-task">
+          <TaskProgress
+            title="生成研报"
+            status={task.data.status}
+            steps={task.data.steps}
+            completedSteps={task.data.completed_steps}
+            queuePosition={task.data.queue_position}
+            error={task.data.error}
+            actions={
+              <>
+                {task.data.status === "failed" && (
+                  <Button disabled={busy} onClick={() => void retry()}>
+                    重试
+                  </Button>
+                )}
+                <Button variant="outline" asChild>
+                  <Link to={`/stocks/${task.data.subject.symbol}`}>
+                    继续浏览
+                  </Link>
+                </Button>
+              </>
+            }
+          />
+        </div>
+      </div>
+    );
+  if (isLoading) return <Loading />;
+  if (error) return <ErrorState error={error} retry={() => void refetch()} />;
+  if (!data) return null;
+  const p = data.payload;
   return (
     <div className="page report-page">
       <BackLink asChild>
-        <Link to="/reports" aria-label="返回报告">返回</Link>
+        <Link to="/reports" aria-label="返回报告">
+          返回
+        </Link>
       </BackLink>
       <PageHeader title={p?.quote.name || "股票研究"}>
         {p && (
@@ -111,20 +148,10 @@ export default function ReportPage() {
       </PageHeader>
       {!p ? (
         <div className="research-job">
-          <div className="job-symbol">
-            {data.status === "failed" ? <RotateCcw size={28} /> : <Loading />}
-          </div>
-          {data.status === "failed" && (
-            <>
-              <h2>研究暂未完成</h2>
-              <p>请重新尝试生成研报。</p>
-            </>
-          )}
-          {data.status === "failed" && (
-            <Button onClick={() => void retry()} disabled={busy}>
-              重新研究
-            </Button>
-          )}
+          <p>报告内容暂不可用</p>
+          <Button variant="outline" onClick={() => void refetch()}>
+            重新获取
+          </Button>
         </div>
       ) : (
         <>

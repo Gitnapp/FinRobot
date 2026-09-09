@@ -2602,7 +2602,7 @@ select {
   font-variant-numeric: tabular-nums;
 }
 .evidence-filings {
-  min-height: 72px;
+  min-height: 0;
   font-size: 12px;
   color: var(--muted-foreground);
 }
@@ -2769,13 +2769,34 @@ select {
 
 .peer-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .peer-heading h2 { margin-bottom: 0; }
-.peer-table-scroll { overflow-x: auto; margin-top: 8px; }
-.peer-comparison .peers-table { min-width: 440px; }
+.peer-table-scroll { min-width: 0; margin-top: 8px; }
+.peer-comparison .peers-table { width: 100%; table-layout: fixed; }
 .peer-comparison .peers-table td { font-variant-numeric: tabular-nums; }
 .peer-comparison .peers-table th:not(:first-child),
 .peer-comparison .peers-table td:not(:first-child) { text-align: right; white-space: nowrap; }
-.peer-comparison .peers-table td:first-child { min-width: 120px; max-width: 220px; }
+.peer-comparison .peers-table th:first-child { width: 30%; }
+.peer-comparison .peers-table th:nth-child(2) { width: 23%; }
+.peer-comparison .peers-table th:nth-child(3) { width: 14%; }
+.peer-comparison .peers-table th:nth-child(4) { width: 19%; }
+.peer-comparison .peers-table th:nth-child(5) { width: 14%; }
+.peer-comparison .peers-table td, .peer-comparison .peers-table th { padding-inline: 4px; font-size: 12px; }
+.peer-comparison .peers-table td:first-child [data-slot="info-label"] { vertical-align: middle; }
 .peer-currency { display: block; color: var(--muted-foreground); font-size: 10px; }
 .peer-selected > div { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); }
 .peer-search-results { display: flex; flex-direction: column; }
 .peer-search-results button { justify-content: flex-start; }
+
+.research-content { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.research-empty, .research-enroll { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.insights-column > [data-slot="card"] { flex: 0 0 auto; }
+.research-lead > :last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.coverage-search { width: min(100%, 320px); }
+@media (max-width: 600px) {
+  .coverage-toolbar { flex-wrap: wrap; gap: 12px; }
+  .coverage-search { width: 100%; }
+}
+
+.task-center { position: fixed; right: 20px; bottom: 20px; z-index: 50; }
+.task-center-list { display: flex; flex-direction: column; gap: 10px; max-height: min(65dvh, 520px); overflow-y: auto; }
+.report-task { width: 100%; max-width: 660px; }
