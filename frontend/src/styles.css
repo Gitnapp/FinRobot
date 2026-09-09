@@ -215,12 +215,10 @@ select {
 }
 .app-breadcrumb ol {
   flex-wrap: nowrap;
-  font-size: 12px;
 }
 .app-breadcrumb a {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
   white-space: nowrap;
 }
 .app-breadcrumb .breadcrumb-current {
@@ -2797,6 +2795,30 @@ select {
   .coverage-search { width: 100%; }
 }
 
-.task-center { position: fixed; right: 20px; bottom: 20px; z-index: 50; }
+.task-center { position: fixed; right: 16px; top: 8px; z-index: 50; }
 .task-center-list { display: flex; flex-direction: column; gap: 10px; max-height: min(65dvh, 520px); overflow-y: auto; }
 .report-task { width: 100%; max-width: 660px; }
+
+.task-center.is-active svg { animation: task-activity 1.6s ease-in-out infinite; transform-origin: center; }
+@keyframes task-activity { 0%,100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(-2px); opacity: .55; } }
+[role="status"][aria-label="正在加载"].fixed { right: 60px; }
+.app-breadcrumb { max-width: calc(100vw - 160px); }
+.app-breadcrumb a { font-weight: 400; border-radius: 6px; transition: background-color 180ms ease, color 180ms ease; }
+.app-breadcrumb a:hover { background: var(--accent); color: var(--foreground); }
+.app-breadcrumb a[aria-current="page"] { color: var(--foreground); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .task-center.is-active svg { animation: none; } }
+header:has(> .app-breadcrumb), .mobile-header { padding-right: 64px; }
+.app-breadcrumb a[aria-current="page"] { background: var(--accent); }
+
+/* The path reads as one control; each segment remains an independent link. */
+.app-breadcrumb.rui-compact-path { border-radius: 6px; background: var(--accent); }
+.app-breadcrumb.rui-compact-path ol { gap: 0; }
+.app-breadcrumb.rui-compact-path a,
+.app-breadcrumb.rui-compact-path a:hover,
+.app-breadcrumb.rui-compact-path a[aria-current="page"] { background: transparent; border-radius: 0; }
+.app-breadcrumb.rui-compact-path a:focus-visible { outline: 1px solid var(--ring); outline-offset: -2px; }
+
+.path-enter { animation: path-enter 160ms ease-out; }
+.path-pending { visibility: hidden; min-width: 90px; }
+@keyframes path-enter { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .path-enter { animation: none; } }

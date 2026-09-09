@@ -6,7 +6,7 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
-  BreadcrumbSeparator,
+  BreadcrumbChevron,
 } from "@gitnapp/ui/components/ui/breadcrumb";
 import {
   DropdownMenu,
@@ -354,6 +354,8 @@ export function RailAppSwitcher({
   );
 }
 
+const NAV_ITEM_METRICS = "min-h-9 px-2 py-1.5 text-sm leading-5 md:min-h-8";
+
 export function RailNavLink({
   href,
   icon,
@@ -377,11 +379,11 @@ export function RailNavLink({
       title={collapsed ? label : undefined}
       onClick={onClick}
       className={cn(
-        "relative flex items-center gap-3 rounded-md text-sm font-normal transition-colors",
+        "relative flex items-center gap-3 rounded-md transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rail-foreground/70",
         active
-          ? "bg-rail-foreground/10 font-medium text-rail-foreground"
-          : "text-rail-foreground/60 hover:bg-rail-foreground/5 hover:text-rail-foreground",
+          ? "bg-rail-foreground/10 font-semibold text-rail-foreground"
+          : "font-normal text-rail-foreground/60 hover:bg-rail-foreground/5 hover:text-rail-foreground",
         // 高亮几何（design.md「高亮几何」）：折叠后只剩图标，着色面必须是正方形，
         // 用 size-8 钉成 32×32（正好填满 48px 图标轨的 px-2 内宽）并水平居中。
         // 展开态是整行长条，桌面高度与折叠态一致（32px = design.md 紧凑控件），
@@ -395,7 +397,7 @@ export function RailNavLink({
         // size-8 已等于折叠态 nav 的内宽，本就贴合左缘，无需 auto margin 居中。
         collapsed
           ? "size-8 justify-center"
-          : "min-h-9 px-2 py-1.5 after:absolute after:inset-x-0 after:-inset-y-0.5 md:min-h-8 md:after:hidden",
+          : cn(NAV_ITEM_METRICS, "after:absolute after:inset-x-0 after:-inset-y-0.5 md:after:hidden"),
       )}
     >
       {icon}
@@ -437,8 +439,8 @@ export function RailTabs({ tabs }: { readonly tabs: readonly RailTab[] }) {
               "rounded-md px-2.5 py-1 text-sm transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rail-foreground/70",
               tab.active
-                ? "bg-rail-foreground/10 font-medium text-rail-foreground"
-                : "text-rail-foreground/60 hover:bg-rail-foreground/5 hover:text-rail-foreground",
+                ? "bg-rail-foreground/10 font-semibold text-rail-foreground"
+                : "font-normal text-rail-foreground/60 hover:bg-rail-foreground/5 hover:text-rail-foreground",
             )}
           >
             {tab.label}
@@ -759,31 +761,35 @@ export function RailBreadcrumb({
   items,
   className,
   ariaLabel = "页面路径",
+  compact = false,
 }: {
   readonly items: readonly { label: string; href?: string }[];
   readonly className?: string;
   readonly ariaLabel?: string;
+  readonly compact?: boolean;
 }) {
   const Link = useContext(ShellLinkContext);
   return (
-    <Breadcrumb aria-label={ariaLabel} className={cn("min-w-0", className)}>
-      <BreadcrumbList className="flex-nowrap text-xs">
+    <Breadcrumb aria-label={ariaLabel} tabIndex={compact ? 0 : undefined} className={cn("min-w-0", compact && "rui-compact-path", className)}>
+      <BreadcrumbList className="flex-nowrap text-sm">
         {items.map((item, index) => (
           <Fragment key={item.href || `${index}-${item.label}`}>
-            {index > 0 && <BreadcrumbSeparator />}
-            <BreadcrumbItem className={index === items.length - 1 ? "min-w-0" : "shrink-0"}>
-              {item.href && index < items.length - 1 ? (
+            <BreadcrumbItem className={index === items.length - 1 ? "min-w-0" : compact ? "rui-path-ancestor" : "shrink-0"}>
+              {item.href ? (
                 <BreadcrumbLink asChild>
                   <Link
                     href={item.href}
-                    className="inline-flex min-h-9 items-center whitespace-nowrap"
+                    aria-current={index === items.length - 1 ? "page" : undefined}
+                    className={cn(NAV_ITEM_METRICS, "inline-flex min-w-0 max-w-full items-center gap-2 whitespace-nowrap")}
                   >
-                    {item.label}
+                    {index > 0 && <BreadcrumbChevron />}
+                    <span className="truncate">{item.label}</span>
                   </Link>
                 </BreadcrumbLink>
               ) : (
-                <BreadcrumbPage className="truncate" title={item.label}>
-                  {item.label}
+                <BreadcrumbPage className={cn(NAV_ITEM_METRICS, "inline-flex min-w-0 items-center gap-2")} title={item.label}>
+                  {index > 0 && <BreadcrumbChevron />}
+                  <span className="truncate">{item.label}</span>
                 </BreadcrumbPage>
               )}
             </BreadcrumbItem>

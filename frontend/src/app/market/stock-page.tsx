@@ -3,14 +3,11 @@ import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import { TrackingControls } from "../../components/tracking-controls";
 import {
   EvidenceCard,
-  useEvidence,
   ResearchLeads,
-  useResearchLeads,
 } from "../../components/intelligence";
 import {
   CatalystCalendar,
   RetailSentiment,
-  useSignal,
 } from "../../components/tracking-signals";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import {
@@ -21,7 +18,7 @@ import {
   CardContent,
   CardFooter,
 } from "@gitnapp/ui/components/ui/card";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import {
   ArrowRight,
@@ -40,9 +37,7 @@ import { toast } from "sonner";
 import { api, write } from "../../api/client";
 import {
   useDetail,
-  useRefresh,
   useReport,
-  usePriceHistory,
 } from "../../hooks/queries";
 import { PriceChart } from "../../components/price-chart";
 import { ModelTable } from "../../components/model-table";
@@ -114,35 +109,11 @@ export default function StockPage() {
   const { symbol = "NVDA" } = useParams();
   const coverageMode = useLocation().pathname.startsWith("/coverage/");
   const { data, error, isLoading, refetch } = useDetail(symbol);
-  const history = usePriceHistory(symbol);
-  const leads = useResearchLeads(symbol);
-  const evidence = useEvidence(symbol);
-  const catalysts = useSignal(symbol, "catalysts");
-  const sentiment = useSignal(symbol, "sentiment");
-  const latestId =
-    data?.reports.find((r) => r.status === "completed")?.id || "";
-  const report = useReport(latestId, symbol);
-  const [readySymbol, setReadySymbol] = useState("");
-  const initialPending =
-    isLoading ||
-    history.isPending ||
-    leads.isPending ||
-    leads.data?.state === "pending" ||
-    catalysts.isPending ||
-    sentiment.isPending ||
-    evidence.isPending ||
-    evidence.data?.state === "pending" ||
-    (Boolean(latestId) && report.isPending);
-  useEffect(() => {
-    if (!initialPending) setReadySymbol(symbol);
-  }, [initialPending, symbol]);
-  const refresh = useRefresh();
   const [tab, setTab] = useState("overview");
   const [researchOpened, setResearchOpened] = useState(false);
   if (isLoading) return <Loading />;
   if (error) return <ErrorState error={error} retry={() => void refetch()} />;
   if (!data) return null;
-  if (readySymbol !== symbol && initialPending) return <Loading />;
   const { quote, coverage, reports } = data;
   const active = reports.find(
     (r) => r.status === "queued" || r.status === "running",

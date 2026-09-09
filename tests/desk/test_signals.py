@@ -18,7 +18,14 @@ class Provider:
         if isinstance(self.value, Exception):
             raise self.value
         if args[1].endswith("/search"):
-            return {"results": [{"ticker": self.value.get("ticker"), "exchange": self.value.get("exchange", "HKEX") }]}
+            return {
+                "results": [
+                    {
+                        "ticker": self.value.get("ticker"),
+                        "exchange": self.value.get("exchange", "HKEX"),
+                    }
+                ]
+            }
         return self.value
 
 
@@ -147,7 +154,24 @@ def test_supported_hong_kong_without_mentions_is_empty(tmp_path):
 
 
 def test_korean_sentiment_and_cross_exchange_identity(tmp_path):
-    s = service(tmp_path, {"ticker":"005930", "exchange":"KRX", "found":True, "sentiment_score":.218})
-    assert asyncio.run(s.read("005930.KS", "sentiment"))["data"]["score"] == .218
+    s = service(
+        tmp_path, {"ticker": "005930", "exchange": "KRX", "found": True, "sentiment_score": 0.218}
+    )
+    assert asyncio.run(s.read("005930.KS", "sentiment"))["data"]["score"] == 0.218
     result = asyncio.run(s.read("005930.SH", "sentiment"))
     assert result["data"] is None and result["reason"] == "asset_not_supported"
+
+
+def test_calendar_links_cover_cached_events_without_overwriting_documents():
+    result = {
+        "data": {
+            "events": [
+                {"date": "2026-08-18"},
+                {"date": "2026-08-18", "url": "https://www.sec.gov/example.htm"},
+            ]
+        }
+    }
+    events = TrackingSignals.links("00700.HK", "catalysts", result)["data"]["events"]
+    assert "symbol=0700.HK" in events[0]["url"]
+    assert events[0]["link_kind"] == "calendar_source"
+    assert events[1]["url"] == "https://www.sec.gov/example.htm"

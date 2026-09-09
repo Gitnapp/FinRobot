@@ -5,8 +5,10 @@ import json
 import math
 import time
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode
 
 from .providers import ProviderError
+from .yahoo import yahoo_symbol
 
 
 def number(value, low=None, high=None):
@@ -34,12 +36,23 @@ class TrackingSignals:
         key = f"signals:{mode}:{symbol}:{kind}"
         row = self.store.one("SELECT value,expires FROM cache WHERE key=?", (key,))
         if row and row["expires"] > time.time():
-            return json.loads(row["value"])
+            return self.links(symbol, kind, json.loads(row["value"]))
         if key not in self.pending:
             task = asyncio.create_task(self.refresh(key, row, symbol, kind, mode))
             self.pending[key] = task
             task.add_done_callback(lambda _: self.pending.pop(key, None))
-        return await asyncio.shield(self.pending[key])
+        return self.links(symbol, kind, await asyncio.shield(self.pending[key]))
+
+    @staticmethod
+    def links(symbol, kind, result):
+        if kind == "catalysts" and result.get("data"):
+            for event in result["data"].get("events", []):
+                if not event.get("url"):
+                    event["url"] = "https://finance.yahoo.com/calendar/earnings?" + urlencode(
+                        {"symbol": yahoo_symbol(symbol), "day": event["date"]}
+                    )
+                    event["link_kind"] = "calendar_source"
+        return result
 
     async def refresh(self, key, cached, symbol, kind, mode):
         stamp = datetime.now(timezone.utc).isoformat()

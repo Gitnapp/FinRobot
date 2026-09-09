@@ -24,6 +24,8 @@ type Events = {
   events: {
     date: string;
     title: string;
+    url?: string;
+    link_kind?: string;
     timing: string;
     upcoming: boolean;
     eps_estimate: number | null;
@@ -134,7 +136,7 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
         <CardAction>
           <InfoHint>
             未来财报日程与历史公告按市场接入；美股历史包含 EDGAR
-            的年报、季报、临时公告和修订文件。披露日期不等于财报发布或事件发生日期。历史记录可打开原文。A股公告来自巨潮资讯，当前查询最近一年；其他市场未接入时保留栏目。
+            的年报、季报、临时公告和修订文件。披露日期不等于财报发布或事件发生日期。披露记录打开原文；未提供原文链接的财报日程打开日历查询页。A股公告来自巨潮资讯，当前查询最近一年；其他市场未接入时保留栏目。
           </InfoHint>
         </CardAction>
       </CardHeader>
@@ -191,7 +193,7 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
               <div>
                 <strong>
                   {e.url ? (
-                    <a href={e.url} target="_blank" rel="noreferrer">
+                    <a href={e.url} target="_blank" rel="noreferrer" title={"link_kind" in e && e.link_kind === "calendar_source" ? "查看财报日历" : "查看原文"}>
                       {e.title} ↗
                     </a>
                   ) : (
