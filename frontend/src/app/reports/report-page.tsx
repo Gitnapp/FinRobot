@@ -1,29 +1,29 @@
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import { ReadingLayout } from "@gitnapp/ui/components/ui/data-layout";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuTrigger,
 } from "@gitnapp/ui/components/ui/dropdown-menu";
 import { TaskProgress } from "@gitnapp/ui/components/ui/task-progress";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import { Download, ExternalLink } from "lucide-react";
+import { Download,ExternalLink } from "lucide-react";
 import { useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { Link,useLocation,useNavigate,useParams } from "react-router";
 import { toast } from "sonner";
 import { write } from "../../api/client";
 import { ReportContents } from "../../components/report-contents";
 import { useTaskReceipt } from "../../components/task-center";
 import {
-  Button,
-  dateText,
-  ErrorState,
-  Loading,
-  PageHeader,
+Button,
+dateText,
+ErrorState,
+Loading,
+PageHeader,
 } from "../../components/ui";
 import { useReport } from "../../hooks/queries";
-import { useTask, type Task } from "../../hooks/tasks";
+import { useTask,type Task } from "../../hooks/tasks";
 import { useActiveSection } from "../../hooks/use-active-section";
 const FIGURE_INDEX: Record<number, number> = {
   0: 0,
@@ -57,7 +57,7 @@ export default function ReportPage() {
   const { data, error, isLoading, refetch } = useReport(
     id,
     undefined,
-    task.data?.status === "completed",
+    true,
   );
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -74,10 +74,10 @@ export default function ReportPage() {
       setBusy(false);
     }
   }
-  if (task.isPending) return <Loading />;
-  if (task.error)
+  if (task.isPending && !data) return <Loading message="正在加载历史研报，首次打开可能需要一些时间。"/>;
+  if (task.error && !data)
     return <ErrorState error={task.error} retry={() => void task.refetch()} />;
-  if (task.data && task.data.status !== "completed")
+  if (task.data && task.data.status !== "completed" && data?.status !== "completed")
     return (
       <div className="page report-page">
         <BackLink asChild>
@@ -110,7 +110,7 @@ export default function ReportPage() {
         </div>
       </div>
     );
-  if (isLoading) return <Loading />;
+  if (isLoading) return <Loading message="正在加载历史研报，首次打开可能需要一些时间。"/>;
   if (error) return <ErrorState error={error} retry={() => void refetch()} />;
   if (!data) return null;
   const p = data.payload;

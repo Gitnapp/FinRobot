@@ -1,9 +1,9 @@
-import { CardPagination, useCardPage } from "./layout/card-pagination";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { ExternalLink } from "lucide-react";
-import type { Detail, History } from "../types";
+import type { Detail,History } from "../types";
 import { useEvidence } from "./intelligence";
-import { compact, money } from "./ui";
+import { CardPagination,useCardPage } from "./layout/card-pagination";
+import { compact,money } from "./ui";
 
 export function Sparkline({ history }: { history: History }) {
   const values = history.points.slice(-90).map((p) => p.close);
@@ -113,6 +113,13 @@ export function FinancialPanel({ data }: { data: Detail }) {
       </dl>
     </section>
   );
+}
+
+export function FinancialPricePanel({ data }: { data: Detail }) {
+  return <section className="dense-panel financial-price-panel" aria-label="财务与价格概览">
+    <FinancialPanel data={data}/>
+    <TechnicalPanel data={data}/>
+  </section>;
 }
 
 export function ValuationPanel({ data }: { data: Detail }) {

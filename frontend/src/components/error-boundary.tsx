@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from "react";
+import { Component,type ReactNode } from "react";
 import { Button } from "./ui";
 
 export class ErrorBoundary extends Component<

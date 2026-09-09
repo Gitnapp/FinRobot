@@ -9,3 +9,6 @@
   color: var(--muted-foreground);
   font-size: 12px;
 }
+
+.async-content[data-loading="true"] { min-height:160px; display:flex; align-self:stretch; }
+.market-side > .async-content[data-loading="true"] { height:100%; }

@@ -24,9 +24,6 @@
   white-space: nowrap;
   font-weight: 400;
   border-radius: 6px;
-  transition:
-    background-color 180ms ease,
-    color 180ms ease;
 }
 .app-breadcrumb a:hover {
   background: var(--accent);
@@ -63,18 +60,11 @@ header:has(> .app-breadcrumb) {
   outline: var(--focus-ring-width) solid var(--ring);
   outline-offset: var(--focus-ring-offset);
 }
-
-.path-enter {
-  animation: path-enter 160ms ease-out;
-}
 .path-pending {
   visibility: hidden;
   min-width: 90px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .path-enter {
-    animation: none;
-  }
 }
 
 .settings-top-nav {
@@ -91,9 +81,6 @@ header:has(> .app-breadcrumb) {
   font-size: 14px;
   line-height: 20px;
   color: var(--muted-foreground);
-  transition:
-    color 180ms ease,
-    background-color 180ms ease;
 }
 .settings-top-nav a:hover {
   color: var(--foreground);
@@ -111,6 +98,6 @@ header:has(> .app-breadcrumb) {
 }
 @media (prefers-reduced-motion: reduce) {
   .settings-top-nav a {
-    transition: none;
   }
 }
+.app-breadcrumb.rui-compact-path .rui-path-ancestor { transition:none; }

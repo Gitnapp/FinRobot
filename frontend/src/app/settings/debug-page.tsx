@@ -1,14 +1,13 @@
-import { FilterToolbar } from "../../components/layout/filter-toolbar";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../api/client";
 import { AnimatedSwitcher } from "../../components/animated-switcher";
+import { FilterToolbar } from "../../components/layout/filter-toolbar";
 import {
-  Button,
-  ErrorState,
-  Input,
-  Loading,
-  PageHeader,
+Button,
+ErrorState,
+Loading,
+PageHeader
 } from "../../components/ui";
 
 type Plan = {

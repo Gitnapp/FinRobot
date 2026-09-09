@@ -5,7 +5,7 @@ import { TechnicalPanel } from "./coverage-insights";
 import { AsyncContent } from "./layout/async-content";
 import { NavigationLink } from "./navigation-link";
 import { PriceChart } from "./price-chart";
-import { Button, Change, compact, money } from "./ui";
+import { Button,Change,compact,money } from "./ui";
 
 export function MarketPreview({
   symbol,

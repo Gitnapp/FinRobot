@@ -1,13 +1,13 @@
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+Card,
+CardContent,
+CardHeader,
+CardTitle,
 } from "@gitnapp/ui/components/ui/card";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
-import { ErrorState, Loading, PageHeader } from "../../components/ui";
+import { ErrorState,Loading,PageHeader } from "../../components/ui";
 import { useSettings } from "../../hooks/queries";
 import type { Settings } from "../../types";
 import { ModelSettings } from "./model-settings";

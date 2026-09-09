@@ -1,10 +1,10 @@
 import {
-  CalendarDays,
-  ChartNoAxesCombined,
-  FileText,
-  Globe,
-  Settings2,
-  Telescope,
+CalendarDays,
+ChartNoAxesCombined,
+FileText,
+Globe,
+Settings2,
+Telescope,
 } from "lucide-react";
 
 export const navigation = [

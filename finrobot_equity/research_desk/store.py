@@ -41,6 +41,8 @@ class Store:
                 CREATE TABLE IF NOT EXISTS scenario_overrides (symbol TEXT NOT NULL, scenario TEXT NOT NULL, values_json TEXT NOT NULL, PRIMARY KEY(symbol,scenario));
                 CREATE TABLE IF NOT EXISTS assumption_overrides (
                     symbol TEXT PRIMARY KEY, values_json TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS task_queue (id TEXT PRIMARY KEY, kind TEXT NOT NULL, payload TEXT NOT NULL, dedupe TEXT NOT NULL, status TEXT NOT NULL, step INTEGER NOT NULL DEFAULT 0, warnings TEXT NOT NULL DEFAULT '[]', error TEXT, created_at TEXT NOT NULL, completed_at TEXT);
+                CREATE UNIQUE INDEX IF NOT EXISTS one_active_operation ON task_queue(dedupe) WHERE status IN ('queued','running');
                 CREATE TABLE IF NOT EXISTS reports (
                     id TEXT PRIMARY KEY, symbol TEXT NOT NULL, version INTEGER NOT NULL,
                     status TEXT NOT NULL, stage TEXT NOT NULL, trigger TEXT NOT NULL,

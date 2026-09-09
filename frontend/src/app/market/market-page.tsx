@@ -1,42 +1,43 @@
 import { AddButton } from "@gitnapp/ui/components/ui/actions";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from "@gitnapp/ui/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
 } from "@gitnapp/ui/components/ui/table";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import { Glasses, Search } from "lucide-react";
+import { Glasses,Search } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link,useNavigate,useSearchParams } from "react-router";
 import { AddAsset } from "../../components/add-asset";
+import { AssetPreparation } from "../../components/asset-preparation";
 import { RefreshNotice } from "../../components/layout/async-content";
 import { FilterToolbar } from "../../components/layout/filter-toolbar";
 import {
-  SplitView,
-  usePreviewSelection,
+SplitView,
+usePreviewSelection,
 } from "../../components/layout/split-view";
 import { MarketPreview } from "../../components/market-preview";
 import {
-  Change,
-  compact,
-  Empty,
-  ErrorState,
-  Loading,
-  money,
-  PageHeader,
+Change,
+compact,
+Empty,
+ErrorState,
+Loading,
+money,
+PageHeader,
 } from "../../components/ui";
 import { WatchlistEditor } from "../../components/watchlist-editor";
-import { useAssets, useWatchlists } from "../../hooks/queries";
+import { useAssets,useWatchlists } from "../../hooks/queries";
 
 export default function MarketPage() {
   const navigate = useNavigate();
@@ -173,6 +174,7 @@ export default function MarketPage() {
                       <strong>{a.name}</strong>
                       <small>{a.symbol}</small>
                     </Link>
+                    <AssetPreparation symbol={a.symbol}/>
                   </div>
                 </TableCell>
                 <TableCell className="numeric">

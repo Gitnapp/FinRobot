@@ -1,9 +1,9 @@
 import { RailBreadcrumb } from "@gitnapp/web-shell";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useLocation } from "react-router";
+import { useQuery,useQueryClient } from "@tanstack/react-query";
+import { Link,useLocation } from "react-router";
 import { macroLabels } from "../app/context/metrics";
 import { navigation } from "../app/navigation";
-import type { Detail, FullReport } from "../types";
+import type { Detail,FullReport } from "../types";
 
 export function AppBreadcrumb({
   parent,
@@ -89,7 +89,7 @@ export function AppBreadcrumb({
   return (
     <RailBreadcrumb
       key={`${pathname}:${current || ""}`}
-      className={`app-breadcrumb path-enter${identifier && !current ? " path-pending" : ""}`}
+      className={`app-breadcrumb${identifier && !current ? " path-pending" : ""}`}
       compact={Boolean(identifier)}
       items={
         childSection === "reports" && symbol

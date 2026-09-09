@@ -36,6 +36,8 @@ from .schemas import (
 from .signals import TrackingSignals
 from .store import Store, now
 from .tasks import Tasks
+from .task_queue import TaskQueue
+from .asset_tasks import definitions as asset_task_definitions
 from .watchlists import routes as watchlist_routes
 
 # FinRobot's report module configures root logging. HTTP clients must never log
@@ -46,13 +48,14 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
     store = Store(directory)
-    tasks = Tasks(store)
     market = market_factory(store)
     signals = TrackingSignals(store, market.providers, market.yahoo)
     intelligence = Intelligence(store, market.financial_data, market.sources)
     coverage_market = CoverageMarket(store, market, intelligence.cache)
     assumption_policy = AssumptionPolicy(store, market, intelligence.cache)
     data_access = DataAccess(market, intelligence, signals, assumption_policy)
+    operation_queue = TaskQueue(store, asset_task_definitions(store, market, data_access))
+    tasks = Tasks(store, operation_queue)
     worker = Worker(store, market, assumption_policy, narrative_writer=narrative_writer)
 
     @asynccontextmanager
@@ -64,6 +67,7 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
             (time.time(),),
         )
         task = asyncio.create_task(worker.run())
+        operation_task = asyncio.create_task(operation_queue.run())
         maintenance_task = asyncio.create_task(worker.maintain())
         financial_task = asyncio.create_task(market.financial_data.run())
         peer_task = asyncio.create_task(market.peers.run())
@@ -73,9 +77,9 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
         try:
             yield
         finally:
-            for running in (task, financial_task, peer_task, maintenance_task):
+            for running in (task, financial_task, peer_task, maintenance_task, operation_task):
                 running.cancel()
-            for running in (task, financial_task, peer_task, maintenance_task):
+            for running in (task, financial_task, peer_task, maintenance_task, operation_task):
                 with suppress(asyncio.CancelledError):
                     await running
             await market.peers.cache.close()
@@ -357,10 +361,17 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
         )
 
     class TaskInput(ResearchInput):
-        kind: Literal["research"] = "research"
+        kind: Literal["research", "add_asset", "refresh_asset", "track_asset"] = "research"
+        list_id: str | None = None
 
     @app.post("/api/tasks", status_code=202)
     def submit_task(body: TaskInput):
+        if body.kind != "research":
+            if body.kind == "add_asset":
+                if not body.list_id or not store.one("SELECT id FROM watchlists WHERE id=?", (body.list_id,)):
+                    raise HTTPException(422, "请选择有效分组")
+            elif body.kind == "refresh_asset": require_asset(body.symbol)
+            return operation_queue.submit(body.kind, {"symbol": body.symbol, "list_id": body.list_id})
         require_asset(body.symbol)
         return tasks.submit(body.symbol, body.focus)
 

@@ -26,7 +26,7 @@ export function AsyncContent({
 }) {
   if (!hasData)
     return (
-      <div className={`async-content ${className}`} aria-busy={pending}>
+      <div className={`async-content ${className}`} aria-busy={pending} data-loading="true">
         {error ? (
           <ErrorState error={error} retry={retry} />
         ) : (

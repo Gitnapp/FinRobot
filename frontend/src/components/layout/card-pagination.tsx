@@ -1,8 +1,8 @@
-import "../../styles/card-pagination.css";
-import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Pagination, PaginationContent, PaginationItem } from "@gitnapp/ui/components/ui/pagination";
 import { Button } from "@gitnapp/ui/components/ui/button";
+import { Pagination,PaginationContent,PaginationItem } from "@gitnapp/ui/components/ui/pagination";
+import { ChevronLeft,ChevronRight } from "lucide-react";
+import { useState } from "react";
+import "../../styles/card-pagination.css";
 
 export function useCardPage<T>(items:readonly T[],size:number,scope:string) {
   const [state,setState]=useState({scope,page:0});

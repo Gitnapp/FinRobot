@@ -1,0 +1,40 @@
+import { act } from "react";
+import { createRoot } from "react-dom/client";
+import { MemoryRouter } from "react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { expect,it,vi } from "vitest";
+import { AddAsset } from "../src/components/add-asset";
+const mocks=vi.hoisted(()=>({write:vi.fn(),refresh:vi.fn(),receive:vi.fn()}));
+vi.mock('../src/api/client',()=>({api:async()=>[{symbol:'PLTR',name:'Palantir',sector:'US'}],write:mocks.write}));
+vi.mock('../src/hooks/tasks',()=>({useTasks:()=>({data:[]})}));
+vi.mock('../src/components/task-center',()=>({useTaskReceipt:()=>mocks.receive}));
+vi.mock('../src/hooks/queries',()=>({useRefresh:()=>mocks.refresh,useWatchlists:()=>({data:[{id:'test',name:'Test',symbols:[]}]})}));
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT=true;
+it('queues adding without navigating or waiting for hydration and prevents duplicate submission',async()=>{
+ let complete!:(value:unknown)=>void;
+ mocks.write.mockReturnValue(new Promise(resolve=>{complete=resolve;}));
+ mocks.refresh.mockReturnValue(new Promise(()=>{}));
+ const close=vi.fn();const host=document.createElement('div');document.body.append(host);const root=createRoot(host);const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+ client.setQueryData(['watchlists'],[{id:'test',name:'Test',symbols:[]}]);
+ client.setQueryData(['catalog',''],[{symbol:'PLTR',name:'Palantir',sector:'US'}]);
+ await act(async()=>{root.render(<QueryClientProvider client={client}><MemoryRouter><AddAsset open listId="test" onOpenChange={close}/></MemoryRouter></QueryClientProvider>);});
+ const button=document.querySelector('.symbol-results button') as HTMLButtonElement;
+ act(()=>{button.click();button.click();});
+ expect(mocks.write).toHaveBeenCalledTimes(1);expect(document.body.textContent).toContain('正在添加 PLTR');
+ await act(async()=>{complete({id:'task-1',kind:'add_asset',status:'queued',subject:{symbol:'PLTR',name:'PLTR'}});});
+ expect(close).not.toHaveBeenCalled();expect(mocks.refresh).not.toHaveBeenCalled();expect(mocks.receive).toHaveBeenCalledWith(expect.objectContaining({id:"task-1"}),{open:false});
+ expect(mocks.write).toHaveBeenCalledWith("/tasks",{kind:"add_asset",symbol:"PLTR",list_id:"test"});
+ expect(client.getQueryData(['watchlists'])).toEqual([{id:'test',name:'Test',symbols:[]}]);
+ await act(async()=>root.unmount());host.remove();client.clear();
+});
+
+it('requires an explicit group when opened from All',async()=>{
+ mocks.write.mockClear();mocks.refresh.mockClear();
+ const host=document.createElement('div');document.body.append(host);const root=createRoot(host);const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+ client.setQueryData(['catalog',''],[{symbol:'PLTR',name:'Palantir',sector:'US'}]);
+ await act(async()=>{root.render(<QueryClientProvider client={client}><MemoryRouter><AddAsset open onOpenChange={()=>{}}/></MemoryRouter></QueryClientProvider>);});
+ expect(document.querySelector('[aria-label="添加到分组"]')?.textContent).toContain('请选择分组');
+ const button=document.querySelector('.symbol-results button') as HTMLButtonElement;
+ expect(button.disabled).toBe(true);act(()=>button.click());expect(mocks.write).not.toHaveBeenCalled();
+ await act(async()=>root.unmount());host.remove();client.clear();
+});

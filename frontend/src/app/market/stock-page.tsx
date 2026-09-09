@@ -1,46 +1,46 @@
-import { CardPagination, useCardPage } from "../../components/layout/card-pagination";
-import "../../styles/detail-cards.css";
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
+Card,
+CardAction,
+CardContent,
+CardHeader,
+CardTitle,
 } from "@gitnapp/ui/components/ui/card";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
-import { Link, useLocation, useParams, useSearchParams } from "react-router";
+import { Link,useLocation,useParams,useSearchParams } from "react-router";
 import { AnimatedSwitcher } from "../../components/animated-switcher";
+import { AssetPreparation } from "../../components/asset-preparation";
 import {
-  CatalystPanel,
-  FinancialPanel,
-  TechnicalPanel,
-  ValuationPanel,
+CatalystPanel,
+FinancialPricePanel,
+ValuationPanel,
 } from "../../components/coverage-insights";
-import { EvidenceCard, ResearchLeads } from "../../components/intelligence";
+import { EvidenceCard,ResearchLeads } from "../../components/intelligence";
 import { RefreshNotice } from "../../components/layout/async-content";
+import { CardPagination,useCardPage } from "../../components/layout/card-pagination";
 import { ModelTable } from "../../components/model-table";
 import { PeersPanel } from "../../components/peers-panel";
 import { PriceChart } from "../../components/price-chart";
 import { ResearchAction } from "../../components/research-action";
 import { TrackingControls } from "../../components/tracking-controls";
 import {
-  CatalystCalendar,
-  RetailSentiment,
+CatalystCalendar,
+RetailSentiment,
 } from "../../components/tracking-signals";
 import {
-  Button,
-  Change,
-  ErrorState,
-  Loading,
-  money,
-  PageHeader,
-  researchBrief,
-  Updated,
+Button,
+Change,
+ErrorState,
+Loading,
+money,
+PageHeader,
+researchBrief,
+Updated,
 } from "../../components/ui";
-import { useDetail, useReport } from "../../hooks/queries";
+import { useDetail,useReport } from "../../hooks/queries";
+import "../../styles/detail-cards.css";
 
 function ResearchSummary({ id, symbol }: { id: string; symbol: string }) {
   const { data, error, refetch } = useReport(id, symbol);
@@ -50,7 +50,7 @@ function ResearchSummary({ id, symbol }: { id: string; symbol: string }) {
     return error ? (
       <ErrorState error={error} retry={() => void refetch()} />
     ) : (
-      <Loading />
+      <Loading message="正在加载历史研报，首次打开可能需要一些时间。"/>
     );
   return (
     <>
@@ -124,6 +124,7 @@ export default function StockPage() {
         )}
         <TrackingControls symbol={symbol} coverage={coverage} />
       </PageHeader>
+      <AssetPreparation symbol={symbol}/>
       <div className="stock-quote-bar">
         <div className="stock-price">
           <InfoLabel label={money(quote.price, quote.currency)}>
@@ -255,20 +256,15 @@ export default function StockPage() {
         </div>
       )}
       <div className="detail-tab-panel" hidden={tab !== "overview"}>
-        <div className="coverage-detail-grid">
-          <div className="detail-column">
-            <PriceChart key={symbol} symbol={symbol} />
-            <FinancialPanel data={data} />
-            <TechnicalPanel data={data} />
-            <EvidenceCard symbol={symbol} />
-          </div>
-          <div className="detail-column">
-            <CatalystCalendar key={`calendar-${symbol}`} symbol={symbol} />
-            <PeersPanel symbol={symbol} />
-            <RetailSentiment key={`sentiment-${symbol}`} symbol={symbol} />
-            <ResearchLeads symbol={symbol} />
-            <CatalystPanel data={data} />
-          </div>
+        <div className="detail-bento">
+          <div className="bento-item bento-price"><PriceChart key={symbol} symbol={symbol}/></div>
+          <div className="bento-item bento-calendar"><CatalystCalendar key={`calendar-${symbol}`} symbol={symbol}/></div>
+          <div className="bento-item bento-financial"><FinancialPricePanel data={data}/></div>
+          <div className="bento-item bento-sentiment"><RetailSentiment key={`sentiment-${symbol}`} symbol={symbol}/></div>
+          <div className="bento-item bento-peers"><PeersPanel symbol={symbol}/></div>
+          <div className="bento-item bento-evidence"><EvidenceCard symbol={symbol}/></div>
+          <div className="bento-item bento-leads"><ResearchLeads symbol={symbol}/></div>
+          {data.news.items.some(item=>item.url && item.title) && <div className="bento-item bento-news"><CatalystPanel data={data}/></div>}
         </div>
       </div>
     </div>

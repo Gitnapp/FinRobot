@@ -1,12 +1,12 @@
 import { MetricGrid } from "@gitnapp/ui/components/ui/data-layout";
 import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
-import { InfoHint, InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import type { Coverage, History, Quote } from "../types";
+import { InfoHint,InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
+import type { Coverage,History,Quote } from "../types";
 import { Sparkline } from "./coverage-insights";
 import type { Snapshot } from "./intelligence";
 import { NavigationLink } from "./navigation-link";
 import { TrackingControls } from "./tracking-controls";
-import { Change, compact, Empty, money } from "./ui";
+import { Change,compact,Empty,money } from "./ui";
 export type CoveredCompany = {
   id: string;
   name: string;

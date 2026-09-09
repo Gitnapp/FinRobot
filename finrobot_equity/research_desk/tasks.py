@@ -11,8 +11,9 @@ ORDER = "CASE WHEN trigger='manual' THEN 0 ELSE 1 END,created_at"
 
 
 class Tasks:
-    def __init__(self, store):
+    def __init__(self, store, queue=None):
         self.store = store
+        self.queue = queue
 
     def view(self, row):
         state = row["status"]
@@ -47,6 +48,8 @@ class Tasks:
         }
 
     def read(self, identifier):
+        operation = self.queue.read(identifier) if self.queue else None
+        if operation: return operation
         row = self.store.one(
             "SELECT id,symbol,status,stage,trigger,created_at,completed_at,error FROM reports WHERE id=?",
             (identifier,),
@@ -63,12 +66,14 @@ class Tasks:
         rows += self.store.all(
             "SELECT id,symbol,status,stage,trigger,created_at,completed_at,error FROM reports WHERE status IN ('completed','failed') ORDER BY created_at DESC LIMIT 10"
         )
-        return [self.view(row) for row in rows]
+        items = sorted([self.view(row) for row in rows] + (self.queue.list() if self.queue else []), key=lambda task: task["created_at"], reverse=True)
+        return sorted(items, key=lambda task: task["status"] not in ("queued", "running"))
 
     def submit(self, symbol, focus=""):
         return self.read(enqueue(self.store, symbol, focus)["id"])
 
     def retry(self, identifier):
+        if self.queue and self.queue.read(identifier): return self.queue.retry(identifier)
         with self.store.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute("SELECT symbol,status FROM reports WHERE id=?", (identifier,)).fetchone()

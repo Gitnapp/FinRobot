@@ -1,15 +1,15 @@
-import { CardPagination, useCardPage } from "./layout/card-pagination";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
+Card,
+CardAction,
+CardContent,
+CardHeader,
+CardTitle,
 } from "@gitnapp/ui/components/ui/card";
 import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
 import { InfoHint } from "@gitnapp/ui/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { CardPagination,useCardPage } from "./layout/card-pagination";
 import { compact } from "./ui";
 export type Snapshot<T> = {
   refreshing?: boolean;
@@ -130,7 +130,7 @@ export function useResearchLeads(symbol: string) {
 }
 export function ResearchLeads({ symbol }: { symbol: string }) {
   const q = useResearchLeads(symbol);
-  const page = useCardPage(q.data?.data?.items || [], 4, symbol);
+  const page = useCardPage(q.data?.data?.items || [], 6, symbol);
   return (
     <Card>
       <CardHeader>

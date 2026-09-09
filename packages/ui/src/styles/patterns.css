@@ -419,3 +419,14 @@
 }
 [data-slot="button"][data-variant="ghost"]:not([data-size^="icon"]):has(svg):hover,
 [data-slot="button"][data-variant="link"]:not([data-size^="icon"]):has(svg):hover { background: var(--accent); }
+
+.rui-loading-state { position:relative; width:100%; min-height:120px; flex:1; align-self:stretch; color:var(--muted-foreground); }
+.rui-loading-center,.rui-loading-scope-indicator { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.rui-loading-message { position:absolute; top:calc(50% + 32px); left:12px; right:12px; margin:0; font-size:12px; line-height:18px; text-align:center; color:var(--muted-foreground); }
+.rui-loading-scope { position:relative; min-height:120px; }
+.rui-math-loader { display:block; flex-shrink:0; overflow:visible; }
+.rui-math-loader-trail { animation:rui-curve-travel 2.4s linear infinite; }
+.rui-math-loader-curve { transform-origin:50px 50px; animation:rui-curve-breathe 3.6s ease-in-out infinite; }
+@keyframes rui-curve-travel { to { stroke-dashoffset:-100; } }
+@keyframes rui-curve-breathe { 50% { transform:scale(.86) rotate(10deg); } }
+@media(prefers-reduced-motion:reduce) { .rui-math-loader-trail,.rui-math-loader-curve { animation:none; } }

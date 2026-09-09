@@ -4,6 +4,10 @@ import { api } from "../api/client";
 export type Task = {
   id: string;
   kind: string;
+  current_step?: string | null;
+  scope?: {list_id?:string|null};
+  warnings?: string[];
+  detail_url?: string | null;
   title: string;
   subject: { symbol: string; name: string };
   status: TaskState;

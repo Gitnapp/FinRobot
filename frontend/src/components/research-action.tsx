@@ -1,9 +1,9 @@
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogHeader,
+DialogTitle,
 } from "@gitnapp/ui/components/ui/dialog";
 import { Label } from "@gitnapp/ui/components/ui/label";
 import { Textarea } from "@gitnapp/ui/components/ui/textarea";
@@ -11,11 +11,9 @@ import { FileText } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { write } from "../api/client";
 import { useRefresh } from "../hooks/queries";
-import type { Task } from "../hooks/tasks";
+import { useSubmitTask } from "../hooks/submit-task";
 import type { Report } from "../types";
-import { useTaskReceipt } from "./task-center";
 import { Button } from "./ui";
 
 export function ResearchAction({
@@ -29,18 +27,17 @@ export function ResearchAction({
   const [focus, setFocus] = useState("");
   const [busy, setBusy] = useState(false);
   const refresh = useRefresh("research");
-  const receive = useTaskReceipt();
+  const submitTask = useSubmitTask();
   const navigate = useNavigate();
 
   async function run() {
     setBusy(true);
     try {
-      const job = await write<Task>("/tasks", {
+      await submitTask({
         kind: "research",
         symbol,
         focus,
       });
-      receive(job);
       setOpen(false);
       void refresh();
     } catch (e) {

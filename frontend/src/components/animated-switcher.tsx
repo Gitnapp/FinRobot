@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type HTMLAttributes } from "react";
+import { useLayoutEffect,useRef,type HTMLAttributes } from "react";
 
 /** Measures the selected control so indicators follow variable labels and resizing. */
 export function AnimatedSwitcher({

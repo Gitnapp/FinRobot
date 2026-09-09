@@ -1,25 +1,25 @@
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+Popover,
+PopoverContent,
+PopoverTrigger,
 } from "@gitnapp/ui/components/ui/popover";
 import { TaskProgress } from "@gitnapp/ui/components/ui/task-progress";
 import { useQueryClient } from "@tanstack/react-query";
 import { ListTodo } from "lucide-react";
 import {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
+createContext,
+useContext,
+useEffect,
+useRef,
+useState,
+type ReactNode,
 } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { write } from "../api/client";
-import { useTasks, type Task } from "../hooks/tasks";
+import { useTasks,type Task } from "../hooks/tasks";
 import { Button } from "./ui";
-const TaskContext = createContext<(task: Task) => void>(() => {});
+const TaskContext = createContext<(task: Task, options?: {open?:boolean}) => void>(() => {});
 export const useTaskReceipt = () => useContext(TaskContext);
 export function TasksProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -32,35 +32,43 @@ export function TasksProvider({ children }: { children: ReactNode }) {
   const active = tasks.filter(
     (t) => t.status === "queued" || t.status === "running",
   );
-  function receive(task: Task) {
+  function receive(task: Task, options?: {open?:boolean}) {
+    previous.current[task.id] = `${task.status}:${task.completed_steps}`;
     client.setQueryData(["task", task.id], task);
     client.setQueryData<Task[]>(["tasks"], (old) => [
       task,
       ...(old || []).filter((t) => t.id !== task.id),
     ]);
-    setOpen(true);
+    if (options?.open !== false) setOpen(true);
     void client.invalidateQueries({ queryKey: ["tasks"] });
   }
   useEffect(() => {
     for (const task of tasks) {
-      const prior = previous.current[task.id];
+      const priorValue = previous.current[task.id];
+      const prior = priorValue?.split(":")[0];
+      const revision = `${task.status}:${task.completed_steps}`;
+      if (priorValue && priorValue !== revision && task.kind !== "research") {
+        for (const key of ["watchlists","assets","detail","full-history","coverage-market","coverage-directory","evidence","peers","disclosures","research-leads","signals"]) void client.invalidateQueries({queryKey:[key]});
+      }
       if (
         prior &&
         prior !== task.status &&
         (task.status === "completed" || task.status === "failed")
       ) {
-        void client.invalidateQueries({ queryKey: ["report", task.id] });
-        void client.invalidateQueries({ queryKey: ["reports"] });
-        toast(task.status === "completed" ? "研报已完成" : "研究任务未完成", {
-          description: task.subject.name,
+        if (task.kind === "research") {
+          void client.invalidateQueries({ queryKey: ["report", task.id] });
+          void client.invalidateQueries({ queryKey: ["reports"] });
+        }
+        toast(task.status === "completed" ? `${task.title}已完成` : `${task.title}未完成`, {
+          description: task.warnings?.length ? `${task.subject.name}：部分资料暂未取得，可重试` : task.subject.name,
           position: "bottom-left",
           action: {
             label: "查看",
-            onClick: () => navigate(`/reports/${task.id}`),
+            onClick: () => { if (task.kind === "research") navigate(`/reports/${task.id}`); else if(task.result_url || task.detail_url) navigate(task.result_url || task.detail_url!); else setOpen(true); },
           },
         });
       }
-      previous.current[task.id] = task.status;
+      previous.current[task.id] = revision;
     }
   }, [tasks, client, navigate]);
   async function retry(id: string) {
@@ -117,9 +125,10 @@ export function TasksProvider({ children }: { children: ReactNode }) {
                   completedSteps={t.completed_steps}
                   queuePosition={t.queue_position}
                   error={t.error}
+                  note={t.kind !== "research" ? `${t.title}${t.warnings?.length ? "：" + t.warnings.join("；") : (t.status === "running" || t.status === "queued") ? "，可能需要一些时间，可继续浏览。" : ""}` : undefined}
                   actions={
                     <>
-                      {t.status === "failed" && (
+                      {(t.status === "failed" || !!t.warnings?.length) && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -129,17 +138,17 @@ export function TasksProvider({ children }: { children: ReactNode }) {
                           重试
                         </Button>
                       )}
-                      <Button
+                      {(t.kind === "research" || t.result_url || t.detail_url) && <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => {
                           client.setQueryData(["task", t.id], t);
-                          navigate(`/reports/${t.id}`);
+                          navigate(t.kind === "research" ? `/reports/${t.id}` : t.result_url || t.detail_url!);
                           setOpen(false);
                         }}
                       >
-                        {t.status === "completed" ? "查看报告" : "查看进度"}
-                      </Button>
+                        {t.kind !== "research" ? "查看标的" : t.status === "completed" ? "查看报告" : "查看进度"}
+                      </Button>}
                     </>
                   }
                 />

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState,type ReactNode } from "react";
 import "../../styles/split-view.css";
 
 export function usePreviewSelection() {

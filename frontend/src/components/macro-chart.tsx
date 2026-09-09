@@ -1,12 +1,12 @@
 import {
-  ColorType,
-  createChart,
-  LineSeries,
-  type IChartApi,
-  type ISeriesApi,
-  type Time,
+ColorType,
+createChart,
+LineSeries,
+type IChartApi,
+type ISeriesApi,
+type Time,
 } from "lightweight-charts";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect,useRef,useState } from "react";
 import type { DateWindow } from "./date-range";
 import type { MacroSeries } from "./intelligence";
 import { observationChanges } from "./macro-observation";

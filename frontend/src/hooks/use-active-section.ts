@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect,useState } from "react";
 
 export function useActiveSection(ready: boolean, reportId: string) {
   const [active, setActive] = useState("section-0");

@@ -1,7 +1,7 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery,useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { invalidateDomain, type INVALIDATE } from "../api/query-policy";
-import type { Asset, Detail, FullReport, Report, Settings } from "../types";
+import { invalidateDomain,type INVALIDATE } from "../api/query-policy";
+import type { Asset,Detail,FullReport,Report,Settings } from "../types";
 
 export const useAssets = (listId?: string) =>
   useQuery({

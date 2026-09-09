@@ -1,23 +1,23 @@
-import { CardPagination, useCardPage } from "./layout/card-pagination";
 import { KeyValueGrid } from "@gitnapp/ui/components/ui/data-layout";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
 } from "@gitnapp/ui/components/ui/table";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
-import { Download, SlidersHorizontal } from "lucide-react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Download,SlidersHorizontal } from "lucide-react";
+import { Fragment,useEffect,useRef,useState } from "react";
 import { toast } from "sonner";
 import { api } from "../api/client";
 import type { FinancialModel } from "../types";
 import { AnimatedSwitcher } from "./animated-switcher";
 import { AssumptionsPanel } from "./assumptions-panel";
-import { Button, ErrorState, Loading } from "./ui";
+import { CardPagination,useCardPage } from "./layout/card-pagination";
+import { Button,ErrorState,Loading } from "./ui";
 
 export function modelValue(
   value: number | null,

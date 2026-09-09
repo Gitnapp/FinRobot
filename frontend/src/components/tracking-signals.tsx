@@ -1,19 +1,20 @@
-import { CardPagination, useCardPage } from "./layout/card-pagination";
+import { MathCurveLoader } from "@gitnapp/ui/components/ui/math-curve-loader";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
+Card,
+CardAction,
+CardContent,
+CardHeader,
+CardTitle,
 } from "@gitnapp/ui/components/ui/card";
 import { LoadingState } from "@gitnapp/ui/components/ui/loading";
-import { InfoHint, InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
+import { InfoHint,InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 import { api } from "../api/client";
 import { AnimatedSwitcher } from "./animated-switcher";
 import type { Snapshot } from "./intelligence";
+import { CardPagination,useCardPage } from "./layout/card-pagination";
 import { Button } from "./ui";
 
 type Result<T> = {
@@ -125,7 +126,7 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
       : [...past, ...disclosureEvents].sort((a, b) =>
           b.date.localeCompare(a.date),
         );
-  const eventPage = useCardPage(events || [], 3, `${symbol}:${period}`);
+  const eventPage = useCardPage(events || [], 4, `${symbol}:${period}`);
   return (
     <Card className="disclosure-calendar">
       <CardHeader>
@@ -161,6 +162,7 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
             </Button>
           ))}
           <Freshness value={query.data} />
+          {period === "recent" && !!events?.length && (history.isFetching || history.data?.refreshing) && <MathCurveLoader size={18}/>}
         </AnimatedSwitcher>
         <div
           className="disclosure-events"
@@ -169,10 +171,10 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
             period === "recent" && (history.isPending)
           }
         >
-          {period === "recent" &&
+          {period === "recent" && !events?.length &&
             (history.isPending ||
               history.data?.state === "pending") && (
-              <LoadingState inline className="calendar-loading" />
+              <LoadingState inline className="calendar-loading" message="正在获取历史披露记录，首次加载可能需要一些时间。"/>
             )}
           {!events ? (
             <State

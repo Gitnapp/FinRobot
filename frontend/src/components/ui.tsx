@@ -1,6 +1,6 @@
 import { LoadingState } from "@gitnapp/ui/components/ui/loading";
-import { InfoHint, InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { InfoHint,InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
+import { ArrowDownRight,ArrowUpRight } from "lucide-react";
 import type { ReactNode } from "react";
 export { Badge } from "@gitnapp/ui/components/ui/badge";
 export { Button } from "@gitnapp/ui/components/ui/button";
@@ -58,8 +58,8 @@ export const dateText = (v: string | null | undefined) =>
         year: "numeric",
       })
     : "—";
-export function Loading() {
-  return <LoadingState inline />;
+export function Loading({message,mode="initial"}:{message?:string;mode?:"initial"|"refresh"} = {}) {
+  return <LoadingState inline message={message} mode={mode}/>;
 }
 export function ErrorState({
   error,

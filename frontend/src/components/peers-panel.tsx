@@ -1,19 +1,19 @@
-import { CardPagination, useCardPage } from "./layout/card-pagination";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogHeader,
+DialogTitle,
 } from "@gitnapp/ui/components/ui/dialog";
 import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { SlidersHorizontal, Undo2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useQuery,useQueryClient } from "@tanstack/react-query";
+import { SlidersHorizontal,Undo2,X } from "lucide-react";
+import { useEffect,useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
-import { api, write } from "../api/client";
-import { Button, Input, Loading, compact, money } from "./ui";
+import { api,write } from "../api/client";
+import { CardPagination,useCardPage } from "./layout/card-pagination";
+import { Button,Input,Loading,compact,money } from "./ui";
 
 type Peer = {
   symbol: string;

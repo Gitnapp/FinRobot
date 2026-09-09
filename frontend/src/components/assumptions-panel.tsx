@@ -1,20 +1,20 @@
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogHeader,
+DialogTitle,
 } from "@gitnapp/ui/components/ui/dialog";
 import { EditableValue } from "@gitnapp/ui/components/ui/editable-value";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { ValueOrigin } from "@gitnapp/ui/components/ui/value-origin";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useRef,useState } from "react";
 import { toast } from "sonner";
-import { api, write } from "../api/client";
+import { api,write } from "../api/client";
 import { useRefresh } from "../hooks/queries";
 import type { Assumptions } from "../types";
 import { AnimatedSwitcher } from "./animated-switcher";
-import { Button, ErrorState, Loading } from "./ui";
+import { Button,ErrorState,Loading } from "./ui";
 
 const fields: [keyof Assumptions, string][] = [
   ["growth", "收入增速"],

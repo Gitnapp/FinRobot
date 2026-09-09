@@ -1,21 +1,21 @@
 import { AddButton } from "@gitnapp/ui/components/ui/actions";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogHeader,
+DialogTitle,
 } from "@gitnapp/ui/components/ui/dialog";
 import { Label } from "@gitnapp/ui/components/ui/label";
-import { ArrowLeft, MoreHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowLeft,MoreHorizontal } from "lucide-react";
+import { useMemo,useState } from "react";
 import { toast } from "sonner";
-import { api, write } from "../api/client";
-import { useRefresh, useWatchlists } from "../hooks/queries";
+import { api,write } from "../api/client";
+import { useRefresh,useWatchlists } from "../hooks/queries";
 import type { Watchlist } from "../types";
 import { AddAsset } from "./add-asset";
 import { SortableMembers } from "./sortable-members";
-import { Button, Input } from "./ui";
+import { Button,Input } from "./ui";
 
 export function WatchlistEditor({
   list,
@@ -200,7 +200,6 @@ export function WatchlistEditor({
           open={adding}
           onOpenChange={setAdding}
           listId={current.id}
-          stayOnPage
         />
       )}
     </>

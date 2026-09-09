@@ -1,4 +1,4 @@
-import { QueryClient, type Query } from "@tanstack/react-query";
+import { QueryClient,type Query } from "@tanstack/react-query";
 import { ApiError } from "./client";
 
 export const POLL = {

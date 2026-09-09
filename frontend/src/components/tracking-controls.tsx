@@ -1,18 +1,18 @@
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuRadioGroup,
+DropdownMenuRadioItem,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
 } from "@gitnapp/ui/components/ui/dropdown-menu";
-import { MoreHorizontal, Pause, Play, Trash2 } from "lucide-react";
+import { MoreHorizontal,Pause,Play,Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { api, write } from "../api/client";
+import { api,write } from "../api/client";
 import { useRefresh } from "../hooks/queries";
 import type { Coverage } from "../types";
 import { Button } from "./ui";

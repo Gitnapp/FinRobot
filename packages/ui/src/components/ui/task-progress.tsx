@@ -12,6 +12,7 @@ export function TaskProgress({
   error,
   actions,
   compact = false,
+  note,
 }: {
   title: string;
   status: TaskState;
@@ -21,6 +22,7 @@ export function TaskProgress({
   error?: string | null;
   actions?: ReactNode;
   compact?: boolean;
+  note?: ReactNode;
 }) {
   const labels = {
     queued: "等待执行",
@@ -90,6 +92,7 @@ export function TaskProgress({
           ))}
         </ol>
       )}
+      {note && <p className="mt-2 text-xs text-muted-foreground">{note}</p>}
       {status === "queued" && queuePosition != null && (
         <p className="mt-3 text-xs text-muted-foreground">排队第 {queuePosition} 位</p>
       )}

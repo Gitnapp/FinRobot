@@ -1,16 +1,16 @@
-import "../styles/price-chart.css";
 import { LoadingState } from "@gitnapp/ui/components/ui/loading";
 import {
-  AreaSeries,
-  CandlestickSeries,
-  ColorType,
-  createChart,
-  type Time,
+AreaSeries,
+CandlestickSeries,
+ColorType,
+createChart,
+type Time,
 } from "lightweight-charts";
-import { ChartCandlestick, ChartNoAxesCombined } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ChartCandlestick,ChartNoAxesCombined } from "lucide-react";
+import { useEffect,useLayoutEffect,useRef,useState } from "react";
 import { usePriceHistory } from "../hooks/queries";
-import { Button, Source } from "./ui";
+import "../styles/price-chart.css";
+import { Button,Source } from "./ui";
 
 export function PriceChart({
   small = false,

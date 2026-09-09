@@ -1,6 +1,6 @@
 import {
-  DateRangePicker,
-  type DateWindow,
+DateRangePicker,
+type DateWindow,
 } from "@gitnapp/ui/components/ui/date-range-picker";
 export type { DateWindow };
 export function withinDates(date: string, range: DateWindow) {

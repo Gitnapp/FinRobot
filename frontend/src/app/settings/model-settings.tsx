@@ -1,36 +1,37 @@
+import { MathCurveLoader } from "@gitnapp/ui/components/ui/math-curve-loader";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+Card,
+CardAction,
+CardContent,
+CardFooter,
+CardHeader,
+CardTitle,
 } from "@gitnapp/ui/components/ui/card";
 import { Label } from "@gitnapp/ui/components/ui/label";
 import { OverflowText } from "@gitnapp/ui/components/ui/overflow-text";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from "@gitnapp/ui/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
 } from "@gitnapp/ui/components/ui/table";
 import { InfoHint } from "@gitnapp/ui/components/ui/tooltip";
-import { Check, Plus, RefreshCw, Server } from "lucide-react";
+import { Check,Plus,RefreshCw,Server } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { write } from "../../api/client";
-import { Button, Input } from "../../components/ui";
+import { Button,Input } from "../../components/ui";
 import { useRefresh } from "../../hooks/queries";
-import type { Provider, Settings } from "../../types";
+import type { Provider,Settings } from "../../types";
 
 type Choice = { provider: string; model: string };
 function ServiceEditor({
@@ -173,10 +174,7 @@ function ServiceEditor({
               disabled={!!busy || !service?.configured}
               onClick={() => void discover()}
             >
-              <RefreshCw
-                size={15}
-                className={busy === "models" ? "animate-spin" : ""}
-              />
+              {busy === "models" ? <MathCurveLoader size={18}/> : <RefreshCw size={15}/>}
             </Button>
           </div>
           {service && (

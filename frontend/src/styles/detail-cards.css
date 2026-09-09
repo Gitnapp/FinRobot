@@ -1,14 +1,28 @@
-.stock-page { --detail-card-height:480px; --detail-model-height:740px; }
-.stock-page .detail-column > :is([data-slot="card"],.dense-panel,.chart-section),
-.stock-page .research-opinion,.stock-page .research-reports,
-.stock-page .valuation-panel { height:var(--detail-card-height); box-sizing:border-box; min-height:0; display:flex; flex-direction:column; }
+.stock-page { --detail-model-height:740px; }
+.detail-bento { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; align-items:start; }
+.bento-item { min-width:0; }
+.bento-item > :is([data-slot="card"],.dense-panel,.chart-section),
+.stock-page .research-opinion,.stock-page .research-reports,.stock-page .valuation-panel {
+  height:100%; box-sizing:border-box; min-height:0; display:flex; flex-direction:column;
+}
+.bento-price { grid-column:span 8; height:440px; }
+.bento-calendar { grid-column:span 4; height:440px; }
+.bento-financial { grid-column:span 8; height:380px; }
+.bento-sentiment { grid-column:span 4; height:380px; }
+.bento-peers,.bento-evidence { grid-column:span 6; height:420px; }
+.bento-leads { grid-column:span 6; height:320px; }
+.bento-news { grid-column:span 6; height:380px; }
+.bento-leads:last-child { grid-column:1/-1; }
+.stock-page .research-opinion { height:360px; }
+.stock-page .research-reports { height:400px; }
+.stock-page .valuation-panel { height:360px; }
 .stock-page [data-slot="card-content"] { min-height:0; flex:1; display:flex; flex-direction:column; }
 .stock-page .research-report-list { max-height:none; overflow:visible; }
 .stock-page .research-report-link { min-height:64px; }
-.stock-page .research-lead { min-height:56px; }
+.stock-page .research-lead { min-height:32px; padding-block:5px; font-size:12px; line-height:20px; align-items:center; }
 .stock-page .catalyst-row { min-height:56px; }
 .stock-page .disclosure-events { height:auto; flex:1; overflow:visible; }
-.stock-page .signal-event { min-height:80px; padding-block:10px; }
+.stock-page .signal-event { min-height:68px; padding-block:8px; }
 .stock-page .signal-meta { font-size:11px; }
 .stock-page .peer-table-scroll { overflow-x:auto; flex:1; }
 .stock-page .peers-table td { height:64px; }
@@ -16,5 +30,44 @@
 .stock-page .model-panel > [data-slot="table-container"] { flex:1; min-height:0; }
 .stock-page .model-panel .financial-table th,.stock-page .model-panel .financial-table td { padding-block:6px; }
 .stock-page .model-footnote { margin-top:8px; font-size:10px; }
-@media(max-width:767px) { .stock-page { --detail-card-height:560px; --detail-model-height:820px; } }
 
+
+
+.stock-page .financial-price-panel { gap:20px; justify-content:space-between; }
+.stock-page .financial-price-panel > .dense-panel { padding:0; margin:0; border:0; border-radius:0; min-height:0; }
+.stock-page .financial-price-panel > .dense-panel + .dense-panel { padding-top:16px; border-top:1px solid var(--border); }
+.stock-page .financial-price-panel h2 { font-size:14px; margin:0 0 12px; }
+.stock-page .financial-price-panel .metric-grid { gap:12px 10px; }
+.stock-page .financial-price-panel .metric-grid dt { font-size:11px; margin-bottom:4px; }
+.stock-page .financial-price-panel .metric-grid dd { font-size:16px; }
+.stock-page .financial-price-panel .price-range { margin-top:16px; }
+.stock-page .disclosure-calendar .disclosure-events { display:flex; flex-direction:column; justify-content:flex-start; }
+.stock-page .disclosure-calendar .signal-event { flex:0 0 auto; }
+
+.stock-page .bento-calendar .signal-event { grid-template-columns:48px minmax(0,1fr); column-gap:10px; }
+.stock-page .bento-calendar .signal-event > div { min-width:0; }
+.stock-page .bento-calendar .signal-event > div > strong { font-size:12px; }
+.stock-page .bento-sentiment .evidence-metrics { gap:10px; }
+.stock-page .bento-financial .financial-price-panel { gap:12px; }
+@media(max-width:1100px) {
+  .bento-price,.bento-calendar,.bento-financial,.bento-sentiment { grid-column:span 6; }
+}
+@media(max-width:767px) {
+  .stock-page { --detail-model-height:820px; }
+  .detail-bento { grid-template-columns:minmax(0,1fr); gap:16px; }
+  .bento-item { grid-column:1/-1; }
+  .bento-price { height:430px; }
+  .bento-calendar { height:480px; }
+  .bento-financial { height:440px; }
+  .bento-sentiment,.bento-evidence,.bento-peers { height:440px; }
+  .bento-leads { height:400px; }
+  .bento-news { height:380px; }
+  .stock-page .research-lead { min-height:44px; padding-block:6px; }
+  .stock-page .research-opinion,.stock-page .valuation-panel { height:400px; }
+}
+
+.stock-page .valuation-panel > h2 { margin-bottom:12px; flex-shrink:0; }
+.stock-page .valuation-panel .valuation-summary { gap:12px; margin-bottom:12px; flex-shrink:0; grid-template-columns:minmax(0,1.2fr) repeat(2,minmax(0,1fr)); }
+.stock-page .valuation-panel .sensitivity-table { table-layout:fixed; width:100%; }
+.stock-page .valuation-panel .sensitivity-table th,.stock-page .valuation-panel .sensitivity-table td { padding:5px 4px; font-size:11px; line-height:16px; }
+.stock-page .valuation-panel .sensitivity-table caption { margin-bottom:6px; }

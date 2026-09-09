@@ -1,28 +1,28 @@
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
+Card,
+CardAction,
+CardContent,
+CardHeader,
+CardTitle,
 } from "@gitnapp/ui/components/ui/card";
 import { LoadingState } from "@gitnapp/ui/components/ui/loading";
-import { InfoHint, InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router";
+import { InfoHint,InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
+import { useInfiniteQuery,useQuery } from "@tanstack/react-query";
+import { ChevronLeft,ChevronRight } from "lucide-react";
+import { useEffect,useLayoutEffect,useMemo,useRef,useState } from "react";
+import { Link,useParams } from "react-router";
 import { api } from "../../api/client";
 import {
-  DateRange,
-  seriesWindow,
-  withinDates,
-  type DateWindow,
+DateRange,
+seriesWindow,
+withinDates,
+type DateWindow,
 } from "../../components/date-range";
-import type { MacroSeries, Snapshot } from "../../components/intelligence";
+import type { MacroSeries,Snapshot } from "../../components/intelligence";
 import { MacroChart } from "../../components/macro-chart";
 import { NavigationLink } from "../../components/navigation-link";
-import { Button, Input, Loading, PageHeader } from "../../components/ui";
+import { Button,Input,Loading,PageHeader } from "../../components/ui";
 import { macroLabels as labels } from "./metrics";
 function useMacro() {
   return useQuery({
@@ -38,7 +38,6 @@ export function MacroPage() {
   return (
     <div className="page macro-page">
       <PageHeader title="宏观指标" />
-      {q.isPending && <Loading />}
       <div className="context-grid">
         {Object.entries(labels).map(([key, label]) => {
           const d = q.data?.[key]?.data;
