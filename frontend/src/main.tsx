@@ -42,7 +42,7 @@ createRoot(document.getElementById("root")!).render(
       <BrowserRouter>
         <TasksProvider>
           <ErrorBoundary>
-            <Suspense fallback={<Loading />}>
+
               <Routes>
                 <Route element={<Shell />}>
                   <Route index element={<Market />} />
@@ -74,7 +74,7 @@ createRoot(document.getElementById("root")!).render(
                   />
                 </Route>
               </Routes>
-            </Suspense>
+
           </ErrorBoundary>
         </TasksProvider>
       </BrowserRouter>

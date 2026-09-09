@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
 Sheet,
 SheetClose,
@@ -17,7 +18,7 @@ import { Activity,PanelLeft,PanelLeftClose } from "lucide-react";
 import { useLayoutEffect,useRef,useState } from "react";
 import { Link,Outlet,useLocation } from "react-router";
 import { AppBreadcrumb } from "../components/app-breadcrumb";
-import { Button } from "../components/ui";
+import { Button, Loading } from "../components/ui";
 import { activeNavigation,navigation } from "./navigation";
 const AppLink = ({
   href,
@@ -109,7 +110,7 @@ export default function Shell() {
         }
       >
         <main ref={scroll} className="main-scroll" id="main-content">
-          <Outlet />
+          <Suspense fallback={<Loading/>}><Outlet /></Suspense>
         </main>
       </RailShell>
       <Sheet open={mobile} onOpenChange={setMobile}>

@@ -1,6 +1,6 @@
 {
   "name": "@gitnapp/web-shell",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "跨产品应用外壳（主题 rail + 顶栏功能 tab），语义真相源：根 design.md「应用外壳」",
   "repository": {
     "type": "git",

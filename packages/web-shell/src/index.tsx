@@ -27,7 +27,7 @@ import {
   useEffect,
   useRef,
 } from "react";
-
+import { useBreadcrumbTransition } from "./breadcrumb-transition";
 import { buttonVariants } from "./button";
 
 export { Button, buttonVariants } from "./button";
@@ -772,28 +772,31 @@ export function RailBreadcrumb({
   readonly compact?: boolean;
 }) {
   const Link = useContext(ShellLinkContext);
+  const path = useBreadcrumbTransition(items, compact);
   return (
     <Breadcrumb
+      ref={path.root}
       aria-label={ariaLabel}
-      tabIndex={compact ? 0 : undefined}
-      className={cn("rui-rail-breadcrumb min-w-0", compact && "rui-compact-path", className)}
+      tabIndex={path.compact ? 0 : undefined}
+      className={cn("rui-rail-breadcrumb min-w-0", path.compact && "rui-compact-path", className)}
     >
-      <BreadcrumbList
-        key={items.map((item) => `${item.href || ""}:${item.label}`).join("|")}
-        className="flex-nowrap text-sm"
-      >
-        {items.map((item, index) => (
+      <BreadcrumbList key={path.key} style={{ animation: "none" }} className="flex-nowrap text-sm">
+        {path.items.map((item, index) => (
           <Fragment key={item.href || `${index}-${item.label}`}>
             <BreadcrumbItem
               className={
-                index === items.length - 1 ? "min-w-0" : compact ? "rui-path-ancestor" : "shrink-0"
+                index === path.items.length - 1
+                  ? "min-w-0"
+                  : path.compact
+                    ? "rui-path-ancestor"
+                    : "shrink-0"
               }
             >
               {item.href ? (
                 <BreadcrumbLink asChild>
                   <Link
                     href={item.href}
-                    aria-current={index === items.length - 1 ? "page" : undefined}
+                    aria-current={index === path.items.length - 1 ? "page" : undefined}
                     className={cn(
                       NAV_ITEM_METRICS,
                       "inline-flex min-w-0 max-w-full items-center gap-2 whitespace-nowrap",
