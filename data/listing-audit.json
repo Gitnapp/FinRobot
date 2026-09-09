@@ -1,0 +1,691 @@
+[
+  {
+    "id": "6402774a0fa96912",
+    "name": "华为（昇腾业务）",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://www.huawei.com/en/media-center/company-facts",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "华为为员工持有的非上市公司；昇腾不是独立上市证券"
+  },
+  {
+    "id": "d8be295043bddabb",
+    "name": "燧原科技",
+    "symbol": null,
+    "listing": {
+      "status": "ipo_pending",
+      "exchange": "SSE",
+      "ticker": "688801",
+      "security_type": "普通股",
+      "source_url": "https://www.cninfo.com.cn/new/commonUrl?url=disclosure%2Fipo%2Farea",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "已取得发行代码；未核实上市交易日，行情目录尚无记录"
+  },
+  {
+    "id": "6d9ab35280955c66",
+    "name": "Cerebras",
+    "symbol": "CBRS",
+    "listing": {
+      "status": "listed",
+      "exchange": "NASDAQ",
+      "ticker": "CBRS",
+      "security_type": "普通股",
+      "source_url": "https://www.cerebras.ai/press-release/cerebras-systems-announces-closing-of-initial-public-offering",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "已核实上市；补齐证券映射"
+  },
+  {
+    "id": "bbfa9aec7823357b",
+    "name": "SK 海力士",
+    "symbol": "SKHY",
+    "listing": {
+      "status": "listed",
+      "exchange": "NASDAQ",
+      "ticker": "SKHY",
+      "security_type": "美国存托凭证",
+      "source_url": "https://www.nasdaqtrader.com/TraderNews.aspx?id=DTN2026-11",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "接入美股存托凭证；与韩国000660为不同交易证券，价格币种不可混用"
+  },
+  {
+    "id": "3ea2f46397838083",
+    "name": "三星电子（存储业务）",
+    "symbol": "005930.KS",
+    "listing": {
+      "status": "listed",
+      "exchange": "KRX",
+      "ticker": "005930",
+      "security_type": "普通股",
+      "source_url": "https://www.samsung.com/global/ir/stock-information/listing-Info/",
+      "checked_at": "2026-09-08",
+      "data_source": "Yahoo Finance"
+    },
+    "reason": "Yahoo Finance 日线已验证；保留原交易所币种，不与其他来源拼接"
+  },
+  {
+    "id": "9200413910eb103f",
+    "name": "铠侠 Kioxia",
+    "symbol": "285A.T",
+    "listing": {
+      "status": "listed",
+      "exchange": "TSE",
+      "ticker": "285A",
+      "security_type": "普通股",
+      "source_url": "https://www.kioxia-holdings.com/ja-jp/ir/stock/outline.html",
+      "checked_at": "2026-09-08",
+      "data_source": "Yahoo Finance"
+    },
+    "reason": "Yahoo Finance 日线已验证；保留原交易所币种，不与其他来源拼接"
+  },
+  {
+    "id": "e5414d176dc9c360",
+    "name": "韩美半导体 Hanmi Semiconductor",
+    "symbol": "042700.KS",
+    "listing": {
+      "status": "listed",
+      "exchange": "KRX",
+      "ticker": "042700",
+      "security_type": "普通股",
+      "source_url": "https://englishdart.fss.or.kr/dsbc001/selectPopup.ax?selectKey=00161383",
+      "checked_at": "2026-09-08",
+      "data_source": "Yahoo Finance"
+    },
+    "reason": "Yahoo Finance 日线已验证；保留原交易所币种，不与其他来源拼接"
+  },
+  {
+    "id": "0c3bf3e170dfb8b1",
+    "name": "Besi",
+    "symbol": "BESI.AS",
+    "listing": {
+      "status": "listed",
+      "exchange": "Euronext Amsterdam",
+      "ticker": "BESI",
+      "security_type": "普通股",
+      "source_url": "https://www.besi.com/investor-relations/share-information",
+      "checked_at": "2026-09-08",
+      "data_source": "Yahoo Finance"
+    },
+    "reason": "Yahoo Finance 日线已验证；保留原交易所币种，不与其他来源拼接"
+  },
+  {
+    "id": "26b253fcdf340831",
+    "name": "Crusoe",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://forgeglobal.com/crusoe-energy-systems_stock/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "862a3f0fc3caec5d",
+    "name": "Lambda",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://stockanalysis.com/private/lambda/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "非上市公司，IPO预期不等于已经挂牌"
+  },
+  {
+    "id": "5557bb18b55b497b",
+    "name": "Nscale",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://stockanalysis.com/private/nscale/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "9cd00551fe9ef729",
+    "name": "Fluidstack",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://stockanalysis.com/private/fluidstack/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，暂无交易所证券"
+  },
+  {
+    "id": "8b7d1a3187ab355d",
+    "name": "OpenAI",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://forgeglobal.com/openai_stock/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "0648d2111ec0ca3d",
+    "name": "DeepSeek",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://docs.house.gov/meetings/HM/HM08/20260317/118982/HHRG-119-HM08-Wstate-DoshiPhDR-20260317.pdf",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "b5c98ec63a169b96",
+    "name": "月之暗面 Moonshot AI",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://stockanalysis.com/private/moonshot-ai/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "f394cc2a6da7dfd6",
+    "name": "Perplexity",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://forgeglobal.com/perplexity_stock/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "非上市公司；私募交易估值不等于公开股价"
+  },
+  {
+    "id": "fda4d4ef1abd417e",
+    "name": "xAI（Grok 业务）",
+    "symbol": null,
+    "listing": {
+      "status": "subsidiary",
+      "source_url": "https://x.ai/news/xai-joins-spacex",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "已被收购，非独立上市证券；不以母公司行情冒充自身股价"
+  },
+  {
+    "id": "f1fff94a8e8008bf",
+    "name": "Mistral AI",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://forgeglobal.com/insights/how-to-invest-in-mistral-ai-stock-pre-ipo/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "744205e43529c1fc",
+    "name": "Anthropic",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://www.msci.com/research-and-insights/paper/private-company-insights-anthropic",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "a738db31fb3f8220",
+    "name": "Anysphere（Cursor）",
+    "symbol": null,
+    "listing": {
+      "status": "subsidiary",
+      "source_url": "https://www.hiive.com/securities/anysphere-cursor.com-stock",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "已被收购，非独立上市证券；不以母公司行情冒充自身股价"
+  },
+  {
+    "id": "deeaa9a408d8e333",
+    "name": "Cognition（Devin／Windsurf）",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://stockanalysis.com/private/cognition/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，暂无交易所证券"
+  },
+  {
+    "id": "601a29658a2d36c4",
+    "name": "Replit",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://forgeglobal.com/replit_stock/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "6a5b495b1f42229e",
+    "name": "Lovable",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://stockanalysis.com/private/lovable/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，暂无交易所证券"
+  },
+  {
+    "id": "f7d279bd362aab7e",
+    "name": "StackBlitz（Bolt）",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://www.collectiveliquidity.com/companies/stackblitz",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "0bc4da79a9b59730",
+    "name": "Augment Code",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://stockanalysis.com/private/augment/valuation/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "d5eef8ad210c5b3a",
+    "name": "Sierra",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://forgeglobal.com/sierra-ai_stock/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "30b5b45bb2159bf3",
+    "name": "Glean",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://www.upmarket.co/private-markets/pre-ipo/glean/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "2db7a0c30b879e15",
+    "name": "Harvey",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://forgeglobal.com/harvey_ipo/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "7d752a76e4beb495",
+    "name": "Abridge",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://www.nasdaqprivatemarket.com/company/abridge/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "e39780fa8ea72413",
+    "name": "Cohere",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://forgeglobal.com/cohere_ipo/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "e96456fbef639222",
+    "name": "字节跳动（Seedance／即梦）",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://www.theinformation.com/articles/bytedance-investors-struggle-to-sell-shares-at-discounted-240-billion-value-amid-ipo-uncertainty",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "b735ff99e5252936",
+    "name": "Runway",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://axevil.com/company/runway",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "9a9c4f69224a9b79",
+    "name": "Luma AI",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://stockanalysis.com/private/luma-ai/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "8a45590e8e81f2fe",
+    "name": "Pika",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "2b6e4519e9171197",
+    "name": "生数科技（Vidu）",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "7515999087e65fcd",
+    "name": "普渡机器人 Pudu",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "ba0764a25f1add51",
+    "name": "擎朗智能 Keenon",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "e25464624b4db0bb",
+    "name": "高仙机器人 Gaussian Robotics",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "6f0b98fa1f40d6ec",
+    "name": "智元机器人 AgiBot",
+    "symbol": null,
+    "listing": {
+      "status": "ipo_pending",
+      "source_url": "https://m.21jingji.com/article/20260725/herald/038a0e9d1986a0080a69162af846769c.html",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "已见上市申请或合并上市资料，尚未核实交易完成及正式挂牌"
+  },
+  {
+    "id": "300e9b0a17b50759",
+    "name": "银河通用 Galbot",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "7cf631049bd2adec",
+    "name": "1X",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "b4fc034fb889efa0",
+    "name": "傅利叶智能 Fourier",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "b56fd4d6dad535ea",
+    "name": "Figure AI",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://forgeglobal.com/figure-ai_ipo/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "c9d5f6cb2c82ff75",
+    "name": "Agility Robotics",
+    "symbol": null,
+    "listing": {
+      "status": "ipo_pending",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2074973/000121390026071655/ea029583801-425_church11.htm",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "已见上市申请或合并上市资料，尚未核实交易完成及正式挂牌"
+  },
+  {
+    "id": "b99b77bac1255d13",
+    "name": "Apptronik",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://forgeglobal.com/apptronik_stock/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "42e70561b53baeae",
+    "name": "Boston Dynamics",
+    "symbol": null,
+    "listing": {
+      "status": "subsidiary",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://bostondynamics.com/faq/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "现代汽车集团旗下公司；不以母公司行情替代其独立行情"
+  },
+  {
+    "id": "7ca6404b1382a23a",
+    "name": "Sanctuary AI",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "c072f44b1cf38fdb",
+    "name": "Dexterity",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "f80ad47116b21a78",
+    "name": "海柔创新 Hai Robotics",
+    "symbol": null,
+    "listing": {
+      "status": "ipo_pending",
+      "source_url": "https://content.etnet.com.hk/content/shk/sc/categorized_news_detail.php?newsid=ETN360213779",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "已见上市申请或合并上市资料，尚未核实交易完成及正式挂牌"
+  },
+  {
+    "id": "fa549ffcec265fd4",
+    "name": "Anduril",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://www.nasdaqprivatemarket.com/company/anduril/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "554ed517bbf05420",
+    "name": "Shield AI",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://forgeglobal.com/shield-ai_stock/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "43cf66cd6b40284e",
+    "name": "Helsing",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "c7018229f702ceee",
+    "name": "Skydio",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "48fb137b46684f57",
+    "name": "ANYbotics",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  },
+  {
+    "id": "8501c9cf9d470183",
+    "name": "云深处科技 DEEP Robotics",
+    "symbol": null,
+    "listing": {
+      "status": "ipo_pending",
+      "exchange": null,
+      "ticker": null,
+      "security_type": null,
+      "source_url": "https://www.stcn.com/ipo/detail/3659.html",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "已见IPO审核资料，未取得已挂牌交易代码"
+  },
+  {
+    "id": "eb1451dee7b632af",
+    "name": "Exail Technologies",
+    "symbol": "EXA.PA",
+    "listing": {
+      "status": "listed",
+      "exchange": "Euronext Paris",
+      "ticker": "EXA",
+      "security_type": "普通股",
+      "source_url": "https://www.exail-technologies.com/investors/",
+      "checked_at": "2026-09-08",
+      "data_source": "Yahoo Finance"
+    },
+    "reason": "Yahoo Finance 日线已验证；保留原交易所币种，不与其他来源拼接"
+  },
+  {
+    "id": "73f91bd834681a02",
+    "name": "Gecko Robotics",
+    "symbol": null,
+    "listing": {
+      "status": "private",
+      "source_url": "https://www.nasdaqprivatemarket.com/company/gecko-robotics/",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "公开资料列为非上市公司，无交易所连续公开行情"
+  },
+  {
+    "id": "f823905564f0efbd",
+    "name": "Flyability",
+    "symbol": null,
+    "listing": {
+      "status": "unverified",
+      "checked_at": "2026-09-08"
+    },
+    "reason": "当前证券目录未匹配；未取得足够上市证明，不能据此断言未上市"
+  }
+]

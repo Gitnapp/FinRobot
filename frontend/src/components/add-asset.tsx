@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { Plus, Search, ArrowRight } from "lucide-react";
@@ -25,28 +25,35 @@ export function AddAsset({
 }) {
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
+  const [term, setTerm] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setTerm(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
   const navigate = useNavigate();
   const refresh = useRefresh();
   const lists = useWatchlists();
   const { data = [] } = useQuery({
-    queryKey: ["catalog"],
-    queryFn: () =>
-      api<{ symbol: string; name: string; sector: string }[]>("/catalog"),
+    queryKey: ["catalog", term],
+    enabled: open,
+    queryFn: ({ signal }) =>
+      api<{ symbol: string; name: string; sector: string }[]>(
+        "/catalog?q=" + encodeURIComponent(term),
+        { signal },
+      ),
   });
-  const filtered = data.filter((a) =>
-    (a.symbol + a.name).toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = data;
   async function add(symbol: string) {
     setBusy(true);
     try {
-      await write(
+      const added = await write<{ symbol: string }>(
         "/watchlists/" + (listId || lists.data?.[0]?.id) + "/symbols",
         { symbol },
       );
       await refresh();
       onOpenChange(false);
       setSearch("");
-      navigate(`/stocks/${symbol.toUpperCase()}`);
+      navigate(`/stocks/${added.symbol}`);
       toast.success(`已添加 ${symbol.toUpperCase()}`);
     } catch (e) {
       toast.error((e as Error).message);
@@ -60,14 +67,14 @@ export function AddAsset({
         <DialogHeader>
           <DialogTitle>添加标的</DialogTitle>
           <DialogDescription className="sr-only">
-            搜索公司或输入美股代码加入自选
+            搜索中、美、港公司或输入完整交易代码加入自选
           </DialogDescription>
         </DialogHeader>
         <div className="search-field">
           <Search size={16} />
           <Input
             aria-label="搜索标的"
-            placeholder="搜索公司或代码，如 NVDA"
+            placeholder="公司名称或代码，如 NVDA、00700.HK"
             autoFocus
             value={search}
             onChange={(e) => setSearch(e.target.value)}

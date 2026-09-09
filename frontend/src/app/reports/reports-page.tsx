@@ -42,7 +42,7 @@ export default function ReportsPage() {
   );
   return (
     <div className="page">
-      <PageHeader title="报告库">
+      <PageHeader title="报告">
         <Button variant="outline" asChild>
           <Link to="/">
             新建研究
@@ -94,8 +94,8 @@ export default function ReportsPage() {
                     <FileText size={20} />
                   </span>
                   <span>
-                    <strong>{r.symbol} · 股票研究</strong>
-                    <small>{r.focus || "业务 · 财务 · 估值 · 风险"}</small>
+                    <strong>{r.company_name || "股票研究"}</strong>
+                    <small>{r.focus || "基本面研究"}</small>
                   </span>
                 </Link>
               </TableCell>

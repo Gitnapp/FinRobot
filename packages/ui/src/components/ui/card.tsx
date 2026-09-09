@@ -1,4 +1,4 @@
-// @gitnapp-customized: card padding 20px, section gap 16px, content gap 12px.
+// @gitnapp-customized: upstream 0.2.0 shadow rules merged;  card padding 20px, section gap 16px, content gap 12px.
 import type * as React from "react";
 
 import { cn } from "../../lib/utils";

@@ -31,6 +31,7 @@ export const useReports = () =>
 export const useReport = (id: string) =>
   useQuery({
     queryKey: ["report", id],
+    enabled: Boolean(id),
     queryFn: () => api<FullReport>(`/reports/${id}`),
     refetchInterval: (q) =>
       q.state.data?.status === "completed" || q.state.data?.status === "failed"
@@ -63,8 +64,14 @@ export const usePriceHistory = (symbol: string) =>
   useQuery({
     queryKey: ["full-history", symbol],
     enabled: Boolean(symbol),
-    queryFn: ({ signal }) =>
-      api<import("../types").History>(`/assets/${symbol}/history`, { signal }),
+    queryFn: async ({ signal }) => {
+      const result = await api<{ data: import("../types").History | null }>(
+        `/data/${symbol}/prices`,
+        { signal },
+      );
+      if (!result.data) throw new Error("历史行情暂不可用");
+      return result.data;
+    },
     staleTime: 21600000,
     retry: false,
   });

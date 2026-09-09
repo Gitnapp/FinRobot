@@ -1,6 +1,6 @@
 "use client";
 
-// @gitnapp-customized: formatIsoDate 固定 locale,修复 SSR/CSR hydration mismatch。
+// @gitnapp-customized: formatIsoDate 固定 locale,修复 SSR/CSR hydration mismatch;design.md「圆角与层级」阴影收敛——移除默认阴影。
 // 升级本组件禁止直接 `shadcn add -o` 覆盖——先 diff 再手动合入。CI 断言此标记存在(scripts/assert-customization-markers.mjs)。
 
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
@@ -74,7 +74,7 @@ function Calendar({
           defaultClassNames.dropdowns,
         ),
         dropdown_root: cn(
-          "relative rounded-md border border-input shadow-xs has-focus:border-ring has-focus:ring-[3px] has-focus:ring-ring/50",
+          "relative rounded-md border border-input has-focus:border-ring has-focus:ring-[3px] has-focus:ring-ring/50",
           defaultClassNames.dropdown_root,
         ),
         dropdown: cn("absolute inset-0 bg-popover opacity-0", defaultClassNames.dropdown),
@@ -189,4 +189,5 @@ function CalendarDayButton({
   );
 }
 
+export { zhCN } from "react-day-picker/locale";
 export { Calendar, CalendarDayButton };

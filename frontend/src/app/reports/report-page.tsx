@@ -1,8 +1,11 @@
+import { BackLink } from "@gitnapp/ui/components/ui/back-link";
+import { ReadingLayout } from "@gitnapp/ui/components/ui/data-layout";
+import { ReportContents } from "../../components/report-contents";
+import { useActiveSection } from "../../hooks/use-active-section";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router";
 import {
-  ArrowLeft,
   Download,
   RotateCcw,
   FileText,
@@ -51,6 +54,7 @@ export default function ReportPage() {
   const navigate = useNavigate();
   const refresh = useRefresh();
   const [busy, setBusy] = useState(false);
+  const activeSection = useActiveSection(Boolean(data?.payload), id);
   if (isLoading) return <Loading />;
   if (error) return <ErrorState error={error} retry={() => void refetch()} />;
   if (!data) return null;
@@ -72,11 +76,10 @@ export default function ReportPage() {
   }
   return (
     <div className="page report-page">
-      <Link to="/reports" className="back-link">
-        <ArrowLeft size={14} />
-        报告库
-      </Link>
-      <PageHeader title={data.symbol + " · 股票研究"}>
+      <BackLink asChild>
+        <Link to="/reports" aria-label="返回报告">返回</Link>
+      </BackLink>
+      <PageHeader title={p?.quote.name || "股票研究"}>
         {p && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -133,18 +136,14 @@ export default function ReportPage() {
               </InfoLabel>
             )}
           </div>
-          <div className="report-layout">
-            <nav className="report-toc" aria-label="研报目录">
-              {p.sections.map((s, i) => (
-                <a href={"#section-" + i} key={s.title}>
-                  {s.title}
-                </a>
-              ))}
-              <a href="#report-sources">来源索引</a>
-            </nav>
+          <ReadingLayout
+            navigation={
+              <ReportContents sections={p.sections} active={activeSection} />
+            }
+          >
             <article className="report-body">
               {p.sections.map((s, i) => (
-                <section id={"section-" + i} key={s.title}>
+                <section id={"section-" + i} key={s.title} tabIndex={-1}>
                   <h2>{s.title}</h2>
                   <div className="report-prose">
                     {s.content
@@ -159,14 +158,14 @@ export default function ReportPage() {
                   )}
                 </section>
               ))}
-              <section id="report-sources">
+              <section id="report-sources" tabIndex={-1}>
                 <h2>来源索引</h2>
                 {p.sources.map((s, i) => (
                   <div className="source-row" key={i}>
                     <span>[{i + 1}]</span>
                     <div>
                       {s.mock ? (
-                        <strong>{s.label} · 示例输入</strong>
+                        <strong>{s.label}（示例输入）</strong>
                       ) : (
                         <a href={s.url} target="_blank" rel="noreferrer">
                           {s.label}
@@ -180,7 +179,7 @@ export default function ReportPage() {
               </section>
               <footer className="report-end">Garage Research</footer>
             </article>
-          </div>
+          </ReadingLayout>
         </>
       )}
     </div>

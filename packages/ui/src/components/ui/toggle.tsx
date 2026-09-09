@@ -1,5 +1,8 @@
 "use client";
 
+// @gitnapp-customized: design.md「圆角与层级」阴影收敛——移除 outline 变体默认阴影，border 已是细边。
+// 升级本组件禁止直接 `shadcn add -o` 覆盖——先 diff 再手动合入。CI 断言此标记存在(scripts/assert-customization-markers.mjs)。
+
 import { cva, type VariantProps } from "class-variance-authority";
 import { Toggle as TogglePrimitive } from "radix-ui";
 import type * as React from "react";
@@ -12,8 +15,7 @@ const toggleVariants = cva(
     variants: {
       variant: {
         default: "bg-transparent",
-        outline:
-          "border border-input bg-transparent shadow-xs hover:bg-accent hover:text-accent-foreground",
+        outline: "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground",
       },
       size: {
         default: "h-9 min-w-9 px-2",

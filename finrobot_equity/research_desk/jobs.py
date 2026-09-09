@@ -38,9 +38,11 @@ def enqueue(store, symbol, focus="", trigger="manual"):
 
 
 class Worker:
-    def __init__(self, store, market):
+    def __init__(self, store, market, assumption_policy=None, *, narrative_writer=None):
         self.store = store
         self.market = market
+        self.narrative_writer = narrative_writer or write_narrative
+        self.assumption_policy = assumption_policy
         self.last_tick = None
 
     def schedule_due(self):
@@ -48,7 +50,8 @@ class Worker:
         with self.store.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             for coverage in db.execute(
-                "SELECT * FROM coverage WHERE active=1 AND next_run<=?", (now(),)
+                "SELECT * FROM coverage WHERE active=1 AND next_run<=? AND EXISTS (SELECT 1 FROM models WHERE models.symbol=coverage.symbol)",
+                (now(),),
             ).fetchall():
                 symbol = coverage["symbol"]
                 busy = db.execute(
@@ -67,9 +70,28 @@ class Worker:
                     "SELECT COALESCE(MAX(version),0)+1 FROM reports WHERE symbol=?",
                     (symbol,),
                 ).fetchone()[0]
+                company = next(
+                    (
+                        json.loads(r["payload"])
+                        for r in db.execute("SELECT payload FROM coverage_companies").fetchall()
+                        if json.loads(r["payload"]).get("symbol") == symbol
+                    ),
+                    None,
+                )
+                focus = (
+                    (
+                        company["scene"]
+                        + "；"
+                        + company["brief"]
+                        + "；重点核验："
+                        + company["focus"]
+                    )[:1200]
+                    if company
+                    else ""
+                )
                 db.execute(
-                    "INSERT INTO reports(id,symbol,version,status,stage,trigger,focus,created_at) VALUES (?,?,?,'queued','排队中','scheduled','',?)",
-                    (identifier, symbol, version, now()),
+                    "INSERT INTO reports(id,symbol,version,status,stage,trigger,focus,created_at) VALUES (?,?,?,'queued','排队中','scheduled',?,?)",
+                    (identifier, symbol, version, focus, now()),
                 )
                 db.execute(
                     "UPDATE coverage SET next_run=? WHERE symbol=?",
@@ -92,12 +114,16 @@ class Worker:
         try:
             symbol = job["symbol"]
             settings = self.store.settings()
+            if self.assumption_policy:
+                await self.assumption_policy.refresh(symbol)
             dossier = await compose(self.market, symbol, self.store.assumptions(symbol))
+            if dossier.get("market_only"):
+                raise RuntimeError("财务数据尚未接入，暂不能生成研究报告")
             quote, base, news = dossier["quote"], dossier["fundamentals"], dossier["news"]
             self.store.execute("UPDATE reports SET stage='计算预测模型' WHERE id=?", (job["id"],))
             model = dossier["model"]
             self.store.execute("UPDATE reports SET stage='撰写研究报告' WHERE id=?", (job["id"],))
-            narrative = await write_narrative(
+            narrative = await self.narrative_writer(
                 symbol, quote, base, model, news, settings, job["focus"], dossier
             )
             payload = {
@@ -140,12 +166,35 @@ class Worker:
             )
         return True
 
+    async def refresh_market_due(self):
+        rows = self.store.all(
+            "SELECT * FROM coverage WHERE active=1 AND next_run<=? AND NOT EXISTS (SELECT 1 FROM models WHERE models.symbol=coverage.symbol)",
+            (now(),),
+        )
+        for row in rows:
+            symbol = row["symbol"]
+            try:
+                async with asyncio.timeout(30):
+                    quote, history = await asyncio.gather(
+                        self.market.quote(symbol), self.market.history(symbol)
+                    )
+                    if quote.get("price") is None or not history.get("points"):
+                        raise RuntimeError("Market data unavailable")
+                self.store.execute(
+                    "UPDATE coverage SET last_run=?,next_run=? WHERE symbol=? AND active=1",
+                    (now(), next_due(row["cadence"]), symbol),
+                )
+            except (RuntimeError, ValueError, TimeoutError):
+                retry = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
+                self.store.execute("UPDATE coverage SET next_run=? WHERE symbol=?", (retry, symbol))
+
     async def run(self):
         # A process restart never leaves a phantom running job. Queued jobs resume normally.
         self.store.execute(
             "UPDATE reports SET status='failed',stage='已中断',error='上次运行被中断，可手动重试' WHERE status='running'"
         )
         while True:
+            await self.refresh_market_due()
             self.schedule_due()
             if not await self.process_one():
                 await asyncio.sleep(2)

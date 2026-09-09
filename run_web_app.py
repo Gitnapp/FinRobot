@@ -9,7 +9,7 @@ import uvicorn
 from dotenv import load_dotenv
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Garage Research · FinRobot")
+    parser = argparse.ArgumentParser(description="Garage Research")
     parser.add_argument("--port", type=int, default=8001)
     parser.add_argument("--reload", action="store_true")
     args = parser.parse_args()

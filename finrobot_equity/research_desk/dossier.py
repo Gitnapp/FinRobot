@@ -65,47 +65,76 @@ def valuation(base, model):
         "fcff": fcff,
         "mock": base["mock"],
         "method": "经营现金流折现",
-        "unit": "USD million",
+        "unit": base.get("currency", "USD") + " million",
         "note": "以 EBIT 税后利润加折旧、减资本开支与营运资金计算企业现金流；未扣净债务，不换算目标股价。",
     }
 
 
 async def basic_metrics(market, symbol):
-    sample = {
-        "pe": {"NVDA": 34.2, "AMD": 45.8, "AVGO": 28.7, "AAPL": 29.4, "MSFT": 31.2}.get(
-            symbol, 26.3
-        ),
-        "beta": 1.35,
-        "growth": 20.0,
-        "mock": True,
-    }
-
     async def fetch(mode):
-        if mode == "mock":
-            return sample
+        fields = {
+            "pe": None,
+            "beta": None,
+            "growth": None,
+            "low": None,
+            "high": None,
+            "mock": False,
+            "sources": {},
+        }
+        aliases = {
+            "pe": "peTTM",
+            "beta": "beta",
+            "growth": "revenueGrowthTTMYoy",
+            "low": "52WeekLow",
+            "high": "52WeekHigh",
+        }
         try:
             raw = await market.get("Finnhub", "stock/metric", {"symbol": symbol, "metric": "all"})
-            m = raw["metric"]
+            for key, alias in aliases.items():
+                value = raw.get("metric", {}).get(alias)
+                if value is not None and math.isfinite(float(value)):
+                    fields[key] = float(value)
+                    fields["sources"][key] = "Finnhub"
+        except (ProviderError, ValueError, TypeError):
+            pass
+        if fields["pe"] is None or fields["beta"] is None:
+            try:
+                raw = await market.yahoo.statistics(symbol)
+                for key, alias in {
+                    "pe": "trailingPE",
+                    "beta": "beta",
+                    "low": "fiftyTwoWeekLow",
+                    "high": "fiftyTwoWeekHigh",
+                }.items():
+                    value = raw.get(alias)
+                    if fields[key] is None and value is not None:
+                        fields[key] = value
+                        fields["sources"][key] = "Yahoo Finance"
+            except (ProviderError, ValueError, TypeError):
+                pass
+        return fields
 
-            def number(key):
-                value = m.get(key)
-                return float(value) if value is not None and math.isfinite(float(value)) else None
-
-            return {
-                "pe": number("peTTM") if number("peTTM") is not None else sample["pe"],
-                "beta": number("beta") if number("beta") is not None else sample["beta"],
-                "growth": number("revenueGrowthTTMYoy"),
-                "low": number("52WeekLow"),
-                "high": number("52WeekHigh"),
-                "mock": number("peTTM") is None or number("beta") is None,
-            }
-        except (ProviderError, ValueError, TypeError, KeyError):
-            return sample
-
-    return await market.cached("metrics:" + symbol, fetch, 21600)
+    return await market.cached("market-metrics:" + symbol, fetch, 21600)
 
 
 async def compose(market, symbol, assumptions=None):
+    if symbol.endswith((".SH", ".SZ", ".BJ", ".HK", ".KS", ".KQ", ".T", ".AS", ".PA")):
+        quote, history, metrics = await asyncio.gather(
+            market.quote(symbol), market.history(symbol), basic_metrics(market, symbol)
+        )
+        return {
+            "quote": quote,
+            "history": history,
+            "market_only": True,
+            "metrics": metrics,
+            "technical": technical(history),
+            "peers": [],
+            "news": {"items": [], "mock": False},
+            "model": None,
+            "fundamentals": None,
+            "valuation": None,
+        }
+
     quote, base, history, news, metrics = await asyncio.gather(
         market.quote(symbol),
         market.fundamentals(symbol),
@@ -113,10 +142,21 @@ async def compose(market, symbol, assumptions=None):
         market.news(symbol),
         basic_metrics(market, symbol),
     )
+    if base is None:
+        return {
+            "quote": quote,
+            "history": history,
+            "market_only": True,
+            "metrics": metrics,
+            "technical": technical(history),
+            "peers": [],
+            "news": news,
+            "model": None,
+            "fundamentals": None,
+            "valuation": None,
+        }
     model = compute_model(base, assumptions)
     peers = [r for r in CATALOG if r[2] == quote["sector"] and r[0] != symbol][:3]
-    if not peers:
-        peers = [r for r in CATALOG if r[0] in ["MSFT", "AAPL", "GOOGL"] and r[0] != symbol][:3]
     peer_quotes = await asyncio.gather(*(market.quote(r[0]) for r in peers))
     peer_metrics = await asyncio.gather(*(basic_metrics(market, r[0]) for r in peers))
     comparisons = [

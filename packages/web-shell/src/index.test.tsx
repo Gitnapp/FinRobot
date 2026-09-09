@@ -6,6 +6,7 @@ import {
   type RailApp,
   RailAppSwitcher,
   RailBrand,
+  RailBreadcrumb,
   RailCollapseButton,
   RailMobileDrawer,
   RailMobileHeader,
@@ -46,7 +47,7 @@ describe("shared rail shell accessibility", () => {
     );
 
     expect(sidebar).toContain('aria-label="功能区"');
-    expect(sidebar).toContain("min-h-11");
+    expect(sidebar).toContain("min-h-9");
     expect(sidebar).toContain('aria-current="page"');
     expect(tabs).toContain('aria-label="当前功能区标签"');
   });
@@ -137,18 +138,18 @@ describe("shared rail shell accessibility", () => {
 
     expect(collapsed).toContain("size-8");
     // 44px 命中区高度只属于展开态；带进折叠态会让高亮退化成 32×44 长方形。
-    expect(collapsed).not.toContain("min-h-11");
+    expect(collapsed).not.toContain("min-h-9");
     // 本包 cn() 没有 tailwind-merge，冲突的 padding 会同时留在 class 里。
     expect(collapsed).not.toContain("py-2.5");
     expect(collapsed).not.toContain("px-3");
   });
 
-  it("keeps the expanded rail entry a full-width row with a 44px touch target", () => {
+  it("keeps the expanded rail entry a full-width row with a compact visual target with transparent hit padding", () => {
     const expanded = renderToStaticMarkup(
       <RailNavLink active collapsed={false} href="/users" icon={<span>U</span>} label="用户" />,
     );
 
-    expect(expanded).toContain("min-h-11");
+    expect(expanded).toContain("min-h-9");
     expect(expanded).toContain("px-2");
     expect(expanded).not.toContain("size-8");
   });
@@ -436,4 +437,13 @@ describe("shared Casdoor login prompt", () => {
       '<div class="grid min-h-dvh place-items-center bg-muted/30 p-6 text-foreground">',
     );
   });
+});
+
+it("renders clickable ancestors and a non-interactive current breadcrumb", () => {
+  const html = renderToStaticMarkup(
+    <RailBreadcrumb items={[{ label: "目录", href: "/library" }, { label: "详情" }]} />,
+  );
+  expect(html).toContain('href="/library"');
+  expect(html).toContain('aria-current="page"');
+  expect(html.match(/<a /g)).toHaveLength(1);
 });

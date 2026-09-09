@@ -1,7 +1,10 @@
+import { AppBreadcrumb } from "../components/app-breadcrumb";
 import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import {
   Activity,
+  Globe,
+  CalendarDays,
   ChartNoAxesCombined,
   FileText,
   PanelLeft,
@@ -28,8 +31,10 @@ import { Button } from "../components/ui";
 const navigation = [
   { href: "/", label: "市场看板", icon: ChartNoAxesCombined },
   { href: "/coverage", label: "持续跟踪", icon: Telescope },
-  { href: "/reports", label: "报告库", icon: FileText },
-  { href: "/settings", label: "模型与数据", icon: Settings2 },
+  { href: "/macro", label: "宏观环境", icon: Globe },
+  { href: "/calendar", label: "事件日历", icon: CalendarDays },
+  { href: "/reports", label: "报告", icon: FileText },
+  { href: "/settings", label: "设置", icon: Settings2 },
 ];
 const AppLink = ({
   href,
@@ -80,8 +85,7 @@ export default function Shell() {
         >
           <PanelLeft size={18} />
         </Button>
-        <span>Garage Research</span>
-        <span />
+        <AppBreadcrumb parent={active} />
       </div>
       <RailShell
         sidebar={
@@ -121,7 +125,7 @@ export default function Shell() {
                 localStorage.setItem("desk-collapsed", String(!collapsed));
               }}
             />
-            <div className="breadcrumb">{active?.label}</div>
+            <AppBreadcrumb parent={active} />
           </>
         }
       >

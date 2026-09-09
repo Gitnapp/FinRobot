@@ -93,4 +93,4 @@ function InfoLabel({
   );
 }
 
-export { InfoLabel, InfoHint, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger };
+export { InfoHint, InfoLabel, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger };

@@ -23,12 +23,23 @@ def number(value, low=None, high=None):
 
 
 class TrackingSignals:
-    def __init__(self, store, providers):
+    def __init__(self, store, providers, yahoo=None):
         self.store = store
         self.providers = providers
+        self.yahoo = yahoo
         self.pending = {}
 
     async def read(self, symbol, kind):
+        if kind == "sentiment" and symbol.endswith(
+            (".SH", ".SZ", ".BJ", ".KS", ".KQ", ".T", ".AS", ".PA")
+        ):
+            return {
+                "status": "unavailable",
+                "as_of": None,
+                "data": None,
+                "reason": "market_not_supported",
+            }
+
         mode = self.store.settings()["data_mode"]
         key = f"signals:{mode}:{symbol}:{kind}"
         row = self.store.one("SELECT value,expires FROM cache WHERE key=?", (key,))
@@ -45,13 +56,10 @@ class TrackingSignals:
         result = {"status": "ready", "as_of": stamp, "data": None, "reason": None}
         ttl = 21600  # Four reads per symbol/day at most; protects free sentiment quotas.
         try:
-            if mode == "mock":
-                result.update(status="unavailable", reason="demo_mode")
-            else:
-                async with asyncio.timeout(12):
-                    result["data"] = await getattr(self, kind)(symbol)
-                if result["data"] is None:
-                    result.update(status="empty")
+            async with asyncio.timeout(12):
+                result["data"] = await getattr(self, kind)(symbol)
+            if result["data"] is None:
+                result.update(status="empty")
         except (ProviderError, TimeoutError, ValueError, TypeError, KeyError, IndexError):
             result.update(status="unavailable", reason="temporarily_unavailable")
             if cached:
@@ -69,6 +77,36 @@ class TrackingSignals:
         return result
 
     async def catalysts(self, symbol):
+        if not symbol.endswith((".SH", ".SZ", ".BJ", ".HK", ".KS", ".KQ", ".T", ".AS", ".PA")):
+            try:
+                result = await self._finnhub_catalysts(symbol)
+                if result["events"] or not self.yahoo:
+                    return result
+            except (ProviderError, ValueError):
+                if not self.yahoo:
+                    raise
+        if not self.yahoo:
+            return {"events": [], "source": ""}
+        raw = await self.yahoo.earnings(symbol)
+        today = datetime.now(timezone.utc).date()
+        return {
+            "source": "Yahoo Finance",
+            "events": [
+                {
+                    **row,
+                    "title": "财报",
+                    "timing": "日期以公司公告为准",
+                    "upcoming": row["date"] >= today.isoformat(),
+                    "revenue_estimate": None,
+                }
+                for row in raw["events"]
+                if (today - timedelta(days=365)).isoformat()
+                <= row["date"]
+                <= (today + timedelta(days=180)).isoformat()
+            ],
+        }
+
+    async def _finnhub_catalysts(self, symbol):
         today = datetime.now(timezone.utc).date()
         raw = await self.providers.get(
             "Finnhub",
@@ -104,18 +142,20 @@ class TrackingSignals:
         return {"events": sorted(events.values(), key=lambda x: x["date"]), "source": "Finnhub"}
 
     async def sentiment(self, symbol):
+        # Adanos HKEX identifiers use four digits without the exchange suffix.
+        ticker = str(int(symbol.removesuffix(".HK"))).zfill(4) if symbol.endswith(".HK") else symbol
         today = datetime.now(timezone.utc).date()
         start = today - timedelta(days=6)
         raw = await self.providers.get(
             "Adanos",
-            f"reddit/stocks/v1/stock/{symbol}",
+            f"reddit/stocks/v1/stock/{ticker}",
             {"from": start.isoformat(), "to": today.isoformat()},
         )
         if not isinstance(raw, dict):
             raise ValueError("invalid sentiment")
         if raw.get("found") is False:
             return None
-        if raw.get("ticker", "").upper() != symbol:
+        if raw.get("ticker", "").upper() != ticker:
             raise ValueError("ticker mismatch")
         daily = {}
         for row in raw.get("daily_trend") or []:

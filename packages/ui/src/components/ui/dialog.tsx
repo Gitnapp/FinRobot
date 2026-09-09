@@ -44,6 +44,7 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onEscapeKeyDown,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
@@ -58,6 +59,11 @@ function DialogContent({
           className,
         )}
         {...props}
+        onEscapeKeyDown={(event) => {
+          if (event.target instanceof Element && event.target.closest("[data-rui-editable]"))
+            event.preventDefault();
+          onEscapeKeyDown?.(event);
+        }}
       >
         {children}
         {showCloseButton && (

@@ -1,4 +1,4 @@
-// @gitnapp-customized: design.md 紧凑尺寸表(32/36px)、按压反馈、coarse-pointer 44px 命中区。
+// @gitnapp-customized: design.md 紧凑尺寸表(32/36px)、按压反馈、coarse-pointer 44px 命中区；design.md「圆角与层级」阴影收敛——移除 outline 变体默认阴影。
 // 升级本组件禁止直接 `shadcn add -o` 覆盖——先 diff 再手动合入。CI 断言此标记存在(scripts/assert-customization-markers.mjs)。
 
 import { cva, type VariantProps } from "class-variance-authority";
@@ -18,7 +18,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",

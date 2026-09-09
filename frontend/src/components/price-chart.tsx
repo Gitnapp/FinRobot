@@ -1,6 +1,6 @@
 import { usePriceHistory } from "../hooks/queries";
 import { LoadingState } from "@gitnapp/ui/components/ui/loading";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   AreaSeries,
   CandlestickSeries,
@@ -32,7 +32,7 @@ export function PriceChart({
     mq.addEventListener("change", changed);
     return () => mq.removeEventListener("change", changed);
   }, []);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!container.current || !shownHistory) return;
     const last = shownHistory.points.at(-1);
     if (!last) return;
@@ -152,7 +152,7 @@ export function PriceChart({
         <p className="muted text-xs">早期日线暂缺，当前展示可用历史。</p>
       )}
       <div className="chart-caption">
-        日线 · USD{" "}
+        日线{shownHistory?.currency ? `（${shownHistory.currency}）` : ""}{" "}
         <span>
           {shownHistory
             ? `${range === 0 ? shownHistory.points[0]?.time + " — " : "截至 "}${shownHistory.as_of}`

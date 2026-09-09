@@ -1,0 +1,84 @@
+{
+  "cik": 2488,
+  "entityName": "ADVANCED MICRO DEVICES INC",
+  "facts": {
+    "us-gaap": {
+      "AdjustmentForAmortization": {
+        "label": "Amortization",
+        "description": "The aggregate amount of recurring noncash expense charged against earnings in the period to allocate the cost of assets over their estimated remaining economic lives.",
+        "units": {
+          "USD": [
+            {
+              "start": "2024-12-29",
+              "end": "2025-12-27",
+              "val": 2254000000,
+              "accn": "0000002488-26-000018",
+              "fy": 2025,
+              "fp": "FY",
+              "form": "10-K",
+              "filed": "2026-02-04",
+              "frame": "CY2025"
+            }
+          ]
+        }
+      },
+      "OperatingIncomeLoss": {
+        "label": "Operating Income (Loss)",
+        "description": "The net result for the period of deducting operating expenses from operating revenues.",
+        "units": {
+          "USD": [
+            {
+              "start": "2024-12-29",
+              "end": "2025-12-27",
+              "val": 3694000000,
+              "accn": "0000002488-26-000018",
+              "fy": 2025,
+              "fp": "FY",
+              "form": "10-K",
+              "filed": "2026-02-04",
+              "frame": "CY2025"
+            }
+          ]
+        }
+      },
+      "OtherDepreciationAndAmortization": {
+        "label": "Other Depreciation and Amortization",
+        "description": "Amount of expense charged against earnings to allocate the cost of tangible and intangible assets over their remaining economic lives, classified as other.",
+        "units": {
+          "USD": [
+            {
+              "start": "2024-12-29",
+              "end": "2025-12-27",
+              "val": 750000000,
+              "accn": "0000002488-26-000018",
+              "fy": 2025,
+              "fp": "FY",
+              "form": "10-K",
+              "filed": "2026-02-04",
+              "frame": "CY2025"
+            }
+          ]
+        }
+      },
+      "RevenueFromContractWithCustomerExcludingAssessedTax": {
+        "label": "Revenue from Contract with Customer, Excluding Assessed Tax",
+        "description": "Amount, excluding tax collected from customer, of revenue from satisfaction of performance obligation by transferring promised good or service to customer. Tax collected from customer is tax assessed by governmental authority that is both imposed on and concurrent with specific revenue-producing transaction, including, but not limited to, sales, use, value added and excise.",
+        "units": {
+          "USD": [
+            {
+              "start": "2024-12-29",
+              "end": "2025-12-27",
+              "val": 34639000000,
+              "accn": "0000002488-26-000018",
+              "fy": 2025,
+              "fp": "FY",
+              "form": "10-K",
+              "filed": "2026-02-04",
+              "frame": "CY2025"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

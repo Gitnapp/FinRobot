@@ -8,14 +8,19 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from .assumption_policy import AssumptionPolicy
+from .coverage_market import CoverageMarket
+from .data_access import DataAccess
 from .dossier import compose
-from .exports import report_date, table_data
+from .exports import assumption_text, report_date, table_data
+from .intelligence import Intelligence
 from .jobs import Worker, enqueue, next_due
 from .market import CATALOG, Market
-from .model import compute_model, defaults
+from .model import compute_model, defaults, unavailable_model
+from .providers import ProviderError
 from .research import call_model, provider_status
 from .schemas import (
     Assumptions,
@@ -24,8 +29,6 @@ from .schemas import (
     SettingsInput,
     SymbolInput,
 )
-from .history import HistoryArchive
-from .providers import ProviderError
 from .signals import TrackingSignals
 from .store import Store, now
 from .watchlists import routes as watchlist_routes
@@ -36,28 +39,46 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
-def create_app(directory=None):
+def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
     store = Store(directory)
-    market = Market(store)
-    archive = HistoryArchive(store, market.providers)
-    signals = TrackingSignals(store, market.providers)
-    worker = Worker(store, market)
+    market = market_factory(store)
+    signals = TrackingSignals(store, market.providers, market.yahoo)
+    intelligence = Intelligence(store, market.financial_data, market.sources)
+    data_access = DataAccess(market, intelligence, signals)
+    coverage_market = CoverageMarket(store, market, intelligence.cache)
+    assumption_policy = AssumptionPolicy(store, market, intelligence.cache)
+    worker = Worker(store, market, assumption_policy, narrative_writer=narrative_writer)
 
     @asynccontextmanager
     async def lifespan(app):
         store.init()
+        intelligence.cache.init()
         task = asyncio.create_task(worker.run())
+        financial_task = asyncio.create_task(market.financial_data.run())
         app.state.worker_task = task
-        yield
-        task.cancel()
-        with suppress(asyncio.CancelledError):
-            await task
+        app.state.financial_task = financial_task
+        try:
+            yield
+        finally:
+            for running in (task, financial_task):
+                running.cancel()
+            for running in (task, financial_task):
+                with suppress(asyncio.CancelledError):
+                    await running
+            await intelligence.cache.close()
+            await market.yahoo.close()
 
-    app = FastAPI(title="Garage Research · FinRobot", lifespan=lifespan)
+    app = FastAPI(title="Garage Research", lifespan=lifespan)
+
+    @app.exception_handler(ProviderError)
+    async def unavailable_market(request, exc):
+        return JSONResponse(status_code=503, content={"detail": "行情暂时不可用，请稍后重试"})
+
     app.state.store = store
     app.state.market = market
+    app.state.intelligence = intelligence
     app.state.worker = worker
-    app.include_router(watchlist_routes(store))
+    app.include_router(watchlist_routes(store, market))
 
     @app.middleware("http")
     async def local_write_guard(request: Request, call_next):
@@ -88,14 +109,39 @@ def create_app(directory=None):
     @app.get("/api/health")
     def health():
         return {
-            "ok": not app.state.worker_task.done(),
+            "ok": not app.state.worker_task.done() and not app.state.financial_task.done(),
             "scheduler": "running" if not app.state.worker_task.done() else "stopped",
             "last_tick": worker.last_tick,
+            "financial_scheduler": "running" if not app.state.financial_task.done() else "stopped",
+            "financial_last_tick": market.financial_data.last_tick,
             "time": now(),
         }
 
+    @app.get("/api/data/capabilities")
+    def data_capabilities():
+        from .capabilities import capability_inventory
+
+        return capability_inventory()
+
+    @app.get("/api/data/{subject}/{dataset}")
+    async def read_data(
+        subject: str,
+        dataset: str,
+        fields: str = "",
+        start: str | None = None,
+        end: str | None = None,
+    ):
+        try:
+            return await data_access.read(
+                subject, dataset, fields=fields.split(",") if fields else None, start=start, end=end
+            )
+        except ValueError:
+            raise HTTPException(422, "请检查指标名称或日期范围") from None
+
     @app.get("/api/catalog")
-    def catalog(q: str = ""):
+    async def catalog(q: str = ""):
+        if q.strip():
+            return await market.search(q.strip())
         return [
             {"symbol": r[0], "name": r[1], "sector": r[2]}
             for r in CATALOG
@@ -110,7 +156,9 @@ def create_app(directory=None):
                 (list_id,),
             )
             if list_id
-            else store.all("SELECT * FROM assets ORDER BY created_at,symbol")
+            else store.all(
+                "SELECT * FROM assets WHERE symbol IN (SELECT symbol FROM watchlist_symbols) ORDER BY created_at,symbol"
+            )
         )
         quotes = await asyncio.gather(*(market.quote(r["symbol"]) for r in rows))
         coverage = {r["symbol"]: r for r in store.all("SELECT * FROM coverage")}
@@ -144,14 +192,52 @@ def create_app(directory=None):
             raise HTTPException(404, "请先将标的加入持续跟踪")
         return symbol
 
+    @app.get("/api/coverage-directory")
+    def coverage_directory():
+        companies = [
+            json.loads(r["payload"])
+            for r in store.all("SELECT payload FROM coverage_companies ORDER BY rowid")
+        ]
+        links = {r["symbol"]: r for r in store.all("SELECT * FROM coverage")}
+        reports = store.reports()
+        represented = {r.get("symbol") for r in companies}
+        for symbol in links:
+            if symbol not in represented:
+                companies.append(
+                    {
+                        "id": symbol,
+                        "name": symbol,
+                        "symbol": symbol,
+                        "track": "自选",
+                        "scene": "其他",
+                        "role": "自选",
+                        "brief": "",
+                        "focus": "",
+                        "availability": "ready",
+                        "reason": "",
+                    }
+                )
+        for company in companies:
+            symbol = company.get("symbol")
+            company["coverage"] = links.get(symbol)
+            company["report"] = next(
+                (r for r in reports if r["symbol"] == symbol and r["status"] == "completed"), None
+            )
+        return companies
+
+    @app.get("/api/coverage-market")
+    async def coverage_quotes():
+        return coverage_market.read(coverage_directory())
+
     @app.get("/api/coverage/{symbol}")
     async def coverage_detail(symbol: str):
         symbol = require_coverage(symbol)
         data = await compose(market, symbol, store.assumptions(symbol))
-        store.execute(
-            "INSERT OR IGNORE INTO models VALUES (?,?,?)",
-            (symbol, json.dumps(data["model"]["assumptions"]), now()),
-        )
+        if data.get("model"):
+            store.execute(
+                "INSERT OR IGNORE INTO models VALUES (?,?,?)",
+                (symbol, json.dumps(data["model"]["assumptions"]), now()),
+            )
         last = store.one(
             "SELECT payload FROM reports WHERE symbol=? AND status='completed' ORDER BY completed_at DESC LIMIT 1",
             (symbol,),
@@ -176,11 +262,16 @@ def create_app(directory=None):
     @app.put("/api/coverage/{symbol}")
     async def coverage(symbol: str, body: CoverageInput):
         symbol = require_asset(symbol)
-        base = await market.fundamentals(symbol)
-        store.execute(
-            "INSERT OR IGNORE INTO models VALUES (?,?,?)",
-            (symbol, json.dumps(defaults(base)), now()),
+        base = (
+            None
+            if symbol.endswith((".SH", ".SZ", ".BJ", ".HK", ".KS", ".KQ", ".T", ".AS", ".PA"))
+            else await market.fundamentals(symbol)
         )
+        if base:
+            store.execute(
+                "INSERT OR IGNORE INTO models VALUES (?,?,?)",
+                (symbol, json.dumps(defaults(base)), now()),
+            )
         old = store.one("SELECT * FROM coverage WHERE symbol=?", (symbol,))
         # Adding / resuming schedules one initial report; changing frequency resets next due time.
         due = old["next_run"] if old else now()
@@ -204,22 +295,40 @@ def create_app(directory=None):
     def remove_coverage(symbol: str):
         symbol = require_asset(symbol)
         store.execute("DELETE FROM coverage WHERE symbol=?", (symbol,))
+        store.execute(
+            "DELETE FROM coverage_companies WHERE json_extract(payload, '$.symbol')=?", (symbol,)
+        )
         store.execute("DELETE FROM models WHERE symbol=?", (symbol,))
         return {"ok": True}
 
     @app.get("/api/models/{symbol}")
     async def get_model(symbol: str, scenario: Literal["base", "bull", "bear"] = "base"):
         symbol = require_coverage(symbol)
-        return compute_model(await market.fundamentals(symbol), store.assumptions(symbol), scenario)
+        base = await market.fundamentals(symbol)
+        if base is None:
+            return unavailable_model(scenario)
+        recommendation = assumption_policy.read(symbol)
+        model = compute_model(base, store.assumptions(symbol), scenario)
+        return {**model, "recommendation_state": recommendation["state"]}
 
     @app.put("/api/models/{symbol}")
-    async def save_model(symbol: str, body: Assumptions):
+    async def save_model(symbol: str, body: dict[str, float | None]):
+        try:
+            Assumptions.model_validate(
+                {**Assumptions().model_dump(), **{k: v for k, v in body.items() if v is not None}}
+            )
+        except ValueError:
+            raise HTTPException(422, "请检查假设数值范围") from None
         symbol = require_coverage(symbol)
-        store.execute(
-            "INSERT OR REPLACE INTO models VALUES (?,?,?)",
-            (symbol, body.model_dump_json(), now()),
-        )
-        return compute_model(await market.fundamentals(symbol), body.model_dump())
+        try:
+            effective = assumption_policy.save(symbol, body)
+        except ValueError:
+            raise HTTPException(422, "请检查假设数值范围") from None
+        return compute_model(await market.fundamentals(symbol), effective)
+
+    @app.get("/api/models/{symbol}/assumptions")
+    async def model_assumptions(symbol: str):
+        return assumption_policy.read(require_coverage(symbol))
 
     @app.get("/api/models/{symbol}/export")
     async def model_export(symbol: str, scenario: Literal["base", "bull", "bear"] = "base"):
@@ -229,9 +338,14 @@ def create_app(directory=None):
         )
         buf = io.StringIO()
         writer = csv.writer(buf)
-        writer.writerow([symbol, "USD million", model["source"], scenario])
+        writer.writerow([symbol, model["unit"], scenario])
         writer.writerows(table_data(model))
-        writer.writerow(["assumptions", json.dumps(model["assumptions"])])
+        writer.writerow(["*", "A为基期，E为预测；隐含每股价格为预测期末名义值，不是当前目标价。"])
+        writer.writerow(["*", assumption_text(model)])
+        writer.writerow(["[1]", model["source"], model["as_of"]])
+        writer.writerow(
+            ["[2]", "每股估值＝（企业价值−净债务）÷摊薄股数；金额与股数采用相同百万单位。"]
+        )
         return Response(
             "\ufeff" + buf.getvalue(),
             media_type="text/csv",
@@ -243,20 +357,11 @@ def create_app(directory=None):
     @app.post("/api/research", status_code=202)
     def research(body: ResearchInput):
         require_asset(body.symbol)
+        if body.symbol.endswith((".SH", ".SZ", ".BJ", ".HK", ".KS", ".KQ", ".T", ".AS", ".PA")):
+            raise HTTPException(422, "此市场财务研究尚未接入")
         row = enqueue(store, body.symbol, body.focus)
         row.pop("payload", None)
         return row
-
-    @app.get("/api/assets/{symbol}/history")
-    async def full_history(symbol: str):
-        try:
-            return await archive.read(symbol_checked(symbol))
-        except ProviderError:
-            raise HTTPException(503, "完整历史暂不可用，请稍后重试") from None
-
-    @app.get("/api/assets/{symbol}/signals/{kind}")
-    async def tracking_signals(symbol: str, kind: Literal["catalysts", "sentiment"]):
-        return await signals.read(symbol_checked(symbol), kind)
 
     @app.get("/api/reports")
     def reports(symbol: str | None = None):
@@ -289,9 +394,14 @@ def create_app(directory=None):
         return {
             **store.settings(),
             "providers": provider_status(),
-            "sources": [
+            "sources": [{"name": "Yahoo Finance", "configured": True}]
+            + [
                 {"name": name, "configured": bool(os.getenv(key))}
                 for name, key in [
+                    ("FRED", "FRED_API_KEY"),
+                    ("JBlanked", "JBLANKED_API_KEY"),
+                    ("SEC EDGAR", "SEC_USER_AGENT"),
+                    ("TickFlow", "TICKFLOW_API_KEY"),
                     ("Finnhub", "FINNHUB_API_KEY"),
                     ("FMP", "FMP_API_KEY"),
                     ("Tavily", "TAVILY_API_KEY"),
@@ -307,8 +417,6 @@ def create_app(directory=None):
 
     @app.post("/api/settings/test")
     async def test_settings(body: SettingsInput):
-        if body.provider == "mock":
-            return {"ok": True, "message": "演示引擎可用"}
         try:
             await call_model(body.model_dump(), [{"role": "user", "content": "Reply OK only"}], 12)
             return {"ok": True, "message": "模型连接成功"}

@@ -23,7 +23,8 @@ export function Source({
   );
 }
 
-export function Change({ value }: { value: number }) {
+export function Change({ value }: { value: number | null }) {
+  if (value == null) return <span className="muted">—</span>;
   const positive = value >= 0;
   return (
     <span className={`change ${positive ? "up" : "down"}`}>
@@ -32,12 +33,12 @@ export function Change({ value }: { value: number }) {
     </span>
   );
 }
-export const money = (v: number | null | undefined) =>
+export const money = (v: number | null | undefined, currency = "USD") =>
   v == null
     ? "—"
     : new Intl.NumberFormat("en-US", {
         style: "currency",
-        currency: "USD",
+        currency,
         maximumFractionDigits: 2,
       }).format(v);
 export const compact = (v: number | null | undefined) =>

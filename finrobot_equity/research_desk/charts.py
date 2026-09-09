@@ -1,7 +1,7 @@
 """Native vector figures for screen, standalone HTML and PDF; no screenshots."""
 
 import base64
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 from reportlab.graphics import renderSVG
 from reportlab.graphics.charts.barcharts import VerticalBarChart
@@ -25,6 +25,8 @@ def frame(title):
 
 
 def bars(title, labels, series, names):
+    if any(value is None for row in series for value in row):
+        return unavailable_figure()
     d = frame(title)
     c = VerticalBarChart()
     c.x = 58
@@ -135,12 +137,25 @@ def profitability_table(labels, series):
         y = 94 - i * 34
         text(14, y, name, 12)
         for x, value in zip(right_edges, values):
-            text(x, y, str(Decimal(str(round(value, 8))).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)), 13, INK, "end")
+            if value is None:
+                text(x, y, "—", 13, INK, "end")
+                continue
+            text(
+                x,
+                y,
+                str(Decimal(str(round(value, 8))).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)),
+                13,
+                INK,
+                "end",
+            )
     return drawing
 
 
 def sensitivity(val):
-    d = frame("DCF enterprise value sensitivity | USD bn")
+    d = frame(
+        "DCF enterprise value sensitivity | "
+        + val.get("unit", "USD million").replace("million", "bn")
+    )
     matrix = val["sensitivity"]
     flat = [v for row in matrix for v in row]
     lo = min(flat)
@@ -177,6 +192,7 @@ def sensitivity(val):
 
 
 def figures(data):
+    currency = data["model"].get("currency", "USD")
     model = data["model"]
     rows = {r["key"]: r["values"] for r in model["rows"]}
     years = model["columns"]
@@ -194,7 +210,7 @@ def figures(data):
             "历史日线与 20 / 50 日均线。"
             + ("图中历史行情为示例。" if history["mock"] else "按收盘价计算。"),
             lines(
-                "Price and moving averages | USD",
+                "Price and moving averages | " + data["quote"].get("currency", "USD"),
                 [r["time"][2:7] for r in history["points"]],
                 [prices, average(20), average(50)],
                 ["Close", "SMA 20", "SMA 50"],
@@ -203,9 +219,9 @@ def figures(data):
         (
             "earnings",
             "收入与经营利润",
-            "百万美元；A 为基期，E 为假设预测。",
+            f"百万 {currency}；A 为基期，E 为假设预测。",
             bars(
-                "Revenue and EBITDA | USD million",
+                f"Revenue and EBITDA | {currency} million",
                 years,
                 [rows["revenue"], rows["ebitda"]],
                 ["Revenue", "EBITDA"],
@@ -218,7 +234,7 @@ def figures(data):
             profitability_table(
                 years,
                 [
-                    [v * 100 for v in rows[k]]
+                    [v * 100 if v is not None else None for v in rows[k]]
                     for k in ["gross_margin", "ebitda_margin", "net_margin"]
                 ],
             ),
@@ -226,9 +242,9 @@ def figures(data):
         (
             "cash",
             "现金流与再投资",
-            "百万美元；区分净利润、资本开支与简化自由现金流。",
+            f"百万 {currency}；基期FCF为经营现金流减资本开支；预测为简化估算。",
             bars(
-                "Cash conversion and reinvestment | USD million",
+                f"Cash conversion and reinvestment | {currency} million",
                 years,
                 [rows["net_income"], rows["capex"], rows["fcf"]],
                 ["Net income", "CapEx", "Free cash flow"],
@@ -251,12 +267,20 @@ def figures(data):
             ),
             bars(
                 "Peer valuation | P/E TTM",
-                [p["symbol"] for p in data["peers"] if p.get("pe") is not None] or ["Unavailable"],
-                [[p["pe"] for p in data["peers"] if p.get("pe") is not None] or [0]],
+                [p["symbol"] for p in data["peers"] if p.get("pe") is not None],
+                [[p["pe"] for p in data["peers"] if p.get("pe") is not None]],
                 ["P/E TTM"],
-            ),
+            )
+            if any(p.get("pe") is not None for p in data["peers"])
+            else unavailable_figure(),
         ),
     ]
+
+
+def unavailable_figure():
+    drawing = Drawing(460, 140)
+    drawing.add(String(24, 70, "Data unavailable", fontSize=12, fillColor=GRAY))
+    return drawing
 
 
 def web_figures(data):

@@ -1,4 +1,4 @@
-"""20-line model. USD millions throughout. Forecasts are assumptions, never facts."""
+"""Scale to earnings to equity value and per-share price. Explicit forecast assumptions."""
 
 from .schemas import Assumptions
 
@@ -31,27 +31,55 @@ ROWS = [
         "money",
         "净利润 + 折旧摊销 − CapEx − 营运资金变动；简化股权现金流",
     ),
-    ("multiple", "EV / EBITDA", "multiple", "预测末年的退出倍数假设"),
+    ("multiple", "EV / EBITDA", "multiple", "各预测期 EV / EBITDA 倍数假设"),
     (
         "ev",
         "企业价值 EV",
         "money",
-        "预测末年 EBITDA × 退出倍数；未折现，非股权价值或目标价",
+        "各预测期 EBITDA × 估值倍数；未折现企业价值",
+    ),
+    ("net_debt", "净债务", "money", "总债务减现金及现金等价物；预测期保持基期水平"),
+    ("equity_value", "隐含股权价值", "money", "企业价值减净债务；为各预测期末名义价值，未折现"),
+    (
+        "shares",
+        "摊薄股数（百万股）",
+        "number",
+        "以基期摊薄加权平均股数作为预测股数，按股数变动假设逐年调整",
+    ),
+    (
+        "price",
+        "隐含每股价格（美元）",
+        "price",
+        "隐含股权价值 ÷ 摊薄股数；两者均为百万单位，不需再换算",
     ),
 ]
 
 
 def defaults(base):
+    if base is None:
+        from .providers import ProviderError
+
+        raise ProviderError("financials_unavailable")
     rev = base["revenue"]
-    return Assumptions(
-        gross_margin=max(0, min(1, (rev - base["cogs"]) / rev)),
-        opex_ratio=max(0, min(1, base["opex"] / rev)),
-        da_ratio=max(0, min(0.5, base["da"] / rev)),
-        capex_ratio=max(0, min(0.6, base["capex"] / rev)),
-    ).model_dump()
+    values = Assumptions().model_dump()
+    for key, source, max_value in [
+        ("gross_margin", "cogs", 1),
+        ("opex_ratio", "opex", 1),
+        ("da_ratio", "da", 0.5),
+        ("capex_ratio", "capex", 0.6),
+    ]:
+        value = base.get(source)
+        if value is not None:
+            ratio = (rev - value) / rev if source == "cogs" else value / rev
+            values[key] = max(0, min(max_value, ratio))
+    return values
 
 
 def compute_model(base, assumptions=None, scenario="base"):
+    if base is None:
+        from .providers import ProviderError
+
+        raise ProviderError("financials_unavailable")
     a = Assumptions(**(assumptions or defaults(base))).model_dump()
     if scenario == "bull":
         a.update(
@@ -69,18 +97,26 @@ def compute_model(base, assumptions=None, scenario="base"):
     rev = base["revenue"]
     if rev <= 0:
         raise ValueError("Positive base revenue required")
-    history.update(gross_profit=rev - base["cogs"], growth=base.get("growth"))
-    history["ebitda"] = history["gross_profit"] - base["opex"]
-    history["ebit"] = history["ebitda"] - base["da"]
-    history["pretax"] = history["ebit"] - base["interest"]
-    history["net_income"] = history["pretax"] - base["tax"]
-    history["fcf"] = history["net_income"] + base["da"] - base["capex"] - base["nwc"]
+
+    def subtract(left, right):
+        return left - right if left is not None and right is not None else None
+
+    def add(left, right):
+        return left + right if left is not None and right is not None else None
+
+    gross = subtract(rev, base.get("cogs"))
+    history.update(gross_profit=gross, growth=base.get("growth"))
+    history["ebitda"] = add(base.get("operating_income"), base.get("da"))
+    history["ebit"] = base.get("operating_income")
+    history["pretax"] = base.get("pretax")
+    history["net_income"] = base.get("net_income")
+    history["fcf"] = base.get("fcf")
     for metric, amount in [
         ("gross_margin", "gross_profit"),
         ("ebitda_margin", "ebitda"),
         ("net_margin", "net_income"),
     ]:
-        history[metric] = history[amount] / rev
+        history[metric] = history[amount] / rev if history[amount] is not None else None
     years = [history]
     for i in range(3):
         prev = rev
@@ -100,13 +136,28 @@ def compute_model(base, assumptions=None, scenario="base"):
         row["ebitda"] = row["gross_profit"] - row["opex"]
         row["ebitda_margin"] = row["ebitda"] / rev
         row["ebit"] = row["ebitda"] - row["da"]
-        row["pretax"] = row["ebit"] - row["interest"]
-        row["tax"] = max(0, row["pretax"]) * a["tax_rate"]
-        row["net_income"] = row["pretax"] - row["tax"]
-        row["net_margin"] = row["net_income"] / rev
-        row["fcf"] = row["net_income"] + row["da"] - row["capex"] - row["nwc"]
-        row["multiple"] = a["exit_multiple"] if i == 2 and row["ebitda"] > 0 else None
+        row["pretax"] = subtract(row["ebit"], row["interest"])
+        row["tax"] = max(0, row["pretax"]) * a["tax_rate"] if row["pretax"] is not None else None
+        row["net_income"] = subtract(row["pretax"], row["tax"])
+        row["net_margin"] = row["net_income"] / rev if row["net_income"] is not None else None
+        row["fcf"] = subtract(subtract(add(row["net_income"], row["da"]), row["capex"]), row["nwc"])
+        row["multiple"] = a["exit_multiple"] if row["ebitda"] > 0 else None
         row["ev"] = row["ebitda"] * a["exit_multiple"] if row["multiple"] else None
+        row["net_debt"] = base.get("net_debt")
+        shares = base.get("shares")
+        row["shares"] = (
+            shares * (1 + a["share_growth"]) ** (i + 1) if shares and shares > 0 else None
+        )
+        row["equity_value"] = (
+            row["ev"] - row["net_debt"]
+            if row["ev"] is not None and row["net_debt"] is not None
+            else None
+        )
+        row["price"] = (
+            row["equity_value"] / row["shares"]
+            if row["equity_value"] is not None and row["equity_value"] >= 0 and row["shares"]
+            else None
+        )
         years.append(row)
     return {
         "columns": [f"{base['year']}A"] + [f"{base['year'] + i}E" for i in range(1, 4)],
@@ -122,14 +173,36 @@ def compute_model(base, assumptions=None, scenario="base"):
         ],
         "assumptions": a,
         "scenario": scenario,
-        "unit": "USD million",
+        "currency": base.get("currency", "USD"),
+        "unit": f"金额：百万 {base.get('currency', 'USD')}；股数：百万股；每股价格：{base.get('currency', 'USD')}",
         "source": base["source"],
         "mock": base["mock"],
         "as_of": base["as_of"],
         "notes": [
-            "A 表示基期；模拟基期仍为演示数据。E 表示假设预测。",
+            "A 表示已披露基期，E 表示假设预测。基期净利润直接采用披露值；基期FCF采用经营现金流减资本开支，预测FCF为简化估算。",
             "经营费用包含研发等费用并剔除折旧摊销，避免重复扣减。",
             "该简化模型省略非经营损益。FCF 采用净利润口径，非 FCFF。",
-            "EV 是预测末年未折现企业价值，不能直接与当前市值或股价比较。",
+            "EV、股权价值与每股价格均为各预测期末名义估值，未经折现，不是当前目标价。",
+            "净债务预测保持基期水平；基期摊薄加权平均股数用作股数假设，并非期末实际流通股数。",
+            "缺少净债务或股数时不计算每股价格；负股权价值不映射为负股票价格。",
+            "每股估值采用财报摊薄股数口径；未进行ADR/ADS比例换算，不能直接与不同币种或股类的市场报价比较。",
         ],
+    }
+
+
+def unavailable_model(scenario="base"):
+    return {
+        "available": False,
+        "columns": ["基期", "预测第1年", "预测第2年", "预测第3年"],
+        "rows": [
+            {"key": key, "label": label, "format": fmt, "formula": formula, "values": [None] * 4}
+            for key, label, fmt, formula in ROWS
+        ],
+        "assumptions": None,
+        "scenario": scenario,
+        "unit": "金额口径待财务基期确认",
+        "source": "尚未取得可用财务基期",
+        "mock": False,
+        "as_of": "—",
+        "notes": ["尚未取得完整、同币种的财务输入，保留模型栏位，不生成预测数字。"],
     }

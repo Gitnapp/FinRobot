@@ -1,6 +1,6 @@
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useState } from "react";
-import { Check, CircleDot, FlaskConical, KeyRound, Server } from "lucide-react";
+import { Check, CircleDot, KeyRound, Server } from "lucide-react";
 import { Label } from "@gitnapp/ui/components/ui/label";
 import { toast } from "sonner";
 import { useRefresh, useSettings } from "../../hooks/queries";
@@ -17,7 +17,6 @@ import {
 function SettingsForm({ initial }: { initial: Settings }) {
   const [provider, setProvider] = useState(initial.provider);
   const [model, setModel] = useState(initial.model);
-  const [dataMode, setDataMode] = useState(initial.data_mode);
   const [busy, setBusy] = useState("");
   const refresh = useRefresh();
   const selected = initial.providers.find((p) => p.id === provider)!;
@@ -26,7 +25,7 @@ function SettingsForm({ initial }: { initial: Settings }) {
     try {
       const result = await write<{ message?: string }>(
         test ? "/settings/test" : "/settings",
-        { provider, model, data_mode: dataMode },
+        { provider, model, data_mode: "auto" },
         test ? "POST" : "PUT",
       );
       if (!test) await refresh();
@@ -52,21 +51,11 @@ function SettingsForm({ initial }: { initial: Settings }) {
               }}
             >
               <span className="provider-icon">
-                {p.id === "mock" ? (
-                  <FlaskConical size={17} />
-                ) : (
-                  <Server size={17} />
-                )}
+                <Server size={17} />
               </span>
               <span>
                 {p.name}
-                <small>
-                  {p.id === "mock"
-                    ? "无需 API Key"
-                    : p.configured
-                      ? "密钥已配置"
-                      : "未配置"}
-                </small>
+                <small>{p.configured ? "密钥已配置" : "未配置"}</small>
               </span>
               {p.id === provider && <Check size={15} />}
             </button>
@@ -81,12 +70,7 @@ function SettingsForm({ initial }: { initial: Settings }) {
               </span>
             </div>
             <span className="source">
-              <KeyRound size={12} />{" "}
-              {provider === "mock"
-                ? "演示"
-                : selected.configured
-                  ? "已配置"
-                  : "未配置"}
+              <KeyRound size={12} /> {selected.configured ? "已配置" : "未配置"}
             </span>
           </div>
           <div className="settings-fields">
@@ -99,11 +83,9 @@ function SettingsForm({ initial }: { initial: Settings }) {
               <Input
                 id="api-key"
                 type="password"
-                value={
-                  selected.configured && provider !== "mock" ? "configured" : ""
-                }
+                value={selected.configured ? "configured" : ""}
                 readOnly
-                placeholder={provider === "mock" ? "不需要密钥" : "尚未配置"}
+                placeholder="尚未配置"
               />
             </div>
             <div>
@@ -115,7 +97,7 @@ function SettingsForm({ initial }: { initial: Settings }) {
               </Label>
               <Input
                 id="base-url"
-                value={selected.base_url || "本地演示引擎"}
+                value={selected.base_url || "未配置"}
                 readOnly
               />
             </div>
@@ -126,7 +108,6 @@ function SettingsForm({ initial }: { initial: Settings }) {
                 list="model-options"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                readOnly={provider === "mock"}
               />
               <datalist id="model-options">
                 {selected.models.map((name) => (
@@ -156,19 +137,10 @@ function SettingsForm({ initial }: { initial: Settings }) {
         <div className="section-toolbar">
           <h2>
             <InfoLabel label="市场数据">
-              优先使用已配置服务。限流、付费限制或缺失字段会使用明确标注的演示数据。Tavily
-              / Exa 密钥已发现，本版研究使用 Finnhub
-              新闻，尚未启用这两个搜索源。
+              中、美、港行情使用 TickFlow，日韩及欧洲行情使用 Yahoo
+              Finance。免费服务提供历史日线和收盘价格，实时行情需要配置密钥并取得相应权限。财务资料仍由独立数据源提供。
             </InfoLabel>
           </h2>
-          <select
-            aria-label="市场数据模式"
-            value={dataMode}
-            onChange={(e) => setDataMode(e.target.value as "auto" | "mock")}
-          >
-            <option value="auto">真实数据优先</option>
-            <option value="mock">全部演示数据</option>
-          </select>
         </div>
         <div className="data-source-list">
           {initial.sources.map((s) => (
@@ -176,11 +148,15 @@ function SettingsForm({ initial }: { initial: Settings }) {
               <CircleDot size={16} />
               <strong>{s.name}</strong>
               <span>
-                {s.name === "Tavily" || s.name === "Exa"
-                  ? "未启用"
-                  : s.configured
-                    ? "密钥已配置"
-                    : "未配置"}
+                {s.name === "Yahoo Finance"
+                  ? "公开数据"
+                  : s.name === "TickFlow" && !s.configured
+                    ? "免费日线"
+                    : s.name === "Exa"
+                      ? "未启用"
+                      : s.configured
+                        ? "密钥已配置"
+                        : "未配置"}
               </span>
             </div>
           ))}

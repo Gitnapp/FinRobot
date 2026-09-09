@@ -1,3 +1,4 @@
+import { useEvidence } from "./intelligence";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { Link } from "react-router";
 import { ExternalLink } from "lucide-react";
@@ -46,9 +47,9 @@ export function TechnicalPanel({ data }: { data: Detail }) {
       </h2>
       <dl className="metric-grid">
         {[
-          ["20 日均线", money(t.sma20)],
-          ["50 日均线", money(t.sma50)],
-          ["200 日均线", money(t.sma200)],
+          ["20 日均线", money(t.sma20, data.quote.currency)],
+          ["50 日均线", money(t.sma50, data.quote.currency)],
+          ["200 日均线", money(t.sma200, data.quote.currency)],
           ["一年涨跌", (t.return_year * 100).toFixed(1) + "%"],
           ["年化波动", (t.volatility * 100).toFixed(1) + "%"],
           ["最大回撤", (t.drawdown * 100).toFixed(1) + "%"],
@@ -61,8 +62,8 @@ export function TechnicalPanel({ data }: { data: Detail }) {
       </dl>
       <div className="price-range">
         <div>
-          <span>52 周低点 {money(t.low)}</span>
-          <span>高点 {money(t.high)}</span>
+          <span>52 周低点 {money(t.low, data.quote.currency)}</span>
+          <span>高点 {money(t.high, data.quote.currency)}</span>
         </div>
         <div className="range-track">
           <i style={{ left: t.range_position * 100 + "%" }} />
@@ -73,39 +74,41 @@ export function TechnicalPanel({ data }: { data: Detail }) {
 }
 
 export function FinancialPanel({ data }: { data: Detail }) {
-  const m = data.model;
-  if (!m) return null;
-  const rows = m.rows.filter((r) =>
-    [
-      "revenue",
-      "ebitda",
-      "net_income",
-      "gross_margin",
-      "fcf",
-      "capex",
-    ].includes(r.key),
-  );
+  const evidence = useEvidence(data.quote.symbol).data?.data;
+  const fields = [
+    ["revenue", "营业收入"],
+    ["ebitda", "EBITDA"],
+    ["net_income", "净利润"],
+    ["gross_margin", "毛利率"],
+    ["free_cash_flow", "自由现金流"],
+    ["capex", "资本开支"],
+  ];
   return (
     <section className="dense-panel">
       <h2>
-        财务概览
-        <Source
-          mock={m.mock}
-          source=""
-          note="本区采用示例财务基期；所有预测是研究假设。"
-        />
+        <InfoLabel label="财务概览">
+          {evidence?.source || "公开财务报表"}；
+          {evidence?.period || "报告期未取得"}；
+          {evidence?.currency || (data.model ? "USD" : data.quote.currency)}
+          。缺失数据不以行情指标替代。
+        </InfoLabel>
       </h2>
       <dl className="metric-grid">
-        {rows.map((r) => (
-          <div key={r.key}>
-            <dt>{r.label}</dt>
-            <dd>
-              {r.format === "percent"
-                ? ((r.values[0] || 0) * 100).toFixed(1) + "%"
-                : compact((r.values[0] || 0) * 1e6)}
-            </dd>
-          </div>
-        ))}
+        {fields.map(([key, label]) => {
+          const value = evidence?.metrics[key];
+          return (
+            <div key={key}>
+              <dt>{label}</dt>
+              <dd>
+                {value == null
+                  ? "—"
+                  : key === "gross_margin"
+                    ? `${(value * 100).toFixed(1)}%`
+                    : compact(value)}
+              </dd>
+            </div>
+          );
+        })}
       </dl>
     </section>
   );
@@ -117,38 +120,46 @@ export function ValuationPanel({ data }: { data: Detail }) {
     <section className="dense-panel valuation-panel">
       <h2>
         <InfoLabel label="情景估值">
-          {v.mock ? "本区基于示例财务数据，仅表示假设测算。" : ""}
-          {v.note}
+          {v?.mock ? "本区基于示例财务数据，仅表示假设测算。" : ""}
+          {v?.note || "暂未取得可用于估值的完整财务输入。"}
         </InfoLabel>
       </h2>
       <div className="valuation-summary">
         <div>
           <span>企业价值现值</span>
-          <strong>{compact(v.enterprise_value * 1e6)}</strong>
+          <strong>{compact(v ? v.enterprise_value * 1e6 : null)}</strong>
         </div>
         <div>
           <span>折现率</span>
-          <b>{(v.wacc * 100).toFixed(0)}%</b>
+          <b>{v ? `${(v.wacc * 100).toFixed(0)}%` : "—"}</b>
         </div>
         <div>
           <span>永续增长</span>
-          <b>{(v.terminal_growth * 100).toFixed(0)}%</b>
+          <b>{v ? `${(v.terminal_growth * 100).toFixed(0)}%` : "—"}</b>
         </div>
       </div>
       <table className="sensitivity-table">
-        <caption>估值敏感性 · 十亿美元</caption>
+        <caption>估值敏感性（十亿美元）</caption>
         <thead>
           <tr>
             <th>折现率 / 增长</th>
-            {v.growth_axis.map((g) => (
+            {v?.growth_axis.map((g) => (
               <th key={g}>{(g * 100).toFixed(0)}%</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {v.sensitivity.map((row, i) => (
+          {!v && (
+            <tr>
+              <th>—</th>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+          )}
+          {v?.sensitivity.map((row, i) => (
             <tr key={i}>
-              <th>{(v.wacc_axis[i] * 100).toFixed(0)}%</th>
+              <th>{(v!.wacc_axis[i] * 100).toFixed(0)}%</th>
               {row.map((n, j) => (
                 <td key={j} className={i === 2 && j === 1 ? "base-case" : ""}>
                   {(n / 1000).toLocaleString("en-US", {
@@ -168,7 +179,7 @@ export function PeersPanel({ data }: { data: Detail }) {
     <section className="dense-panel">
       <h2>
         <InfoLabel label="同业比较">
-          同业估值口径可能不同，应结合业务结构与增长质量判断。缺失资料时使用明确标记的示例指标。
+          同业估值口径可能不同，应结合业务结构与增长质量判断。缺失资料保留空值，不补造可比公司指标。
         </InfoLabel>
       </h2>
       <table className="peers-table">
@@ -181,6 +192,14 @@ export function PeersPanel({ data }: { data: Detail }) {
           </tr>
         </thead>
         <tbody>
+          {!data.peers.length && (
+            <tr>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+          )}
           {data.peers.map((p) => (
             <tr key={p.symbol}>
               <td>

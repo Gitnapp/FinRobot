@@ -22,7 +22,7 @@ class ListOrder(StrictModel):
     symbols: list[str]
 
 
-def routes(store):
+def routes(store, market):
     router = APIRouter(prefix="/api/watchlists")
 
     def require(identifier):
@@ -65,8 +65,9 @@ def routes(store):
         return {"ok": True}
 
     @router.post("/{identifier}/symbols")
-    def add(identifier: str, body: SymbolInput):
+    async def add(identifier: str, body: SymbolInput):
         require(identifier)
+        await market.instrument(body.symbol)
         with store.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             db.execute("INSERT OR IGNORE INTO assets VALUES (?,?)", (body.symbol, now()))

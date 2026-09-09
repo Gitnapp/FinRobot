@@ -1,229 +1,129 @@
-import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
+import { CardGrid } from "@gitnapp/ui/components/ui/data-layout";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
-import { ArrowRight, Pause, Play, Telescope, FileText } from "lucide-react";
 import { toast } from "sonner";
-import { write } from "../../api/client";
-import { useCoverage, useRefresh } from "../../hooks/queries";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@gitnapp/ui/components/ui/select";
+import { api, write } from "../../api/client";
+import { useRefresh } from "../../hooks/queries";
 import {
   Button,
-  Change,
-  compact,
-  Empty,
-  ErrorState,
   Loading,
-  money,
+  ErrorState,
   PageHeader,
-  Updated,
-  researchBrief,
+  Empty,
 } from "../../components/ui";
-import { Sparkline } from "../../components/coverage-insights";
-import type { Detail } from "../../types";
-
+import {
+  CoverageAssetCard,
+  UnmatchedSecurities,
+  type CoveredCompany,
+  type CoverageQuote,
+} from "../../components/coverage-asset-card";
+import type { Snapshot } from "../../components/intelligence";
 export default function CoveragePage() {
-  const { data = [], error, isLoading, refetch } = useCoverage();
-  const refresh = useRefresh();
+  const directory = useQuery({
+    queryKey: ["coverage-directory"],
+    queryFn: () => api<CoveredCompany[]>("/coverage-directory"),
+  });
+  const quotes = useQuery({
+    queryKey: ["coverage-market"],
+    queryFn: () =>
+      api<Record<string, Snapshot<CoverageQuote>>>("/coverage-market"),
+    refetchInterval: (q) =>
+      Object.values(q.state.data || {}).some(
+        (s) => s.state === "pending" || s.refreshing,
+      )
+        ? 1500
+        : 30000,
+    retry: false,
+  });
+  const [list, setList] = useState("all");
   const [filter, setFilter] = useState("all");
-  const [busy, setBusy] = useState("");
-  if (isLoading) return <Loading />;
-  if (error) return <ErrorState error={error} retry={() => void refetch()} />;
-  const shown = data.filter(
-    (d) =>
-      filter === "all" ||
-      (filter === "active" ? d.coverage?.active : !d.coverage?.active),
+  if (directory.isPending) return <Loading />;
+  if (directory.error)
+    return (
+      <ErrorState
+        error={directory.error}
+        retry={() => void directory.refetch()}
+      />
+    );
+  const companies = directory.data || [];
+  const members = companies.filter(
+    (c) =>
+      (list === "all" || c.scene === list) &&
+      (filter === "all" ||
+        (filter === "active"
+          ? !!c.coverage?.active
+          : c.coverage?.active === 0)),
   );
-  async function toggle(d: Detail) {
-    setBusy(d.quote.symbol);
-    try {
-      await write(
-        "/coverage/" + d.quote.symbol,
-        { cadence: d.coverage!.cadence, active: !d.coverage!.active },
-        "PUT",
-      );
-      await refresh();
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusy("");
-    }
-  }
+  const pending =
+    quotes.isPending ||
+    Object.values(quotes.data || {}).some(
+      (s) => s.state === "pending" && !s.data,
+    );
   return (
     <div className="page">
       <PageHeader title="持续跟踪">
         <Button variant="outline" asChild>
-          <Link to="/">
-            添加跟踪标的
-            <ArrowRight size={15} />
-          </Link>
+          <Link to="/">添加</Link>
         </Button>
       </PageHeader>
+      <div className="coverage-list-picker">
+        <Select value={list} onValueChange={setList}>
+          <SelectTrigger aria-label="持续跟踪列表" className="w-[168px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部</SelectItem>
+            {Array.from(new Set(companies.map((c) => c.scene))).map((s) => (
+              <SelectItem key={s} value={s}>
+                {s === "其他" ? "自选" : s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="muted">{members.length} 家公司</span>
+      </div>
       <div className="coverage-toolbar">
         <div className="segmented">
           {[
             ["all", "全部"],
             ["active", "跟踪中"],
             ["paused", "已暂停"],
-          ].map(([k, n]) => (
+          ].map(([key, label]) => (
             <button
-              key={k}
-              className={k === filter ? "selected" : ""}
-              onClick={() => setFilter(k)}
+              key={key}
+              className={filter === key ? "selected" : ""}
+              onClick={() => setFilter(key)}
             >
-              {n}
+              {label}
             </button>
           ))}
         </div>
-        <span className="muted">{data.length} 个标的</span>
       </div>
-      <div className="coverage-grid">
-        {shown.map((d) => {
-          const q = d.quote;
-          const m = d.model;
-          const rows = Object.fromEntries(
-            m?.rows.map((r) => [r.key, r.values[0]]) || [],
-          );
-          const report = d.reports.find((r) => r.status === "completed");
-          const pending = d.reports.find(
-            (r) => r.status === "running" || r.status === "queued",
-          );
-          return (
-            <article className="coverage-card" key={q.symbol}>
-              <div className="coverage-card-head">
-                <Link to={"/coverage/" + q.symbol}>
-                  <span>
-                    <strong>{q.symbol}</strong>
-                    <small>{q.name}</small>
-                  </span>
-                </Link>
-                <span className="coverage-state">
-                  {d.coverage?.active ? "跟踪中" : "已暂停"}
-                </span>
-              </div>
-              <div className="coverage-price">
-                <InfoLabel label={<strong>{money(q.price)}</strong>}>
-                  {q.mock ? "此报价为示例。" : null}
-                </InfoLabel>
-                <Change value={q.change_percent} />
-              </div>
-              <div className="coverage-chart">
-                <Sparkline history={d.history} />
-                <div>
-                  <span>{d.history.mock ? "示例走势" : "价格走势"}</span>
-                  <InfoLabel label={d.technical.trend}>
-                    近一年收益 {(d.technical.return_year * 100).toFixed(1)}
-                    %，年化波动 {(d.technical.volatility * 100).toFixed(1)}%。
-                    {d.history.mock ? "根据示例历史数据计算。" : ""}
-                  </InfoLabel>
-                </div>
-              </div>
-              <dl className="coverage-metrics">
-                <div>
-                  <dt>市值</dt>
-                  <dd>{compact(q.market_cap)}</dd>
-                </div>
-                <div>
-                  <dt>
-                    <InfoLabel label="市盈率">
-                      {d.metrics.mock ? "此指标为示例。" : null}
-                    </InfoLabel>
-                  </dt>
-                  <dd>{d.metrics.pe?.toFixed(1) || "—"}</dd>
-                </div>
-                <div>
-                  <dt>
-                    <InfoLabel label="Beta">
-                      {d.metrics.mock ? "此指标为示例。" : null}
-                    </InfoLabel>
-                  </dt>
-                  <dd>{d.metrics.beta?.toFixed(2) || "—"}</dd>
-                </div>
-              </dl>
-              <div className="financial-caption">
-                <InfoLabel label={m?.mock ? "假设财务" : "财务摘要"}>
-                  {m?.mock
-                    ? "下方财务数据为示例基期；完整计算与假设可在详情中查看。"
-                    : null}
-                </InfoLabel>
-              </div>
-              <dl className="coverage-metrics">
-                <div>
-                  <dt>营业收入</dt>
-                  <dd>{compact((rows.revenue || 0) * 1e6)}</dd>
-                </div>
-                <div>
-                  <dt>EBITDA</dt>
-                  <dd>{compact((rows.ebitda || 0) * 1e6)}</dd>
-                </div>
-                <div>
-                  <dt>毛利率</dt>
-                  <dd>{((rows.gross_margin || 0) * 100).toFixed(1)}%</dd>
-                </div>
-              </dl>
-              <div className="coverage-thesis">
-                <span>研究观点</span>
-                <InfoLabel label={<b>{m?.mock ? "待核实" : "持续观察"}</b>}>
-                  {researchBrief(
-                    d.summary || "加入跟踪后会自动整理资料并生成研报。",
-                  )}
-                  {m?.mock ? "财务输入为示例，不能形成真实买卖评级。" : ""}
-                </InfoLabel>
-              </div>
-              <div className="coverage-card-footer">
-                <span>
-                  {pending ? (
-                    "正在研究"
-                  ) : d.reports[0]?.status === "failed" ? (
-                    "更新未完成"
-                  ) : (
-                    <Updated report={report} />
-                  )}
-                </span>
-                <div className="actions">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={busy === q.symbol}
-                    aria-label={
-                      (d.coverage?.active ? "暂停 " : "恢复 ") + q.symbol
-                    }
-                    onClick={() => void toggle(d)}
-                  >
-                    {d.coverage?.active ? (
-                      <Pause size={14} />
-                    ) : (
-                      <Play size={14} />
-                    )}
-                  </Button>
-                  {report && (
-                    <Button variant="ghost" size="icon" asChild>
-                      <Link
-                        to={"/reports/" + report.id}
-                        aria-label={"阅读 " + q.symbol + " 研报"}
-                      >
-                        <FileText size={15} />
-                      </Link>
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={"/coverage/" + q.symbol}>
-                      详情
-                      <ArrowRight size={14} />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-      {!shown.length && (
-        <Empty icon={<Telescope size={25} />}>
-          <strong>选择需要持续跟踪的标的</strong>
-          <Button variant="outline" asChild>
-            <Link to="/">浏览自选</Link>
-          </Button>
-        </Empty>
+      {pending && <Loading />}
+      {quotes.error && (
+        <ErrorState error={quotes.error} retry={() => void quotes.refetch()} />
       )}
+      <CardGrid minWidth={300}>
+        {members
+          .filter((c) => c.symbol)
+          .map((c) => (
+            <CoverageAssetCard
+              key={c.id}
+              company={c}
+              snapshot={c.symbol ? quotes.data?.[c.symbol] : undefined}
+            />
+          ))}
+      </CardGrid>
+      <UnmatchedSecurities companies={members.filter((c) => !c.symbol)} />
+      {!members.length && <Empty>没有匹配的标的</Empty>}
     </div>
   );
 }

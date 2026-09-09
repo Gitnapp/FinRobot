@@ -43,8 +43,7 @@ export default function MarketPage() {
   }
   const lists = useWatchlists();
   const [params, setParams] = useSearchParams();
-  const list =
-    lists.data?.find((l) => l.id === params.get("list")) || lists.data?.[0];
+  const list = lists.data?.find((l) => l.id === params.get("list"));
   const { data = [], error, isLoading, refetch } = useAssets(list?.id);
   const [selected, setSelected] = useState("");
   const [search, setSearch] = useState("");
@@ -71,13 +70,14 @@ export default function MarketPage() {
       <div className="watchlist-toolbar">
         <div className="actions">
           <Select
-            value={list?.id || ""}
-            onValueChange={(id) => setParams({ list: id })}
+            value={list?.id || "all"}
+            onValueChange={(id) => setParams(id === "all" ? {} : { list: id })}
           >
             <SelectTrigger aria-label="自选列表" className="w-[132px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper" align="start">
+              <SelectItem value="all">全部</SelectItem>
               {lists.data?.map((l) => (
                 <SelectItem key={l.id} value={l.id}>
                   {l.name}
@@ -96,12 +96,10 @@ export default function MarketPage() {
           >
             <Plus size={18} />
           </Button>
-          {list && (
-            <WatchlistEditor
-              list={list}
-              onSelect={(id) => setParams(id ? { list: id } : {})}
-            />
-          )}
+          <WatchlistEditor
+            list={list}
+            onSelect={(id) => setParams(id ? { list: id } : {})}
+          />
         </div>
       </div>
       <div className="market-grid">
@@ -163,13 +161,13 @@ export default function MarketPage() {
                           }
                         }}
                       >
-                        <strong>{a.symbol}</strong>
-                        <small>{a.name}</small>
+                        <strong>{a.name}</strong>
+                        <small>{a.symbol}</small>
                       </Link>
                     </div>
                   </TableCell>
                   <TableCell className="numeric">
-                    <InfoLabel label={money(a.price)}>
+                    <InfoLabel label={money(a.price, a.currency)}>
                       {a.mock ? "此报价为示例，尚未取得实际行情。" : null}
                     </InfoLabel>
                   </TableCell>
@@ -224,14 +222,14 @@ export default function MarketPage() {
                 <div className="preview-heading">
                   <div>
                     <Link to={"/stocks/" + symbol} className="symbol-title">
-                      {symbol}
+                      {detail.data.quote.name}
                       <ArrowRight size={15} />
                     </Link>
-                    <span className="muted">{detail.data.quote.name}</span>
+                    <span className="muted">{detail.data.quote.symbol}</span>
                   </div>
                 </div>
                 <div className="preview-price">
-                  {money(detail.data.quote.price)}
+                  {money(detail.data.quote.price, detail.data.quote.currency)}
                   <Change value={detail.data.quote.change_percent} />
                 </div>
                 <PriceChart key={symbol} symbol={symbol} small />

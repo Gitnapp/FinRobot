@@ -13,7 +13,21 @@ import Shell from "./app/shell";
 import { ErrorBoundary } from "./components/error-boundary";
 import { Loading } from "./components/ui";
 import "./styles.css";
+import "@gitnapp/ui/patterns.css";
 
+const MacroPage = lazy(() =>
+  import("./app/context/context-page").then((m) => ({ default: m.MacroPage })),
+);
+const MacroDetailPage = lazy(() =>
+  import("./app/context/context-page").then((m) => ({
+    default: m.MacroDetailPage,
+  })),
+);
+const CalendarPage = lazy(() =>
+  import("./app/context/context-page").then((m) => ({
+    default: m.CalendarPage,
+  })),
+);
 const Market = lazy(() => import("./app/market/market-page"));
 const Stock = lazy(() => import("./app/market/stock-page"));
 const Coverage = lazy(() => import("./app/coverage/coverage-page"));
@@ -44,6 +58,9 @@ createRoot(document.getElementById("root")!).render(
                   <Route path="stocks/:symbol" element={<Stock />} />
                   <Route path="coverage" element={<Coverage />} />
                   <Route path="coverage/:symbol" element={<Stock />} />
+                  <Route path="macro" element={<MacroPage />} />
+                  <Route path="macro/:metric" element={<MacroDetailPage />} />
+                  <Route path="calendar" element={<CalendarPage />} />
                   <Route path="reports" element={<Reports />} />
                   <Route path="reports/:id" element={<Report />} />
                   <Route path="settings" element={<Settings />} />

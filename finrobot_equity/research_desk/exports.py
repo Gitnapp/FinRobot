@@ -41,11 +41,13 @@ def report_date(payload):
     )
 
 
-def formatted(value, kind):
+def formatted(value, kind, currency="USD"):
     if value is None:
         return "—"
     if kind == "percent":
         return f"{value * 100:.1f}%"
+    if kind == "price":
+        return f"{currency} {value:,.2f}"
     if kind == "multiple":
         return f"{value:.1f}x"
     return f"{value:,.1f}"
@@ -53,7 +55,10 @@ def formatted(value, kind):
 
 def table_data(model, summary=False):
     return [["行项目", *model["columns"]]] + [
-        [r["label"], *[formatted(v, r["format"]) for v in r["values"]]]
+        [
+            r["label"],
+            *[formatted(v, r["format"], model.get("currency", "USD")) for v in r["values"]],
+        ]
         for r in model["rows"]
         if not summary or r["key"] in SUMMARY_KEYS
     ]
@@ -68,7 +73,8 @@ def assumption_text(model):
         "da_ratio": "折旧摊销率",
         "capex_ratio": "资本开支率",
         "nwc_ratio": "增量营运资金率",
-        "exit_multiple": "退出倍数",
+        "exit_multiple": "估值倍数",
+        "share_growth": "股数年变动率",
     }
     return "；".join(
         f"{labels[k]} {formatted(v, 'multiple' if k == 'exit_multiple' else 'percent')}"
@@ -86,7 +92,7 @@ def markdown(p):
         blocks += ["## " + s["title"], s["content"]]
     table = table_data(p["model"], True)
     blocks += [
-        "## 财务预测 · 百万美元",
+        f"## 财务预测 · 百万 {p['model'].get('currency', 'USD')}",
         " | ".join(table[0]),
         " | ".join(["---"] * 5),
         *[" | ".join(row) for row in table[1:]],
@@ -120,7 +126,7 @@ def html_report(p):
 
     quote = p["quote"]
     val = p["valuation"]
-    facts = f"<h2>市场与估值</h2><dl><dt>最近收盘价</dt><dd>USD {quote['price']:,.2f}</dd><dt>市值</dt><dd>{(quote['market_cap'] or 0) / 1e9:,.2f} 十亿美元</dd><dt>现金流折现企业价值</dt><dd>{val['enterprise_value']:,.0f} 百万美元</dd><dt>折现率 / 永续增长率</dt><dd>{val['wacc']:.0%} / {val['terminal_growth']:.0%}</dd></dl><p class='note'>企业价值测算未扣净债务，不能解读为目标股价。</p>"
+    facts = f"<h2>市场与估值</h2><dl><dt>最近收盘价</dt><dd>{quote.get('currency', 'USD')} {quote['price']:,.2f}</dd><dt>市值</dt><dd>{(quote['market_cap'] or 0) / 1e9:,.2f} 十亿 {quote.get('currency', 'USD')}</dd><dt>现金流折现企业价值</dt><dd>{val['enterprise_value']:,.0f} 百万 {p['model'].get('currency', 'USD')}</dd><dt>折现率 / 永续增长率</dt><dd>{val['wacc']:.0%} / {val['terminal_growth']:.0%}</dd></dl><p class='note'>企业价值测算未扣净债务，不能解读为目标股价。</p>"
     sources = "<h2>来源索引</h2>" + "".join(
         f"<p class='reference'>[{i}] {esc(s['label'])}<br><small>{esc(str(s['as_of']))}</small><br>"
         + ("示例输入" if s["mock"] else f'<a href="{esc(s["url"], quote=True)}">查看原始来源</a>')
@@ -149,7 +155,7 @@ def html_report(p):
     )
     return f"""<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{p["symbol"]} 股票研究</title><style>
     *{{box-sizing:border-box}}body{{font:14px/1.85 system-ui,sans-serif;color:#25332e;background:#f0f3f1;margin:0}}main{{max-width:1080px;background:white;padding:48px 52px;margin:32px auto}}header{{border-top:4px solid #344942;border-bottom:1px solid #aebdb6;padding:22px 0;margin-bottom:28px}}header .meta{{display:flex;justify-content:space-between;font-size:12px;color:#687c71}}h1{{font-size:34px;font-weight:500;margin:16px 0 5px}}h2{{font-size:18px;font-weight:600;border-bottom:1px solid #dbe2de;padding-bottom:10px;margin:0 0 16px}}p{{margin:0 0 16px;text-align:justify}}.spread{{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px;padding:26px 0;border-bottom:1px solid #dbe2de;break-after:page}}.spread>div+div{{border-left:1px solid #e2e7e4;padding-left:28px}}figure{{margin:24px 0 12px}}img{{width:100%;display:block}}figcaption,.note,small{{color:#6c7e74;font-size:11px}}dl{{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px}}dd{{text-align:right;margin:0;font-variant-numeric:tabular-nums}}table{{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}}th,td{{text-align:right;padding:10px;border-bottom:1px solid #dce3df}}td:first-child,th:first-child{{text-align:left}}th{{background:#eef2ef}}.financial{{margin-top:30px}}.reference{{font-size:12px;overflow-wrap:anywhere}}a{{color:#34584a}}.quality{{font-size:12px;color:#846d41}}@media(max-width:750px){{main{{padding:24px;margin:0}}.spread{{grid-template-columns:1fr}}.spread>div+div{{border:0;padding:0}}}}@media print{{body{{background:white}}main{{margin:0;padding:0;max-width:none}}@page{{size:A4;margin:18mm}}.spread{{gap:8mm;break-inside:auto}}h2{{break-after:avoid}}figure{{break-inside:avoid}}}}
-    </style><main><header><div class="meta"><span>Garage Research · 股票研究</span><span>{report_date(p)}</span></div><h1>{p["quote"]["name"]} / {p["symbol"]}</h1><div>{esc(p["quote"]["sector"])} · 基本面与估值</div><div class="quality">{"预测基于示例财务数据" if p["has_mock_data"] else "数据口径与来源见附录"}</div></header>{content}<section class="financial"><h2>财务预测 / 百万美元</h2><table>{table_html}</table><p class="note">{esc(assumption_text(p["model"]))}</p></section></main></html>"""
+    </style><main><header><div class="meta"><span>Garage Research · 股票研究</span><span>{report_date(p)}</span></div><h1>{p["quote"]["name"]} / {p["symbol"]}</h1><div>{esc(p["quote"]["sector"])} · 基本面与估值</div><div class="quality">{"预测基于示例财务数据" if p["has_mock_data"] else "数据口径与来源见附录"}</div></header>{content}<section class="financial"><h2>财务预测 / 百万 {p["model"].get("currency", "USD")}</h2><table>{table_html}</table><p class="note">{esc(assumption_text(p["model"]))}</p></section></main></html>"""
 
 
 def pdf_report(p, destination):
@@ -233,9 +239,12 @@ def pdf_report(p, destination):
     val = p["valuation"]
     facts = [Paragraph("市场与估值", head)]
     for k, v in [
-        ("最近收盘价", f"USD {q['price']:,.2f}"),
-        ("市值", f"{(q['market_cap'] or 0) / 1e9:,.2f} 十亿美元"),
-        ("DCF 企业价值", f"{val['enterprise_value']:,.0f} 百万美元"),
+        ("最近收盘价", f"{q.get('currency', 'USD')} {q['price']:,.2f}"),
+        ("市值", f"{(q['market_cap'] or 0) / 1e9:,.2f} 十亿 {q.get('currency', 'USD')}"),
+        (
+            "DCF 企业价值",
+            f"{val['enterprise_value']:,.0f} 百万 {p['model'].get('currency', 'USD')}",
+        ),
         ("折现率 / 永续增长率", f"{val['wacc']:.0%} / {val['terminal_growth']:.0%}"),
     ]:
         facts += [Paragraph(esc(k + "：" + v), body)]
@@ -275,7 +284,10 @@ def pdf_report(p, destination):
             if right is not None:
                 b += graphic(right)
         story.append(spread(a, b))
-    story += [Spacer(1, 24), Paragraph("财务预测 / 百万美元", head)]
+    story += [
+        Spacer(1, 24),
+        Paragraph(f"财务预测 / 百万 {p['model'].get('currency', 'USD')}", head),
+    ]
     table = Table(
         [[Paragraph(esc(c), small) for c in row] for row in table_data(p["model"], True)],
         colWidths=[155] + [(Layout.CONTENT_WIDTH - 155) / 4] * 4,
@@ -333,7 +345,7 @@ def export_files(p, directory):
     root.mkdir(exist_ok=True)
     buf = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow([p["symbol"], "USD million"])
+    writer.writerow([p["symbol"], p["model"].get("currency", "USD") + " million"])
     writer.writerows(table_data(p["model"], True))
     content = {
         "md": markdown(p),

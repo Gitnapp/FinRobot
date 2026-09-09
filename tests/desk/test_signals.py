@@ -119,3 +119,26 @@ def test_provider_limits_and_redacts_errors(monkeypatch):
         assert "test-credential" not in str(calls[0].url)
 
     asyncio.run(run())
+
+
+def test_hong_kong_identifier_is_normalized_and_response_checked(tmp_path):
+    s = service(tmp_path, {"ticker": "0700", "found": True, "sentiment_score": 0.189})
+    calls = []
+    original = s.providers.get
+
+    async def capture(*args):
+        calls.append(args)
+        return await original(*args)
+
+    s.providers.get = capture
+    result = asyncio.run(s.read("00700.HK", "sentiment"))
+    assert result["status"] == "ready"
+    assert result["data"]["score"] == 0.189
+    assert calls[0][1] == "reddit/stocks/v1/stock/0700"
+    s.providers.value = {"ticker": "XIACY", "found": True, "sentiment_score": 0.8}
+    assert asyncio.run(s.read("01810.HK", "sentiment"))["status"] == "unavailable"
+
+
+def test_supported_hong_kong_without_mentions_is_empty(tmp_path):
+    s = service(tmp_path, {"ticker": "1810", "found": False})
+    assert asyncio.run(s.read("01810.HK", "sentiment"))["status"] == "empty"

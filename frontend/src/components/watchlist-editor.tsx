@@ -31,7 +31,7 @@ export function WatchlistEditor({
   list,
   onSelect,
 }: {
-  list: Watchlist;
+  list?: Watchlist;
   onSelect: (id: string) => void;
 }) {
   const [mode, setMode] = useState<"create" | "edit" | null>(null);
@@ -44,7 +44,7 @@ export function WatchlistEditor({
       if (mode === "create") {
         const created = await write<Watchlist>("/watchlists", { name });
         onSelect(created.id);
-      } else await write("/watchlists/" + list.id, { name }, "PUT");
+      } else if (list) await write("/watchlists/" + list.id, { name }, "PUT");
       await refresh();
       setMode(null);
     } catch (e) {
@@ -54,6 +54,7 @@ export function WatchlistEditor({
     }
   }
   async function remove() {
+    if (!list) return;
     setBusy(true);
     try {
       await api("/watchlists/" + list.id, { method: "DELETE" });
@@ -67,6 +68,7 @@ export function WatchlistEditor({
     }
   }
   async function member(symbol: string, direction: number) {
+    if (!list) return;
     setBusy(true);
     try {
       if (direction === 0)
@@ -110,7 +112,7 @@ export function WatchlistEditor({
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => {
-              setName(list.name);
+              setName(list?.name || "");
               setMode("edit");
             }}
           >
@@ -153,7 +155,7 @@ export function WatchlistEditor({
             />
             {mode === "edit" && (
               <div className="list-members">
-                {list.symbols.map((s, i) => (
+                {list?.symbols.map((s, i) => (
                   <div key={s}>
                     <strong>{s}</strong>
                     <div className="actions">

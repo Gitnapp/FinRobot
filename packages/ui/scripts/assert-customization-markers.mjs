@@ -12,10 +12,24 @@ const CUSTOMIZED_FILES = [
   "src/components/ui/label.tsx",
   "src/components/ui/select.tsx",
   "src/components/ui/tooltip.tsx",
-
   "src/components/ui/button.tsx",
   "src/components/ui/calendar.tsx",
+  "src/components/ui/checkbox.tsx",
+  "src/components/ui/context-menu.tsx",
+  "src/components/ui/dropdown-menu.tsx",
+  "src/components/ui/hover-card.tsx",
+  "src/components/ui/input-otp.tsx",
+  "src/components/ui/menubar.tsx",
+  "src/components/ui/navigation-menu.tsx",
+  "src/components/ui/popover.tsx",
+  "src/components/ui/radio-group.tsx",
+  "src/components/ui/slider.tsx",
   "src/components/ui/sonner.tsx",
+  "src/components/ui/switch.tsx",
+  "src/components/ui/tabs.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/components/ui/toggle.tsx",
+  "src/components/ui/toggle-group.tsx",
 ];
 
 const invalid = CUSTOMIZED_FILES.filter((file) => {

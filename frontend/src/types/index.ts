@@ -6,6 +6,7 @@ export type Coverage = {
   last_run: string | null;
 };
 export type Report = {
+  company_name?: string | null;
   id: string;
   symbol: string;
   version: number;
@@ -18,11 +19,12 @@ export type Report = {
   error: string | null;
 };
 export type Quote = {
+  price_kind?: "realtime" | "close";
   symbol: string;
   name: string;
   sector: string;
-  price: number;
-  change_percent: number;
+  price: number | null;
+  change_percent: number | null;
   market_cap: number | null;
   currency: string;
   source: string;
@@ -45,7 +47,8 @@ export type Candle = {
   close: number;
 };
 export type History = {
-  complete?: boolean;
+  currency?: string;
+  complete?: boolean | null;
   points: Candle[];
   source: string;
   mock: boolean;
@@ -53,6 +56,7 @@ export type History = {
   note: string;
 };
 export type Assumptions = {
+  share_growth: number;
   growth: number;
   gross_margin: number;
   opex_ratio: number;
@@ -70,9 +74,12 @@ export type ModelRow = {
   values: (number | null)[];
 };
 export type FinancialModel = {
+  currency?: string;
+  recommendation_state?: "ready" | "pending" | "stale" | "unavailable";
   columns: string[];
   rows: ModelRow[];
-  assumptions: Assumptions;
+  assumptions: Assumptions | null;
+  available?: boolean;
   scenario: string;
   unit: string;
   source: string;
@@ -93,6 +100,7 @@ export type News = {
   note: string;
 };
 export type Detail = {
+  market_only?: boolean;
   quote: Quote;
   history: History;
   fundamentals: {
@@ -137,7 +145,7 @@ export type Detail = {
   peers: {
     symbol: string;
     name: string;
-    price: number;
+    price: number | null;
     market_cap: number | null;
     pe: number | null;
     beta: number | null;
@@ -173,7 +181,7 @@ export type Provider = {
 export type Settings = {
   provider: string;
   model: string;
-  data_mode: "auto" | "mock";
+  data_mode: "auto";
   providers: Provider[];
   sources: { name: string; configured: boolean }[];
 };

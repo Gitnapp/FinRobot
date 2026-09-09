@@ -1,6 +1,14 @@
 "use client";
 
 import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@gitnapp/ui/components/ui/breadcrumb";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -12,6 +20,7 @@ import {
 // （content-factory / navigator / userportal）统一引用本包，不在 app 内另造外壳。
 import {
   createContext,
+  Fragment,
   type MouseEvent,
   type ReactNode,
   useContext,
@@ -244,7 +253,7 @@ export function RailBrand({
       {!collapsed && (
         <span
           className={cn(
-            "truncate text-sm font-normal",
+            "truncate text-sm font-medium",
             tone === "rail" ? "text-rail-foreground/85" : "text-foreground/85",
           )}
         >
@@ -368,10 +377,10 @@ export function RailNavLink({
       title={collapsed ? label : undefined}
       onClick={onClick}
       className={cn(
-        "relative flex items-center gap-3 rounded-md text-sm font-medium transition-colors",
+        "relative flex items-center gap-3 rounded-md text-sm font-normal transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rail-foreground/70",
         active
-          ? "bg-rail-foreground/10 text-rail-foreground"
+          ? "bg-rail-foreground/10 font-medium text-rail-foreground"
           : "text-rail-foreground/60 hover:bg-rail-foreground/5 hover:text-rail-foreground",
         // 高亮几何（design.md「高亮几何」）：折叠后只剩图标，着色面必须是正方形，
         // 用 size-8 钉成 32×32（正好填满 48px 图标轨的 px-2 内宽）并水平居中。
@@ -384,7 +393,9 @@ export function RailNavLink({
         // 绝不能用 mx-auto：auto margin 按「正在 300ms 动画中的」轨宽实时求值，
         // 折叠瞬间会把图标甩到宽轨中点再滑回来（实测单帧 98px 的可见闪动）。
         // size-8 已等于折叠态 nav 的内宽，本就贴合左缘，无需 auto margin 居中。
-        collapsed ? "size-8 justify-center" : "min-h-9 px-2 py-1.5 after:absolute after:inset-x-0 after:-inset-y-0.5 md:min-h-8 md:after:hidden",
+        collapsed
+          ? "size-8 justify-center"
+          : "min-h-9 px-2 py-1.5 after:absolute after:inset-x-0 after:-inset-y-0.5 md:min-h-8 md:after:hidden",
       )}
     >
       {icon}
@@ -426,7 +437,7 @@ export function RailTabs({ tabs }: { readonly tabs: readonly RailTab[] }) {
               "rounded-md px-2.5 py-1 text-sm transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rail-foreground/70",
               tab.active
-                ? "bg-rail-foreground/10 text-rail-foreground"
+                ? "bg-rail-foreground/10 font-medium text-rail-foreground"
                 : "text-rail-foreground/60 hover:bg-rail-foreground/5 hover:text-rail-foreground",
             )}
           >
@@ -741,5 +752,44 @@ export function RailMobileDrawer({
         {children}
       </div>
     </div>
+  );
+}
+
+export function RailBreadcrumb({
+  items,
+  className,
+  ariaLabel = "页面路径",
+}: {
+  readonly items: readonly { label: string; href?: string }[];
+  readonly className?: string;
+  readonly ariaLabel?: string;
+}) {
+  const Link = useContext(ShellLinkContext);
+  return (
+    <Breadcrumb aria-label={ariaLabel} className={cn("min-w-0", className)}>
+      <BreadcrumbList className="flex-nowrap text-xs">
+        {items.map((item, index) => (
+          <Fragment key={item.href || `${index}-${item.label}`}>
+            {index > 0 && <BreadcrumbSeparator />}
+            <BreadcrumbItem className={index === items.length - 1 ? "min-w-0" : "shrink-0"}>
+              {item.href && index < items.length - 1 ? (
+                <BreadcrumbLink asChild>
+                  <Link
+                    href={item.href}
+                    className="inline-flex min-h-9 items-center whitespace-nowrap"
+                  >
+                    {item.label}
+                  </Link>
+                </BreadcrumbLink>
+              ) : (
+                <BreadcrumbPage className="truncate" title={item.label}>
+                  {item.label}
+                </BreadcrumbPage>
+              )}
+            </BreadcrumbItem>
+          </Fragment>
+        ))}
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 }

@@ -1,3 +1,5 @@
+import { DateRange, withinDates, type DateWindow } from "./date-range";
+import type { Snapshot } from "./intelligence";
 import { LoadingState } from "@gitnapp/ui/components/ui/loading";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -42,11 +44,12 @@ type Sentiment = {
   trend: "rising" | "falling" | "stable" | null;
   daily: { date: string; mentions: number | null; score: number | null }[];
 };
-function useSignal<T>(symbol: string, kind: string) {
+export function useSignal<T>(symbol: string, kind: string, enabled = true) {
   return useQuery({
     queryKey: ["signals", symbol, kind],
+    enabled,
     queryFn: ({ signal }) =>
-      api<Result<T>>(`/assets/${symbol}/signals/${kind}`, { signal }),
+      api<Result<T>>(`/data/${symbol}/${kind}`, { signal }),
     staleTime: 15 * 60 * 1000,
     retry: 1,
     refetchOnWindowFocus: false,
@@ -80,20 +83,58 @@ const fmt = (v: number | null, suffix = "") =>
   v === null
     ? "—"
     : `${v.toLocaleString("zh-CN", { maximumFractionDigits: 2 })}${suffix}`;
+type Disclosures = {
+  filings: { form: string; date: string; url: string }[];
+  complete: boolean;
+  source: string;
+};
 export function CatalystCalendar({ symbol }: { symbol: string }) {
   const query = useSignal<Events>(symbol, "catalysts");
   const [period, setPeriod] = useState("upcoming");
-  const events = query.data?.data?.events.filter(
-    (e) => e.upcoming === (period === "upcoming"),
-  );
+  const [page, setPage] = useState(0);
+  const [range, setRange] = useState<DateWindow>({ from: "", to: "" });
+  const history = useQuery({
+    queryKey: ["disclosures", symbol],
+    enabled: period === "recent",
+    queryFn: () => api<Snapshot<Disclosures>>(`/data/${symbol}/disclosures`),
+    refetchInterval: (q) => (q.state.data?.state === "pending" ? 1500 : false),
+    retry: false,
+  });
+  const upcoming = query.data?.data?.events.filter((e) => e.upcoming);
+  const past = query.data?.data?.events.filter((e) => !e.upcoming) || [];
+  const disclosureEvents = (history.data?.data?.filings || []).map((f) => ({
+    date: f.date,
+    title:
+      ({
+        "10-K": "年度报告",
+        "10-Q": "季度报告",
+        "8-K": "临时公告",
+        "20-F": "年度报告",
+        "6-K": "发行人公告",
+      }[f.form.split("/")[0]] || "披露文件"),
+    timing: "披露日期",
+    url: f.url,
+    eps_estimate: null,
+    revenue_estimate: null,
+    eps_actual: null,
+    upcoming: false,
+  }));
+  const events:
+    | (NonNullable<typeof upcoming>[number] & { url?: string })[]
+    | undefined =
+    period === "upcoming"
+      ? upcoming?.filter((e) => withinDates(e.date.slice(0, 10), range))
+      : [...past, ...disclosureEvents]
+          .filter((e) => withinDates(e.date.slice(0, 10), range))
+          .sort((a, b) => b.date.localeCompare(a.date));
   return (
     <Card>
       <CardHeader>
         <CardTitle>催化日历</CardTitle>
         <CardAction>
           <InfoHint>
-            未来 90 天及过去 30
-            天的财报日程。日期可能调整，盘前盘后按美股交易时段；每股收益和收入为供应商调整后口径。日程来源：Finnhub。
+            未来财报日程与历史公告按市场接入；美股历史包含 EDGAR
+            的年报、季报、临时公告和修订文件。披露日期不等于财报发布或事件发生日期。历史记录可打开原文。A股公告来自巨潮资讯，当前查询最近一年；其他市场未接入时保留栏目。
           </InfoHint>
         </CardAction>
       </CardHeader>
@@ -101,35 +142,62 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
         <div className="signal-period" role="group" aria-label="事件时间范围">
           {[
             ["upcoming", "即将到来"],
-            ["recent", "近期发布"],
+            ["recent", "历史记录"],
           ].map(([id, label]) => (
             <Button
               key={id}
               size="sm"
               variant={period === id ? "secondary" : "ghost"}
               aria-pressed={period === id}
-              onClick={() => setPeriod(id)}
+              onClick={() => {
+                setPeriod(id);
+                setPage(0);
+              }}
             >
               {label}
             </Button>
           ))}
           <Freshness value={query.data} />
         </div>
+        <DateRange
+          value={range}
+          onChange={(v) => {
+            setRange(v);
+            setPage(0);
+          }}
+        />
+        {period === "recent" &&
+          (history.isPending || history.data?.state === "pending") && (
+            <LoadingState />
+          )}
         {!events ? (
           <State loading={query.isPending} retry={() => void query.refetch()} />
         ) : events.length === 0 ? (
-          <p className="signal-empty">
-            {period === "upcoming" ? "暂无已公布日程" : "近期暂无财报记录"}
-          </p>
+          period === "recent" &&
+          (history.isPending || history.data?.state === "pending") ? null : (
+            <p className="signal-empty">
+              {period === "upcoming"
+                ? "暂无已公布日程"
+                : "暂无已取得的历史记录"}
+            </p>
+          )
         ) : (
-          events.map((e) => (
-            <article className="signal-event" key={e.date}>
+          events.slice(page * 5, (page + 1) * 5).map((e) => (
+            <article className="signal-event" key={e.url || e.date + e.title}>
               <time dateTime={e.date}>
                 <strong>{e.date.slice(5)}</strong>
                 <small>{e.date.slice(0, 4)}</small>
               </time>
               <div>
-                <strong>{e.title}</strong>
+                <strong>
+                  {e.url ? (
+                    <a href={e.url} target="_blank" rel="noreferrer">
+                      {e.title} ↗
+                    </a>
+                  ) : (
+                    e.title
+                  )}
+                </strong>
                 <div className="signal-meta">
                   {e.timing}
                   {e.eps_estimate !== null && (
@@ -147,6 +215,29 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
               </div>
             </article>
           ))
+        )}
+        {events && events.length > 5 && (
+          <div className="calendar-pagination">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={page === 0}
+              onClick={() => setPage(page - 1)}
+            >
+              上一页
+            </Button>
+            <span>
+              {page + 1} / {Math.ceil(events.length / 5)}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={(page + 1) * 5 >= events.length}
+              onClick={() => setPage(page + 1)}
+            >
+              下一页
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -171,14 +262,16 @@ export function RetailSentiment({ symbol }: { symbol: string }) {
       <CardContent>
         <Freshness value={query.data} />
         {!data ? (
-          query.data?.status === "empty" ? (
-            <p className="signal-empty">近期讨论样本不足</p>
-          ) : (
-            <State
-              loading={query.isPending}
-              retry={() => void query.refetch()}
-            />
-          )
+          <dl className="evidence-metrics" aria-label="散户情绪指标">
+            {["情绪分", "热度", "讨论量", "看多占比", "看空占比"].map(
+              (label) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>—</dd>
+                </div>
+              ),
+            )}
+          </dl>
         ) : (
           <>
             <div className="sentiment-heading">

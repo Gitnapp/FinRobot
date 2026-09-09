@@ -1,7 +1,7 @@
 import { LoadingState } from "@gitnapp/ui/components/ui/loading";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { FilePlus2 } from "lucide-react";
+import { FileText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -46,17 +46,18 @@ export function ResearchAction({
   return (
     <>
       <Button
+        variant="outline"
         onClick={() =>
           active ? navigate(`/reports/${active.id}`) : setOpen(true)
         }
       >
-        {active ? <LoadingState /> : <FilePlus2 size={15} />}{" "}
+        {active ? <LoadingState /> : <FileText size={15} />}{" "}
         {active ? "查看进度" : "生成研报"}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>研究 {symbol}</DialogTitle>
+            <DialogTitle>生成研报</DialogTitle>
             <DialogDescription>分析业务、财务、估值与风险。</DialogDescription>
           </DialogHeader>
           <Label htmlFor="research-focus">研究重点（可选）</Label>

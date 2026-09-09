@@ -13,6 +13,7 @@ class ProviderError(Exception):
 
 class ProviderClient:
     CONFIG = {
+        "TickFlow": ("https://api.tickflow.org/v1/", "TICKFLOW_API_KEY", None),
         "FMP": ("https://financialmodelingprep.com/stable/", "FMP_API_KEY", "apikey"),
         "Finnhub": ("https://finnhub.io/api/v1/", "FINNHUB_API_KEY", "token"),
         "Adanos": ("https://api.adanos.org/", "ADANOS_API_KEY", None),
@@ -25,7 +26,9 @@ class ProviderClient:
     async def get(self, provider, endpoint, params):
         root, key_name, key_param = self.CONFIG[provider]
         key = os.getenv(key_name)
-        if not key:
+        if provider == "TickFlow" and not key:
+            root = "https://free-api.tickflow.org/v1/"
+        elif not key:
             raise ProviderError("not_configured")
         if self.cooldown.get(provider, 0) > time.time():
             raise ProviderError("rate_limited")
@@ -33,7 +36,7 @@ class ProviderClient:
         headers = {}
         if key_param:
             query[key_param] = key
-        else:
+        elif key:
             headers["X-API-Key"] = key
         try:
             async with asyncio.timeout(10):
@@ -43,6 +46,8 @@ class ProviderClient:
             if response.status_code == 429:
                 self.cooldown[provider] = time.time() + 900
                 raise ProviderError("rate_limited")
+            if response.status_code == 402:
+                raise ProviderError("subscription_required")
             if response.status_code in (401, 403):
                 raise ProviderError("access_denied")
             if response.status_code == 404:

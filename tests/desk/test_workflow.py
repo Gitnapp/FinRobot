@@ -4,9 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.testclient import TestClient
 
+from devtools.fixture_app import FixtureMarket as Market
+from devtools.fixture_app import fixture_narrative
 from finrobot_equity.research_desk.jobs import Worker, enqueue
 from finrobot_equity.research_desk.main import create_app
-from finrobot_equity.research_desk.market import Market
 from finrobot_equity.research_desk.store import Store, now
 
 
@@ -15,7 +16,7 @@ def setup_store(tmp_path):
     store.init()
     store.execute(
         "UPDATE settings SET value=?",
-        (json.dumps({"provider": "mock", "model": "deterministic-demo", "data_mode": "mock"}),),
+        (json.dumps({"provider": "openai", "model": "fixture", "data_mode": "auto"}),),
     )
     return store
 
@@ -31,7 +32,7 @@ def test_concurrent_enqueue_is_idempotent(tmp_path):
 def test_report_files_and_frozen_model(tmp_path):
     store = setup_store(tmp_path)
     market = Market(store)
-    worker = Worker(store, market)
+    worker = Worker(store, market, narrative_writer=fixture_narrative)
     job = enqueue(store, "NVDA", focus="测试现金流")
     assert asyncio.run(worker.process_one())
     report = store.one("SELECT * FROM reports WHERE id=?", (job["id"],))
@@ -43,7 +44,7 @@ def test_report_files_and_frozen_model(tmp_path):
     for ext in ("pdf", "html", "md", "json", "csv"):
         assert (root / f"report.{ext}").stat().st_size > (300 if ext == "csv" else 500)
     assert (root / "report.pdf").read_bytes().startswith(b"%PDF")
-    assert "模拟" in (root / "report.html").read_text()
+    assert "示例" in (root / "report.html").read_text()
     assert "营业收入" in (root / "report.csv").read_text()
     assert len(payload["charts"]) == 6
     assert sum(len(s["content"]) for s in payload["sections"]) > 2800
@@ -63,7 +64,8 @@ def test_report_files_and_frozen_model(tmp_path):
 
 def test_schedule_due_pause_and_no_duplicate(tmp_path):
     store = setup_store(tmp_path)
-    worker = Worker(store, Market(store))
+    store.execute("INSERT INTO models VALUES (?,?,?)", ("NVDA", "{}", now()))
+    worker = Worker(store, Market(store), narrative_writer=fixture_narrative)
     for symbol, active in (("NVDA", 1), ("AAPL", 0)):
         store.execute(
             "INSERT INTO coverage(symbol,cadence,active,next_run) VALUES (?,'daily',?,?)",
@@ -99,7 +101,8 @@ def test_restart_marks_interrupted_job_failed(tmp_path):
 
 def test_due_coverage_coalesces_with_manual_report(tmp_path):
     store = setup_store(tmp_path)
-    worker = Worker(store, Market(store))
+    store.execute("INSERT INTO models VALUES (?,?,?)", ("NVDA", "{}", now()))
+    worker = Worker(store, Market(store), narrative_writer=fixture_narrative)
     enqueue(store, "NVDA")
     store.execute(
         "INSERT INTO coverage(symbol,cadence,active,next_run) VALUES ('NVDA','weekly',1,?)",
@@ -113,7 +116,7 @@ def test_due_coverage_coalesces_with_manual_report(tmp_path):
 
 
 def test_api_validation_settings_and_recoverable_removal(tmp_path):
-    app = create_app(tmp_path)
+    app = create_app(tmp_path, market_factory=Market, narrative_writer=fixture_narrative)
     setup_store(tmp_path)
     with TestClient(app) as client:
         assert client.get("/api/health").json()["ok"]
@@ -134,7 +137,7 @@ def test_api_validation_settings_and_recoverable_removal(tmp_path):
         client.put("/api/coverage/NVDA", json={"active": False, "cadence": "weekly"})
         assert app.state.store.assumptions("NVDA") is not None
         base = client.get("/api/models/NVDA").json()
-        assert len(base["rows"]) == 20
+        assert len(base["rows"]) == 24
         assert client.get("/api/models/NVDA?scenario=invalid").status_code == 422
         assert (
             client.put(
@@ -181,7 +184,7 @@ def test_failed_model_is_not_disguised_as_demo(tmp_path, monkeypatch):
 
 
 def test_watchlist_membership_order_and_coverage_are_independent(tmp_path):
-    app = create_app(tmp_path)
+    app = create_app(tmp_path, market_factory=Market, narrative_writer=fixture_narrative)
     setup_store(tmp_path)
     with TestClient(app) as client:
         created = client.post("/api/watchlists", json={"name": "科技观察"}).json()
@@ -242,3 +245,43 @@ def test_research_language_does_not_leak_implementation_terms():
     validate_report_language({"summary": "现金流折现结果依赖收入与利润假设。"})
     with pytest.raises(ValueError):
         validate_report_language({"summary": "这是 valuation模块 的结果。"})
+
+
+def test_market_only_tracking_has_unified_controls_and_removes_directory(tmp_path):
+    app = create_app(tmp_path, market_factory=Market, narrative_writer=fixture_narrative)
+    store = setup_store(tmp_path)
+    store.execute("INSERT INTO assets VALUES (?,?)", ("00700.HK", now()))
+    store.execute(
+        "INSERT INTO coverage_companies VALUES (?,?)",
+        ("tencent", json.dumps({"symbol": "00700.HK", "id": "tencent", "name": "Tencent"})),
+    )
+    with TestClient(app) as client:
+        assert (
+            client.put(
+                "/api/coverage/00700.HK", json={"active": True, "cadence": "weekly"}
+            ).status_code
+            == 200
+        )
+        assert (
+            client.put("/api/coverage/00700.HK", json={"active": False, "cadence": "daily"}).json()[
+                "active"
+            ]
+            == 0
+        )
+        assert client.delete("/api/coverage/00700.HK").status_code == 200
+        assert not any(
+            c.get("symbol") == "00700.HK" for c in client.get("/api/coverage-directory").json()
+        )
+
+
+def test_market_only_tracking_refresh_does_not_enqueue_report(tmp_path):
+    store = setup_store(tmp_path)
+    store.execute(
+        "INSERT INTO coverage(symbol,cadence,active,next_run) VALUES ('NVDA','weekly',1,?)",
+        (now(),),
+    )
+    worker = Worker(store, Market(store))
+    asyncio.run(worker.refresh_market_due())
+    worker.schedule_due()
+    assert not store.reports()
+    assert store.one("SELECT last_run FROM coverage WHERE symbol='NVDA'")["last_run"]

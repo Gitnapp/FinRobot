@@ -1,6 +1,15 @@
+import { BackLink } from "@gitnapp/ui/components/ui/back-link";
+import { TrackingControls } from "../../components/tracking-controls";
+import {
+  EvidenceCard,
+  useEvidence,
+  ResearchLeads,
+  useResearchLeads,
+} from "../../components/intelligence";
 import {
   CatalystCalendar,
   RetailSentiment,
+  useSignal,
 } from "../../components/tracking-signals";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import {
@@ -11,10 +20,9 @@ import {
   CardContent,
   CardFooter,
 } from "@gitnapp/ui/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import {
-  ArrowLeft,
   ArrowRight,
   BookmarkPlus,
   Pause,
@@ -29,7 +37,12 @@ import {
 } from "@gitnapp/ui/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { api, write } from "../../api/client";
-import { useDetail, useRefresh, useReport } from "../../hooks/queries";
+import {
+  useDetail,
+  useRefresh,
+  useReport,
+  usePriceHistory,
+} from "../../hooks/queries";
 import { PriceChart } from "../../components/price-chart";
 import { ModelTable } from "../../components/model-table";
 import { ResearchAction } from "../../components/research-action";
@@ -74,7 +87,7 @@ function ResearchSummary({ id }: { id: string }) {
       </CardHeader>
       <CardContent>
         <h3 className="text-xl leading-7 font-semibold">
-          {p.symbol} · 基本面与估值
+          基本面与估值
         </h3>
         <p className="text-sm leading-7 text-muted-foreground line-clamp-5">
           {researchBrief(p.sections[0]?.content)}
@@ -103,129 +116,65 @@ export default function StockPage() {
   const { symbol = "NVDA" } = useParams();
   const coverageMode = useLocation().pathname.startsWith("/coverage/");
   const { data, error, isLoading, refetch } = useDetail(symbol, coverageMode);
+  const history = usePriceHistory(symbol);
+  const leads = useResearchLeads(symbol);
+  const evidence = useEvidence(symbol);
+  const catalysts = useSignal(symbol, "catalysts");
+  const sentiment = useSignal(symbol, "sentiment");
+  const latestId =
+    data?.reports.find((r) => r.status === "completed")?.id || "";
+  const report = useReport(latestId);
+  const [readySymbol, setReadySymbol] = useState("");
+  const initialPending =
+    isLoading ||
+    history.isPending ||
+    leads.isPending ||
+    leads.data?.state === "pending" ||
+    catalysts.isPending ||
+    sentiment.isPending ||
+    evidence.isPending ||
+    evidence.data?.state === "pending" ||
+    (Boolean(latestId) && report.isPending);
+  useEffect(() => {
+    if (!initialPending) setReadySymbol(symbol);
+  }, [initialPending, symbol]);
   const refresh = useRefresh();
-  const navigate = useNavigate();
   const [tab, setTab] = useState("overview");
-  const [busy, setBusy] = useState(false);
   if (isLoading) return <Loading />;
   if (error) return <ErrorState error={error} retry={() => void refetch()} />;
   if (!data) return null;
+  if (readySymbol !== symbol && initialPending) return <Loading />;
   const { quote, coverage, reports } = data;
   const active = reports.find(
     (r) => r.status === "queued" || r.status === "running",
   );
   const latest = reports.find((r) => r.status === "completed");
-  async function track(
-    activeFlag = true,
-    cadence = coverage?.cadence || "weekly",
-  ) {
-    setBusy(true);
-    try {
-      await write(
-        "/coverage/" + symbol,
-        { active: activeFlag, cadence },
-        "PUT",
-      );
-      void refresh();
-      if (!coverageMode) navigate("/coverage/" + symbol);
-      toast.success(activeFlag ? "已开启持续跟踪" : "已暂停跟踪");
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function remove() {
-    try {
-      await api("/coverage/" + symbol, { method: "DELETE" });
-      void refresh();
-      navigate("/coverage");
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  }
   return (
     <div className="page stock-page">
-      <Link to={coverageMode ? "/coverage" : "/"} className="back-link">
-        <ArrowLeft size={14} />
-        {coverageMode ? "持续跟踪" : "市场看板"}
-      </Link>
+      <BackLink asChild>
+        <Link to={coverageMode ? "/coverage" : "/"} aria-label={coverageMode ? "返回持续跟踪" : "返回市场看板"}>返回</Link>
+      </BackLink>
       <PageHeader
         title={
           <>
-            {symbol}
-            <span className="company-name">{quote.name}</span>
+            {quote.name}
+            <span className="security-code">{quote.symbol}</span>
           </>
         }
       >
-        <ResearchAction symbol={symbol} active={active} />
-        {coverageMode ? (
-          <>
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => void track(!coverage?.active)}
-            >
-              {coverage?.active ? <Pause size={15} /> : <Play size={15} />}{" "}
-              {coverage?.active ? "暂停跟踪" : "恢复跟踪"}
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="更多跟踪操作">
-                  <MoreHorizontal size={16} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => void remove()}>
-                  移出持续跟踪
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </>
-        ) : coverage ? (
-          <Button variant="outline" asChild>
-            <Link to={"/coverage/" + symbol}>
-              查看持续跟踪
-              <ArrowRight size={14} />
-            </Link>
-          </Button>
-        ) : (
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => void track()}
-          >
-            <BookmarkPlus size={15} />
-            持续跟踪
-          </Button>
+        {!data.market_only && (
+          <ResearchAction symbol={symbol} active={active} />
         )}
+        <TrackingControls symbol={symbol} coverage={coverage} />
       </PageHeader>
       <div className="stock-quote-bar">
         <div className="stock-price">
-          <InfoLabel label={money(quote.price)}>
+          <InfoLabel label={money(quote.price, quote.currency)}>
             {quote.mock ? "此报价为示例。" : null}
           </InfoLabel>
           <Change value={quote.change_percent} />
         </div>
         <span className="stock-sector">{quote.sector}</span>
-        {coverageMode && (
-          <div className="tracking-settings">
-            <select
-              aria-label="跟踪频率"
-              value={coverage?.cadence}
-              onChange={(e) =>
-                void track(
-                  Boolean(coverage?.active),
-                  e.target.value as "daily" | "weekly",
-                )
-              }
-              disabled={busy}
-            >
-              <option value="daily">每日跟踪</option>
-              <option value="weekly">每周跟踪</option>
-            </select>
-          </div>
-        )}
       </div>
       {coverageMode && (
         <div className="detail-tabs" role="tablist" aria-label="持续跟踪详情">
@@ -253,8 +202,10 @@ export default function StockPage() {
             <div className="insights-column">
               <PriceChart key={symbol} symbol={symbol} />
               <TechnicalPanel data={data} />
-              {coverageMode && <FinancialPanel data={data} />}
+              <FinancialPanel data={data} />
               <PeersPanel data={data} />
+              <EvidenceCard symbol={symbol} />
+              <ResearchLeads symbol={symbol} />
             </div>
             <div className="insights-column">
               <CatalystCalendar key={`calendar-${symbol}`} symbol={symbol} />
@@ -263,45 +214,22 @@ export default function StockPage() {
                 {latest ? (
                   <ResearchSummary id={latest.id} />
                 ) : (
-                  <Empty>
-                    <strong>{active ? "正在研究" : "尚无研报"}</strong>
-                    {active && (
-                      <Button variant="outline" asChild>
-                        <Link to={"/reports/" + active.id}>查看进度</Link>
-                      </Button>
-                    )}
-                  </Empty>
+                  <>
+                    <CardHeader>
+                      <CardTitle>研究观点</CardTitle>
+                    </CardHeader>
+                    <Empty>
+                      <strong>{active ? "正在研究" : "尚无研报"}</strong>
+                      {active && (
+                        <Button variant="outline" asChild>
+                          <Link to={"/reports/" + active.id}>查看进度</Link>
+                        </Button>
+                      )}
+                    </Empty>
+                  </>
                 )}
               </Card>
-              {coverageMode ? (
-                <ValuationPanel data={data} />
-              ) : (
-                <section className="dense-panel">
-                  <h2>公司概览</h2>
-                  <dl className="metric-grid">
-                    <div>
-                      <dt>市值</dt>
-                      <dd>{compact(quote.market_cap)}</dd>
-                    </div>
-                    <div>
-                      <dt>
-                        <InfoLabel label="市盈率">
-                          {data.metrics.mock ? "此指标为示例。" : null}
-                        </InfoLabel>
-                      </dt>
-                      <dd>{data.metrics.pe?.toFixed(1) || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt>
-                        <InfoLabel label="Beta">
-                          {data.metrics.mock ? "此指标为示例。" : null}
-                        </InfoLabel>
-                      </dt>
-                      <dd>{data.metrics.beta?.toFixed(2) || "—"}</dd>
-                    </div>
-                  </dl>
-                </section>
-              )}
+              <ValuationPanel data={data} />
               <CatalystPanel data={data} />
             </div>
           </div>

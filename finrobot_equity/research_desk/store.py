@@ -37,6 +37,8 @@ class Store:
                 CREATE TABLE IF NOT EXISTS models (
                     symbol TEXT PRIMARY KEY REFERENCES assets(symbol), assumptions TEXT NOT NULL,
                     updated_at TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS assumption_overrides (
+                    symbol TEXT PRIMARY KEY, values_json TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS reports (
                     id TEXT PRIMARY KEY, symbol TEXT NOT NULL, version INTEGER NOT NULL,
                     status TEXT NOT NULL, stage TEXT NOT NULL, trigger TEXT NOT NULL,
@@ -45,6 +47,7 @@ class Store:
                 CREATE UNIQUE INDEX IF NOT EXISTS one_active_report ON reports(symbol)
                     WHERE status IN ('queued','running');
                 CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS coverage_companies (id TEXT PRIMARY KEY, payload TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires REAL NOT NULL);
                 CREATE TABLE IF NOT EXISTS watchlists (id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS watchlist_symbols (
@@ -66,7 +69,7 @@ class Store:
                 ):
                     db.execute("INSERT OR IGNORE INTO assets VALUES (?,?)", (symbol, now()))
                 settings = {
-                    "provider": "openai" if os.getenv("OPENAI_API_KEY") else "mock",
+                    "provider": "openai",
                     "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
                     "data_mode": "auto",
                 }
@@ -98,7 +101,7 @@ class Store:
         return json.loads(row["assumptions"]) if row else None
 
     def reports(self, symbol=None):
-        query = "SELECT id,symbol,version,status,stage,trigger,focus,created_at,completed_at,error FROM reports"
+        query = "SELECT id,symbol,version,status,stage,trigger,focus,created_at,completed_at,error, json_extract(payload, '$.quote.name') AS company_name FROM reports"
         return self.all(
             query
             + (" WHERE symbol=?" if symbol else "")
