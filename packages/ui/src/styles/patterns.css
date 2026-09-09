@@ -281,13 +281,116 @@
   font-variant-numeric: tabular-nums;
 }
 
-.rui-compact-path { outline: none; }
-.rui-compact-path ol { gap: 4px; }
-.rui-compact-path .rui-path-ancestor { min-width: 0; max-width: 0; opacity: 0; visibility: hidden; overflow: hidden; transition: max-width 200ms ease, opacity 180ms ease, visibility 180ms; }
+.rui-compact-path {
+  outline: none;
+}
+.rui-compact-path ol {
+  gap: 4px;
+}
+.rui-compact-path .rui-path-ancestor {
+  min-width: 0;
+  max-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  transition:
+    max-width 200ms ease,
+    opacity 180ms ease,
+    visibility 180ms;
+}
 .rui-compact-path:hover .rui-path-ancestor,
-.rui-compact-path:focus-within .rui-path-ancestor { max-width: 240px; opacity: 1; visibility: visible; }
-.rui-compact-path:focus-visible { box-shadow: 0 0 0 1px var(--ring); border-radius: 6px; }
-.rui-compact-path li:last-child { overflow: hidden; }
-.rui-compact-path li:last-child a { max-width: 100%; }
+.rui-compact-path:focus-within .rui-path-ancestor {
+  max-width: 240px;
+  opacity: 1;
+  visibility: visible;
+}
+.rui-compact-path:focus-visible {
+  box-shadow: 0 0 0 1px var(--ring);
+  border-radius: 6px;
+}
+.rui-compact-path li:last-child {
+  overflow: hidden;
+}
+.rui-compact-path li:last-child a {
+  max-width: 100%;
+}
 
-@media (prefers-reduced-motion: reduce) { .rui-compact-path .rui-path-ancestor { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .rui-compact-path .rui-path-ancestor {
+    transition: none;
+  }
+}
+
+.rui-field {
+  box-sizing: border-box;
+  height: var(--control-height);
+  font-size: var(--control-font-size);
+  line-height: var(--control-line-height);
+  font-weight: 400;
+  padding: var(--control-padding-block) var(--control-padding-inline);
+  border: 1px solid var(--input);
+  background: var(--card);
+}
+:is(
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  [tabindex="0"]
+):focus-visible {
+  outline: var(--focus-ring-width) solid var(--ring);
+  outline-offset: var(--focus-ring-offset);
+  /* biome-ignore lint/complexity/noImportantStyles: enforce one keyboard focus indicator over vendor ring utilities */
+  box-shadow: none !important;
+}
+.rui-task-compact {
+  padding: var(--task-padding);
+}
+.rui-task-compact strong,
+.rui-task-compact button {
+  font-size: var(--task-font-size);
+}
+.rui-task-compact p,
+.rui-task-compact [role="status"] {
+  font-size: var(--task-meta-size);
+  line-height: var(--control-line-height);
+}
+.rui-task-compact > :not(:first-child) {
+  margin-top: var(--task-gap);
+}
+.rui-task-compact button {
+  height: 28px;
+  padding: 4px 8px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  [data-slot="button"] {
+    min-height: var(--control-touch-size);
+  }
+  [data-slot="button"][data-size^="icon"] {
+    min-width: var(--control-touch-size);
+  }
+}
+
+[data-slot="page-header"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--toolbar-gap);
+  margin: 0 0 var(--page-title-gap);
+}
+.page-heading[data-slot="page-header"] h1 {
+  margin: 0;
+  font-size: var(--page-title-size);
+  line-height: var(--page-title-line-height);
+}
+[data-slot="page-header"] .actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

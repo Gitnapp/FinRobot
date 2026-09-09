@@ -1,4 +1,4 @@
-import { DateRange, withinDates, type DateWindow } from "./date-range";
+import { ArrowUpRight } from "lucide-react";
 import type { Snapshot } from "./intelligence";
 import { LoadingState } from "@gitnapp/ui/components/ui/loading";
 import { useState } from "react";
@@ -94,7 +94,6 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
   const query = useSignal<Events>(symbol, "catalysts");
   const [period, setPeriod] = useState("upcoming");
   const [page, setPage] = useState(0);
-  const [range, setRange] = useState<DateWindow>({ from: "", to: "" });
   const history = useQuery({
     queryKey: ["disclosures", symbol],
     enabled: period === "recent",
@@ -125,23 +124,22 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
     | (NonNullable<typeof upcoming>[number] & { url?: string })[]
     | undefined =
     period === "upcoming"
-      ? upcoming?.filter((e) => withinDates(e.date.slice(0, 10), range))
+      ? upcoming
       : [...past, ...disclosureEvents]
-          .filter((e) => withinDates(e.date.slice(0, 10), range))
           .sort((a, b) => b.date.localeCompare(a.date));
   return (
-    <Card>
+    <Card className="disclosure-calendar">
       <CardHeader>
-        <CardTitle>催化日历</CardTitle>
+        <CardTitle>披露日历</CardTitle>
         <CardAction>
           <InfoHint>
-            未来财报日程与历史公告按市场接入；美股历史包含 EDGAR
+            预计日期以公司公告为准。未来财报日程与历史公告按市场接入；美股历史包含 EDGAR
             的年报、季报、临时公告和修订文件。披露日期不等于财报发布或事件发生日期。披露记录打开原文；未提供原文链接的财报日程打开日历查询页。A股公告来自巨潮资讯，当前查询最近一年；其他市场未接入时保留栏目。
           </InfoHint>
         </CardAction>
       </CardHeader>
       <CardContent>
-        <div className="signal-period" role="group" aria-label="事件时间范围">
+        <div className="disclosure-tabs" role="group" aria-label="事件时间范围">
           {[
             ["upcoming", "即将到来"],
             ["recent", "历史记录"],
@@ -149,7 +147,7 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
             <Button
               key={id}
               size="sm"
-              variant={period === id ? "secondary" : "ghost"}
+              variant="ghost"
               aria-pressed={period === id}
               onClick={() => {
                 setPeriod(id);
@@ -161,13 +159,6 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
           ))}
           <Freshness value={query.data} />
         </div>
-        <DateRange
-          value={range}
-          onChange={(v) => {
-            setRange(v);
-            setPage(0);
-          }}
-        />
         {period === "recent" &&
           (history.isPending || history.data?.state === "pending") && (
             <LoadingState />
@@ -194,14 +185,14 @@ export function CatalystCalendar({ symbol }: { symbol: string }) {
                 <strong>
                   {e.url ? (
                     <a href={e.url} target="_blank" rel="noreferrer" title={"link_kind" in e && e.link_kind === "calendar_source" ? "查看财报日历" : "查看原文"}>
-                      {e.title} ↗
+                      {e.title}<ArrowUpRight size={14} aria-hidden="true" />
                     </a>
                   ) : (
                     e.title
                   )}
                 </strong>
                 <div className="signal-meta">
-                  {e.timing}
+                  {e.timing !== "日期以公司公告为准" && e.timing}
                   {e.eps_estimate !== null && (
                     <span>预期 EPS ${fmt(e.eps_estimate)}</span>
                   )}

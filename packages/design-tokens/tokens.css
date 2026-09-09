@@ -291,12 +291,61 @@ textarea {
   }
 }
 
-/* Touch hit area is independent of the visible button surface. */
-@media (hover: none) and (pointer: coarse) {
-  [data-slot="button"] { position: relative; }
-  [data-slot="button"]::after { content: ""; position: absolute; inset: -4px; }
-}
+/* Touch controls own their target area; no overlapping pseudo-element hit slop. */
 
 @layer base {
-  button, a, select, [role="button"], [role="menuitem"], [role="option"] { cursor: default; }
+  button,
+  a,
+  select,
+  [role="button"],
+  [role="menuitem"],
+  [role="option"] {
+    cursor: default;
+  }
+}
+
+/* Shared compact fields, task typography and non-overlapping keyboard focus. */
+:root {
+  --control-height: 33px;
+  --control-font-size: 12px;
+  --control-line-height: 18px;
+  --control-padding-inline: 12px;
+  --control-padding-block: 6px;
+  --control-touch-size: 44px;
+  --focus-ring-width: 1px;
+  --focus-ring-offset: -2px;
+  --task-padding: 10px;
+  --task-font-size: 12px;
+  --task-meta-size: 11px;
+  --task-gap: 10px;
+}
+@media (hover: none) and (pointer: coarse) {
+  :root {
+    --control-height: var(--control-touch-size);
+  }
+}
+
+@media (max-width: 47.999rem), ((hover: none) and (pointer: coarse)) {
+  :root {
+    --control-font-size: 16px;
+    --control-line-height: 22px;
+    --control-height: 44px;
+  }
+}
+
+:root {
+  --page-title-gap: 24px;
+  --page-title-size: 24px;
+  --page-title-line-height: 32px;
+  --page-padding-block: 32px;
+  --page-padding-inline: 36px;
+  --section-gap: 20px;
+  --toolbar-gap: 16px;
+  --calendar-past-background: color-mix(in oklab, var(--muted) 65%, var(--background));
+}
+@media (max-width: 767px) {
+  :root {
+    --page-padding-block: 24px;
+    --page-padding-inline: 18px;
+  }
 }

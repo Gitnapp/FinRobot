@@ -34,6 +34,7 @@ const Stock = lazy(() => import("./app/market/stock-page"));
 const Coverage = lazy(() => import("./app/coverage/coverage-page"));
 const Reports = lazy(() => import("./app/reports/reports-page"));
 const Report = lazy(() => import("./app/reports/report-page"));
+const Debug = lazy(() => import("./app/settings/debug-page"));
 const Settings = lazy(() => import("./app/settings/settings-page"));
 const client = new QueryClient({
   defaultOptions: {
@@ -66,6 +67,7 @@ createRoot(document.getElementById("root")!).render(
                   <Route path="reports" element={<Reports />} />
                   <Route path="reports/:id" element={<Report />} />
                   <Route path="settings" element={<Settings />} />
+                  <Route path="settings/debug" element={<Debug />} />
                   <Route
                     path="*"
                     element={

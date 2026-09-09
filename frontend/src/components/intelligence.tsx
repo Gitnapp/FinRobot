@@ -63,7 +63,7 @@ export function EvidenceCard({ symbol }: { symbol: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>经营证据</CardTitle>
+        <CardTitle>财务数据</CardTitle>
         <CardAction>
           <InfoHint>
             对应课程第三册的商业闭环核验。自由现金流按经营现金流减固定资产购建支出计算，与简单模型的估算口径不同。财报数字不能直接证明用户留存与产品竞争力，留存、续费及AI业务收入仍需单独证据。

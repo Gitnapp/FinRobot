@@ -2,11 +2,11 @@
 
 import {
   Breadcrumb,
+  BreadcrumbChevron,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
-  BreadcrumbChevron,
 } from "@gitnapp/ui/components/ui/breadcrumb";
 import {
   DropdownMenu,
@@ -380,7 +380,7 @@ export function RailNavLink({
       onClick={onClick}
       className={cn(
         "relative flex items-center gap-3 rounded-md transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rail-foreground/70",
+        "focus-visible:outline-none",
         active
           ? "bg-rail-foreground/10 font-semibold text-rail-foreground"
           : "font-normal text-rail-foreground/60 hover:bg-rail-foreground/5 hover:text-rail-foreground",
@@ -397,7 +397,10 @@ export function RailNavLink({
         // size-8 已等于折叠态 nav 的内宽，本就贴合左缘，无需 auto margin 居中。
         collapsed
           ? "size-8 justify-center"
-          : cn(NAV_ITEM_METRICS, "after:absolute after:inset-x-0 after:-inset-y-0.5 md:after:hidden"),
+          : cn(
+              NAV_ITEM_METRICS,
+              "after:absolute after:inset-x-0 after:-inset-y-0.5 md:after:hidden",
+            ),
       )}
     >
       {icon}
@@ -437,7 +440,7 @@ export function RailTabs({ tabs }: { readonly tabs: readonly RailTab[] }) {
             onClick={tab.onClick}
             className={cn(
               "rounded-md px-2.5 py-1 text-sm transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rail-foreground/70",
+              "focus-visible:outline-none",
               tab.active
                 ? "bg-rail-foreground/10 font-semibold text-rail-foreground"
                 : "font-normal text-rail-foreground/60 hover:bg-rail-foreground/5 hover:text-rail-foreground",
@@ -770,24 +773,38 @@ export function RailBreadcrumb({
 }) {
   const Link = useContext(ShellLinkContext);
   return (
-    <Breadcrumb aria-label={ariaLabel} tabIndex={compact ? 0 : undefined} className={cn("min-w-0", compact && "rui-compact-path", className)}>
+    <Breadcrumb
+      aria-label={ariaLabel}
+      tabIndex={compact ? 0 : undefined}
+      className={cn("min-w-0", compact && "rui-compact-path", className)}
+    >
       <BreadcrumbList className="flex-nowrap text-sm">
         {items.map((item, index) => (
           <Fragment key={item.href || `${index}-${item.label}`}>
-            <BreadcrumbItem className={index === items.length - 1 ? "min-w-0" : compact ? "rui-path-ancestor" : "shrink-0"}>
+            <BreadcrumbItem
+              className={
+                index === items.length - 1 ? "min-w-0" : compact ? "rui-path-ancestor" : "shrink-0"
+              }
+            >
               {item.href ? (
                 <BreadcrumbLink asChild>
                   <Link
                     href={item.href}
                     aria-current={index === items.length - 1 ? "page" : undefined}
-                    className={cn(NAV_ITEM_METRICS, "inline-flex min-w-0 max-w-full items-center gap-2 whitespace-nowrap")}
+                    className={cn(
+                      NAV_ITEM_METRICS,
+                      "inline-flex min-w-0 max-w-full items-center gap-2 whitespace-nowrap",
+                    )}
                   >
                     {index > 0 && <BreadcrumbChevron />}
                     <span className="truncate">{item.label}</span>
                   </Link>
                 </BreadcrumbLink>
               ) : (
-                <BreadcrumbPage className={cn(NAV_ITEM_METRICS, "inline-flex min-w-0 items-center gap-2")} title={item.label}>
+                <BreadcrumbPage
+                  className={cn(NAV_ITEM_METRICS, "inline-flex min-w-0 items-center gap-2")}
+                  title={item.label}
+                >
                   {index > 0 && <BreadcrumbChevron />}
                   <span className="truncate">{item.label}</span>
                 </BreadcrumbPage>

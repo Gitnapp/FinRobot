@@ -175,3 +175,11 @@ def test_calendar_links_cover_cached_events_without_overwriting_documents():
     assert "symbol=0700.HK" in events[0]["url"]
     assert events[0]["link_kind"] == "calendar_source"
     assert events[1]["url"] == "https://www.sec.gov/example.htm"
+
+
+def test_hong_kong_numeric_collision_does_not_use_another_exchange(tmp_path):
+    s = service(tmp_path, {'ticker':'0100','exchange':'KLSE','found':True,'sentiment_score':0.7})
+    result = asyncio.run(s.read('00100.HK','sentiment'))
+    assert result['reason'] == 'asset_not_supported'
+    assert result['data'] is None
+    assert s.providers.calls == 1

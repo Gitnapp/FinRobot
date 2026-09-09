@@ -1,3 +1,5 @@
+import { AddButton } from "@gitnapp/ui/components/ui/actions";
+import { FinancialPanel, TechnicalPanel } from "../../components/coverage-insights";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { usePriceHistory } from "../../hooks/queries";
 import { LoadingBoundary } from "@gitnapp/ui/components/ui/loading";
@@ -10,7 +12,7 @@ import {
 } from "@gitnapp/ui/components/ui/select";
 import { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router";
-import { Plus, Search, ArrowRight, Glasses } from "lucide-react";
+import { Plus, Search, ArrowRight, Glasses, X } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -39,7 +41,7 @@ export default function MarketPage() {
   const navigate = useNavigate();
   function selectAsset(symbol: string) {
     if (matchMedia("(max-width: 767px)").matches) navigate("/stocks/" + symbol);
-    else setSelected(symbol);
+    else setSelected(current => current === symbol ? "" : symbol);
   }
   const lists = useWatchlists();
   const [params, setParams] = useSearchParams();
@@ -53,7 +55,7 @@ export default function MarketPage() {
   );
   const symbol = data.some((a) => a.symbol === selected)
     ? selected
-    : data[0]?.symbol || "";
+    : "";
   const detail = useDetail(symbol);
   const history = usePriceHistory(symbol);
   if (lists.isLoading || isLoading) return <Loading />;
@@ -88,21 +90,14 @@ export default function MarketPage() {
           <span className="muted">{data.length} 个标的</span>
         </div>
         <div className="actions">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="添加标的"
-            onClick={() => setAdding(true)}
-          >
-            <Plus size={18} />
-          </Button>
+          <AddButton attention="quiet" iconOnly label="添加标的" onClick={() => setAdding(true)} />
           <WatchlistEditor
             list={list}
             onSelect={(id) => setParams(id ? { list: id } : {})}
           />
         </div>
       </div>
-      <div className="market-grid">
+      <div className={`market-grid${symbol ? " has-preview" : ""}`}>
         <section className="watchlist-panel">
           <div className="search-field table-search">
             <Search size={15} />
@@ -130,6 +125,8 @@ export default function MarketPage() {
                   tabIndex={0}
                   aria-label={`预览 ${a.symbol} 走势`}
                   aria-selected={symbol === a.symbol}
+                  aria-expanded={symbol === a.symbol}
+                  aria-controls="market-preview"
                   onClick={(e) => {
                     if (!(e.target as HTMLElement).closest("a,button"))
                       selectAsset(a.symbol);
@@ -206,14 +203,13 @@ export default function MarketPage() {
                 {search ? "没有找到匹配标的" : "这个列表还没有标的"}
               </strong>
               {!search && (
-                <Button variant="outline" onClick={() => setAdding(true)}>
-                  添加标的
-                </Button>
+                <AddButton attention="primary" label="添加标的" onClick={() => setAdding(true)} />
               )}
             </Empty>
           )}
         </section>
-        <aside className="market-side">
+        {symbol && <aside className="market-side" id="market-preview" aria-label="标的预览">
+          <Button className="preview-close" variant="ghost" size="icon" aria-label="关闭预览" onClick={() => setSelected("")}><X size={16}/></Button>
           <LoadingBoundary
             pending={Boolean(symbol) && (detail.isPending || history.isPending)}
           >
@@ -247,10 +243,10 @@ export default function MarketPage() {
                     </InfoLabel>
                   </div>
                 </div>
-                <Link className="preview-link" to={"/stocks/" + symbol}>
-                  查看标的
-                  <ArrowRight size={15} />
-                </Link>
+                <div className="preview-data">
+                  <FinancialPanel data={detail.data} />
+                  <TechnicalPanel data={detail.data} />
+                </div>
               </>
             ) : symbol ? (
               <ErrorState
@@ -263,7 +259,7 @@ export default function MarketPage() {
               </Empty>
             )}
           </LoadingBoundary>
-        </aside>
+        </aside>}
       </div>
       <AddAsset open={adding} onOpenChange={setAdding} listId={list?.id} />
     </div>

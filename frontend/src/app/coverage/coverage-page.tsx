@@ -1,7 +1,8 @@
+import { AddButton } from "@gitnapp/ui/components/ui/actions";
 import { CardGrid } from "@gitnapp/ui/components/ui/data-layout";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Search } from "lucide-react";
 import {
   Select,
@@ -27,6 +28,7 @@ import {
 } from "../../components/coverage-asset-card";
 import type { Snapshot } from "../../components/intelligence";
 export default function CoveragePage() {
+  const navigate = useNavigate();
   const directory = useQuery({
     queryKey: ["coverage-directory"],
     queryFn: () => api<CoveredCompany[]>("/coverage-directory"),
@@ -73,9 +75,7 @@ export default function CoveragePage() {
   return (
     <div className="page">
       <PageHeader title="持续跟踪">
-        <Button variant="outline" asChild>
-          <Link to="/">添加</Link>
-        </Button>
+        <AddButton attention="secondary" onClick={() => navigate("/")} />
       </PageHeader>
       <div className="coverage-list-picker">
         <Select value={list} onValueChange={setList}>

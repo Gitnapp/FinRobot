@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { useState } from "react";
 import { Check, CircleDot, KeyRound, Server } from "lucide-react";
@@ -179,7 +180,7 @@ export default function SettingsPage() {
   const { data, error, isLoading, refetch } = useSettings();
   return (
     <div className="page settings-page">
-      <PageHeader eyebrow="PREFERENCES / PROVIDERS" title="模型与数据" />
+      <PageHeader title="设置"><Button variant="ghost" asChild><Link to="/settings/debug">调试</Link></Button></PageHeader>
       {isLoading ? (
         <Loading />
       ) : error ? (

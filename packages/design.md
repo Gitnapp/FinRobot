@@ -442,3 +442,17 @@ Suggestion / Error / AuiIf），**不为凑数重写**。新增交互优先复�
 左栏放功能区，顶栏放当前子页面。深层页面的路径默认收起祖先，只显示分隔箭头与当前页面；悬停或键盘聚焦时展开祖先，链接分别可点击，当前页用aria-current标记。任务入口在顶栏右侧，仅图标；有活动任务时使用轻量动效，尊重减少动态效果设置。
 
 导航项尺寸：侧栏与顶栏共用14px字号、20px行高、左右8px/上下6px内边距；桌面最小高度32px，移动端36px。路径箭头属于导航按钮内容，包含在其背景与点击区域内。
+
+## 紧凑控件与键盘焦点（修订）
+
+- 任务保持卡片、阶段进度、错误说明与操作按钮结构；compact通过task字号、padding、gap tokens缩小，不擅自改成无进度的列表。
+- Input与SelectTrigger共用control尺寸token：桌面33px高、12px字；移动端44px高、16px字，避免聚焦自动放大。字段横向padding12px，纵向6px。
+- 键盘焦点只有一条1px内收线，offset=-2px，不叠加ring/box-shadow，不改变布局尺寸、不覆盖相邻控件。不得取消焦点可见性。
+- 触摸目标通过控件本身的最小尺寸保证，禁止通用负inset伪元素与相邻按钮命中区重叠。
+
+## 页面节奏与语义操作
+
+- PageHeader统一标题与首个正文区域的距离为page-title-gap（24px），页面不得另写不同margin覆盖；页面内模块使用section-gap（20px）、工具行使用toolbar-gap（16px）。
+- AddButton按注意力分为primary（一个区域唯一主操作，如空状态添加）、secondary（页面级辅助添加）、quiet（工具栏图标选项）。AddMenuItem用于菜单中的添加入口，不在菜单内嵌Button。相同操作不临时拼装图标与不同尺寸。
+- control、task、focus token分别管理控件、任务卡片和焦点；改变字号或padding不改变已有交互结构。
+- 日历过去事件使用calendar-past-background；时间分界线明确标示即将到来的事件。无数据直接显示空状态，不要求用户不断点击翻空页。

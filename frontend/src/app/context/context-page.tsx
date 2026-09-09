@@ -1,6 +1,7 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BackLink } from "@gitnapp/ui/components/ui/back-link";
 import { macroLabels as labels } from "./metrics";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useParams } from "react-router";
 import {
   DateRange,
@@ -9,7 +10,7 @@ import {
   type DateWindow,
 } from "../../components/date-range";
 import { MacroChart } from "../../components/macro-chart";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import {
   Card,
   CardHeader,
@@ -19,7 +20,7 @@ import {
 } from "@gitnapp/ui/components/ui/card";
 import { InfoHint, InfoLabel } from "@gitnapp/ui/components/ui/tooltip";
 import { api } from "../../api/client";
-import { Button, PageHeader, Loading } from "../../components/ui";
+import { Button, Input, PageHeader, Loading } from "../../components/ui";
 import type { Snapshot, MacroSeries } from "../../components/intelligence";
 function useMacro() {
   return useQuery({
@@ -58,10 +59,6 @@ export function MacroPage() {
                 </CardAction>
               </CardHeader>
               <CardContent>
-                <div className="context-value">
-                  {last?.value.toFixed(2) ?? "—"}
-                  <small>{d?.unit}</small>
-                </div>
                 {d ? (
                   <MacroChart points={d.points} unit={d.unit} range={seriesWindow(last?.date)} compact />
                 ) : q.data?.[key]?.state === "pending" ? (
@@ -93,19 +90,6 @@ export function MacroDetailPage() {
         .map((p) => ({ ...p, value: measure === "mom" ? p.mom! : p.value })),
     [d, measure],
   );
-  const prior = (months: number) => {
-    if (!latest || !d) return undefined;
-    const date = new Date(latest.date + "T00:00:00Z");
-    date.setUTCDate(1);
-    date.setUTCMonth(date.getUTCMonth() - months);
-    return d.points
-      .filter((p) => p.date.startsWith(date.toISOString().slice(0, 7)))
-      .at(-1);
-  };
-  const difference = (months: number) => {
-    const p = prior(months);
-    return latest && p ? (latest.value - p.value).toFixed(2) : "—";
-  };
   return (
     <div className="page">
       <BackLink asChild>
@@ -117,30 +101,6 @@ export function MacroDetailPage() {
       {q.isPending || snapshot?.state === "pending" ? <Loading /> : null}
       {d && latest ? (
         <>
-          <div className="macro-detail-values">
-            <div>
-              <small>{metric === "cn_cpi" ? "同比" : "最新值"}</small>
-              <strong>
-                {latest.value.toFixed(2)} {d.unit}
-              </strong>
-            </div>
-            <div>
-              <small>{metric === "cn_cpi" ? "环比" : "较上月"}</small>
-              <strong>
-                {metric === "cn_cpi"
-                  ? `${latest.mom?.toFixed(2) ?? "—"} %`
-                  : `${difference(1)} ${d.unit === "%" ? "个百分点" : "点"}`}
-              </strong>
-            </div>
-            {metric !== "cn_cpi" && (
-              <div>
-                <small>较上年</small>
-                <strong>
-                  {difference(12)} {d.unit === "%" ? "个百分点" : "点"}
-                </strong>
-              </div>
-            )}
-          </div>
           <DateRange
             value={range}
             onChange={(range) => setSelection({ metric, range })}
@@ -163,7 +123,7 @@ export function MacroDetailPage() {
               </button>
             </div>
           )}
-          <MacroChart points={points} unit={d.unit} range={range} />
+          <MacroChart points={points} comparisonPoints={d.points} unit={d.unit} range={range} />
           <details className="macro-observations">
             <summary>历史数据</summary>
             <div className="macro-history-table">
@@ -220,74 +180,67 @@ type Calendar = {
   }[];
   source: string;
 };
+function shiftMonth(month: string, offset: number) {
+  const [year, value] = month.split("-").map(Number);
+  return new Date(Date.UTC(year, value - 1 + offset, 1)).toISOString().slice(0, 7);
+}
+function monthRange(month: string) {
+  const [year, value] = month.split("-").map(Number);
+  return { from: new Date(Date.UTC(year, value - 1, 0)).toISOString().slice(0, 10), to: new Date(Date.UTC(year, value, 1)).toISOString().slice(0, 10) };
+}
 export function CalendarPage() {
-  const [range, setRange] = useState<DateWindow>({ from: "", to: "" });
-  const q = useQuery({
-    queryKey: ["macro-calendar", range.from, range.to],
-    queryFn: () =>
-      api<Snapshot<Calendar>>(
-        `/data/global/calendar?start=${range.from}&end=${range.to}`,
-      ),
-    refetchInterval: (q) => (q.state.data?.state === "pending" ? 1500 : 60000),
+  const [month, setMonth] = useState(() => new Date().toLocaleDateString("sv-SE").slice(0, 7));
+  const end = useRef<HTMLDivElement>(null);
+  const q = useInfiniteQuery({
+    queryKey: ["calendar-months", month],
+    initialPageParam: month,
+    queryFn: async ({pageParam, signal}) => {
+      const range = monthRange(pageParam);
+      const snapshot = await api<Snapshot<Calendar>>(`/data/global/calendar?start=${range.from}&end=${range.to}`, {signal});
+      return {month: pageParam, snapshot};
+    },
+    getNextPageParam: last => last.month < "9999-12" ? shiftMonth(last.month, 1) : undefined,
+    refetchInterval: query => query.state.data?.pages.some(p => p.snapshot.state === "pending" || p.snapshot.refreshing) ? 1500 : false,
     retry: false,
   });
-  return (
-    <div className="page">
-      <PageHeader title="事件日历" />
-      {(q.isPending || q.data?.state === "pending") && <Loading />}
-      <Card>
-        <CardHeader>
-          <CardTitle>经济数据与政策事件</CardTitle>
-          <CardAction>
-            <InfoHint>
-              日期范围可查询历史与未来日程，单次不超过一年；数据源缺失或未公布时不补造数值，时间统一转换为本地时间。
-              {q.data?.state === "stale" ? "当前为最近一次有效快照。" : ""}
-            </InfoHint>
-          </CardAction>
-        </CardHeader>
-        <CardContent>
-          <DateRange value={range} onChange={setRange} />
-          {q.data?.data?.events.filter((e) =>
-            withinDates(new Date(e.at).toLocaleDateString("sv-SE"), range),
-          ).length ? (
-            q.data.data.events
-              .filter((e) =>
-                withinDates(new Date(e.at).toLocaleDateString("sv-SE"), range),
-              )
-              .map((e, i) => (
-                <div className="macro-event" key={e.at + e.title + i}>
-                  <time>
-                    {new Date(e.at).toLocaleString("zh-CN", {
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </time>
-                  <div>
-                    <strong>{e.title}</strong>
-                    <small>
-                      {e.currency}　{e.impact}　前值{" "}
-                      {String(e.previous ?? "—")}
-                      　预期 {String(e.forecast ?? "—")}　实际{" "}
-                      {e.actual_status === "unverified" ? (
-                        <InfoLabel label="待核实">
-                          数据源返回零值，但未提供有效的公布状态，暂不作为实际值展示。
-                        </InfoLabel>
-                      ) : e.actual_status === "scheduled" ? (
-                        "待公布"
-                      ) : (
-                        String(e.actual ?? "—")
-                      )}
-                    </small>
-                  </div>
-                </div>
-              ))
-          ) : (
-            <p className="muted">此日期范围内暂无已取得的事件</p>
-          )}
-        </CardContent>
-      </Card>
+  const tail = q.data?.pages.at(-1);
+  const canAutoLoad = Boolean(tail?.snapshot.data?.events.length) && !q.isFetching;
+  useEffect(() => {
+    if (!end.current || !canAutoLoad) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && q.hasNextPage) void q.fetchNextPage();
+    }, {root: end.current.closest(".main-scroll"), rootMargin: "160px"});
+    observer.observe(end.current);
+    return () => observer.disconnect();
+  }, [canAutoLoad, q.hasNextPage, q.fetchNextPage, tail?.month]);
+  return <div className="page">
+    <PageHeader title="事件日历" />
+    <div className="calendar-month-picker">
+      <Button variant="ghost" size="icon" aria-label="上一月" onClick={() => setMonth(shiftMonth(month,-1))}><ChevronLeft size={16} /></Button>
+      <Input type="month" aria-label="选择月份" value={month} onChange={e => {if (/^\d{4}-\d{2}$/.test(e.target.value)) setMonth(e.target.value);}} />
+      <Button variant="ghost" size="icon" aria-label="下一月" onClick={() => setMonth(shiftMonth(month,1))}><ChevronRight size={16} /></Button>
+      <InfoHint>浅底色表示过去的事件，分界线后为即将到来的事件。选择月份快速跳转，向下滚动继续查看后续月份。未公布事件或数据暂不可用时保留真实空状态，不补造事件。</InfoHint>
     </div>
-  );
+    {(q.isPending || tail?.snapshot.state === "pending") && <Loading />}
+    <div className="calendar-months">
+      {q.data?.pages.map(({month: period, snapshot}) => {
+        const events = (snapshot.data?.events || []).filter(e => new Date(e.at).toLocaleDateString("sv-SE").startsWith(period)).sort((a,b) => a.at.localeCompare(b.at));
+        return <section key={period} className="calendar-month-section">
+          <h2>{period.replace("-", " 年 ")} 月</h2>
+          {events.map((e,i) => <div className={`macro-event${new Date(e.at).getTime() < Date.now() ? " is-past" : (i === 0 || new Date(events[i-1].at).getTime() < Date.now()) ? " future-start" : ""}`} key={e.at+e.title+i}>
+            {new Date(e.at).getTime() >= Date.now() && (i === 0 || new Date(events[i-1].at).getTime() < Date.now()) && <span className="calendar-boundary">即将到来</span>}
+            <time>{new Date(e.at).toLocaleString("zh-CN", {month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})}</time>
+            <div><strong>{e.title}</strong><small>
+              {e.currency}　{e.impact}　前值 {String(e.previous ?? "—")}　预期 {String(e.forecast ?? "—")}　实际 {e.actual_status === "unverified" ? <InfoLabel label="待核实">零值未经有效公布状态确认，暂不作为实际值。</InfoLabel> : e.actual_status === "scheduled" ? "待公布" : String(e.actual ?? "—")}
+            </small></div>
+          </div>)}
+          {!events.length && snapshot.state !== "pending" && <p className="muted">暂无数据</p>}
+        </section>;
+      })}
+    </div>
+    <div ref={end} className="calendar-more">
+      {q.isFetchingNextPage && <Loading />}
+      {q.isError ? <Button variant="ghost" onClick={() => void q.refetch()}>重新获取</Button> : null}
+    </div>
+  </div>;
 }

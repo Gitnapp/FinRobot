@@ -1,8 +1,8 @@
 import { MetricGrid } from "@gitnapp/ui/components/ui/data-layout";
 import { Link } from "react-router";
-import { ArrowRight, Glasses } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { InfoLabel, InfoHint } from "@gitnapp/ui/components/ui/tooltip";
-import { Button, Change, compact, Empty, money } from "./ui";
+import { Change, compact, Empty, money } from "./ui";
 import { Sparkline } from "./coverage-insights";
 import type { Quote, History } from "../types";
 import type { Snapshot } from "./intelligence";
@@ -57,8 +57,9 @@ export function CoverageAssetCard({
       <div className="coverage-card-head">
         <div>
           {to ? (
-            <Link to={to}>
+            <Link to={to} className="coverage-company-link">
               <strong>{q?.name || c.name}</strong>
+              <ArrowRight size={16} aria-hidden="true" />
             </Link>
           ) : (
             <strong>{c.name}</strong>
@@ -122,14 +123,6 @@ export function CoverageAssetCard({
           </span>
         </Empty>
       )}
-      <div className="financial-caption">
-        财务摘要
-        <InfoHint>
-          {data?.financials
-            ? `财务基期 ${data.financials.as_of}，金额单位百万 ${data.financials.currency || "USD"}。`
-            : "暂未取得可核实的财务数据，缺失值以 — 表示。"}
-        </InfoHint>
-      </div>
       <MetricGrid
         label="财务摘要"
         items={[
@@ -161,37 +154,6 @@ export function CoverageAssetCard({
           },
         ]}
       />
-      <div className="coverage-card-footer">
-        <span className="muted">
-          {c.coverage
-            ? c.coverage.active
-              ? "跟踪中"
-              : "已暂停"
-            : c.symbol
-              ? c.scene
-              : "无证券行情"}
-        </span>
-        <div className="actions">
-          {c.report && (
-            <Button variant="ghost" size="icon" asChild>
-              <Link
-                aria-label={`阅读 ${c.name}`}
-                to={`/reports/${c.report.id}`}
-              >
-                <Glasses size={16} />
-              </Link>
-            </Button>
-          )}
-          {to && (
-            <Button variant="outline" size="sm" asChild>
-              <Link to={to}>
-                查看
-                <ArrowRight size={14} />
-              </Link>
-            </Button>
-          )}
-        </div>
-      </div>
     </article>
   );
 }

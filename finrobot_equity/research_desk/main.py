@@ -3,6 +3,7 @@ import csv
 import io
 import json
 import logging
+import time
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Literal
@@ -15,6 +16,7 @@ from pydantic import BaseModel
 from .assumption_policy import AssumptionPolicy
 from .coverage_market import CoverageMarket
 from .data_access import DataAccess
+from .diagnostics import Diagnostics
 from .exports import assumption_text, report_date, table_data
 from .intelligence import Intelligence
 from .jobs import Worker, next_due
@@ -55,6 +57,10 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
     async def lifespan(app):
         store.init()
         intelligence.cache.init()
+        store.execute(
+            "UPDATE data_update_runs SET status='interrupted',finished=? WHERE status IN ('queued','running')",
+            (time.time(),),
+        )
         task = asyncio.create_task(worker.run())
         maintenance_task = asyncio.create_task(worker.maintain())
         financial_task = asyncio.create_task(market.financial_data.run())
@@ -398,6 +404,14 @@ def create_app(directory=None, *, market_factory=Market, narrative_writer=None):
         return FileResponse(
             filename, filename=f"{row['symbol']}-research-{report_date(row)}.{extension}"
         )
+
+    @app.get("/api/debug/updates")
+    def update_plans():
+        return Diagnostics(store, market).plans()
+
+    @app.get("/api/debug/logs")
+    def update_logs(before: int | None = None):
+        return Diagnostics(store, market).logs(before)
 
     @app.get("/api/settings")
     def settings():

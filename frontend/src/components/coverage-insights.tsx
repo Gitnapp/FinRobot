@@ -20,6 +20,7 @@ export function Sparkline({ history }: { history: History }) {
   return (
     <svg
       viewBox="0 0 300 60"
+      preserveAspectRatio="none"
       role="img"
       aria-label={history.mock ? "示例价格趋势" : "最近价格趋势"}
       className="sparkline"
@@ -176,34 +177,17 @@ export function ValuationPanel({ data }: { data: Detail }) {
   );
 }
 export function CatalystPanel({ data }: { data: Detail }) {
+  const items = data.news.items.filter(n => n.url && n.title).slice(0, 4);
+  if (!items.length) return null;
   return (
     <section className="dense-panel">
       <h2>近期催化</h2>
-      {data.news.items.length ? (
-        data.news.items.slice(0, 4).map((n, i) => (
-          <a
-            className="catalyst-row"
-            key={i}
-            href={n.url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span>{n.title}</span>
-            <ExternalLink size={13} />
-          </a>
-        ))
-      ) : (
-        <ul className="tracking-checklist">
-          <li>核验最新收入与经营指引</li>
-          <li>跟踪毛利率和费用投入</li>
-          <li>观察资本开支与现金回收</li>
-          <li>
-            <InfoLabel label="核验财报日历和公司公告">
-              尚未取得近期新闻与可靠日历，不生成虚构事件或日期。
-            </InfoLabel>
-          </li>
-        </ul>
-      )}
+      {items.map((n) => (
+        <a className="catalyst-row" key={n.url} href={n.url} target="_blank" rel="noreferrer">
+          <span>{n.title}</span>
+          <ExternalLink size={13} />
+        </a>
+      ))}
     </section>
   );
 }

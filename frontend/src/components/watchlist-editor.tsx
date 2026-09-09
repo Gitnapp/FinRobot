@@ -1,3 +1,4 @@
+import { AddMenuItem, AddButton } from "@gitnapp/ui/components/ui/actions";
 import { useState } from "react";
 import {
   ArrowUp,
@@ -101,15 +102,14 @@ export function WatchlistEditor({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem
+          <AddMenuItem
             onSelect={() => {
               setName("");
               setMode("create");
             }}
           >
-            <Plus size={16} />
             新建列表
-          </DropdownMenuItem>
+          </AddMenuItem>
           <DropdownMenuItem
             onSelect={() => {
               setName(list?.name || "");
@@ -205,9 +205,7 @@ export function WatchlistEditor({
                   删除列表
                 </Button>
               )}
-              <Button type="submit" disabled={busy || !name.trim()}>
-                保存
-              </Button>
+              {mode === "create" ? <AddButton attention="primary" label="创建列表" type="submit" disabled={busy || !name.trim()} /> : <Button type="submit" disabled={busy || !name.trim()}>保存</Button>}
             </div>
           </form>
         </DialogContent>

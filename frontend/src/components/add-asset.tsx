@@ -1,3 +1,4 @@
+import { AddButton } from "@gitnapp/ui/components/ui/actions";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
@@ -105,17 +106,7 @@ export function AddAsset({
           ))}
           {search.trim() &&
             !filtered.some((a) => a.symbol === search.trim().toUpperCase()) && (
-              <Button
-                disabled={
-                  busy ||
-                  !/^[A-Za-z0-9][A-Za-z0-9.\-^=]{0,14}$/.test(search.trim())
-                }
-                variant="outline"
-                onClick={() => void add(search.trim())}
-              >
-                <Plus size={15} />
-                添加 {search.toUpperCase()}
-              </Button>
+              <AddButton attention="primary" label={`添加 ${search.toUpperCase()}`} disabled={busy || !/^[A-Za-z0-9][A-Za-z0-9.\-^=]{0,14}$/.test(search.trim())} onClick={() => void add(search.trim())} />
             )}
         </div>
       </DialogContent>

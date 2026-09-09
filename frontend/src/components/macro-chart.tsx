@@ -15,11 +15,13 @@ export function MacroChart({
   unit,
   compact = false,
   range,
+  comparisonPoints,
 }: {
   points: MacroSeries["points"];
   unit: string;
   compact?: boolean;
   range?: DateWindow;
+  comparisonPoints?: MacroSeries["points"];
 }) {
   const root = useRef<HTMLDivElement>(null);
   const chartRef = useRef<{
@@ -66,7 +68,7 @@ export function MacroChart({
     });
     chartRef.current = { chart, series };
     chart.subscribeCrosshairMove((event) => {
-      if (!event.time || !event.seriesData.get(series)) {
+      if (!event.time || !event.point || !event.seriesData.get(series)) {
         setHoverDate(null);
         return;
       }
@@ -107,30 +109,20 @@ export function MacroChart({
     }
   }, [points, compact, range?.from, range?.to]);
   const current =
-    (hoverDate && points.find((p) => p.date === hoverDate)) || visible.at(-1);
-  const changes = current ? observationChanges(points, current, unit) : null;
+    hoverDate ? points.find((p) => p.date === hoverDate) : undefined;
+  const original = current && (comparisonPoints || points).find(p => p.date === current.date);
+  const changes = original ? observationChanges(comparisonPoints || points, original, unit) : null;
+  const displayed = current || visible.at(-1);
   const format = (value: number | null | undefined) =>
     value == null ? "—" : value.toFixed(2);
   return (
-    <div className="macro-chart">
-      <div className="macro-chart-readout" aria-live="polite">
-        <span>
-          {current
-            ? `${current.date}　${current.value.toFixed(2)} ${unit}`
-            : "所选范围暂无观测数据"}
-        </span>
-        {changes && (
-          <span className="macro-chart-changes">
-            <span>
-              同比{changes.direct ? "" : "变化"} {format(changes.yoy)}{" "}
-              {changes.unit}
-            </span>
-            <span>
-              环比{changes.direct ? "" : "变化"} {format(changes.mom)}{" "}
-              {changes.unit}
-            </span>
-          </span>
-        )}
+    <div className="macro-chart" onPointerLeave={() => setHoverDate(null)}>
+      <div className="macro-headline">
+        <div className="context-value" aria-live="polite">{displayed ? displayed.value.toFixed(2) : "—"}<small>{unit}</small></div>
+        <dl className="macro-hover-changes" data-visible={Boolean(current)} aria-hidden={!current}>
+          <div><dt>同比{changes?.direct ? "" : "变化"}</dt><dd>{format(changes?.yoy)} {changes?.unit}</dd></div>
+          <div><dt>环比{changes?.direct ? "" : "变化"}</dt><dd>{format(changes?.mom)} {changes?.unit}</dd></div>
+        </dl>
       </div>
       <div
         ref={root}

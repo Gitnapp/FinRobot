@@ -208,19 +208,15 @@ export default function StockPage() {
       )}
       <div hidden={tab !== "overview"}>
         <div className="coverage-detail-grid">
-          <div className="insights-column">
-            <PriceChart key={symbol} symbol={symbol} />
-            <TechnicalPanel data={data} />
-            <FinancialPanel data={data} />
-            <PeersPanel symbol={symbol} />
-            <EvidenceCard symbol={symbol} />
-            <ResearchLeads symbol={symbol} />
-          </div>
-          <div className="insights-column">
-            <CatalystCalendar key={`calendar-${symbol}`} symbol={symbol} />
-            <RetailSentiment key={`sentiment-${symbol}`} symbol={symbol} />
-            <CatalystPanel data={data} />
-          </div>
+          <PriceChart key={symbol} symbol={symbol} />
+          <CatalystCalendar key={`calendar-${symbol}`} symbol={symbol} />
+          <FinancialPanel data={data} />
+          <PeersPanel symbol={symbol} />
+          <TechnicalPanel data={data} />
+          <RetailSentiment key={`sentiment-${symbol}`} symbol={symbol} />
+          <EvidenceCard symbol={symbol} />
+          <ResearchLeads symbol={symbol} />
+          <CatalystPanel data={data} />
         </div>
       </div>
     </div>

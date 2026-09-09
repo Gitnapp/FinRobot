@@ -93,24 +93,7 @@ export function Empty({
     </div>
   );
 }
-export function PageHeader({
-  eyebrow,
-  title,
-  children,
-}: {
-  eyebrow?: string;
-  title: ReactNode;
-  children?: ReactNode;
-}) {
-  return (
-    <div className="page-heading">
-      <div>
-        <h1>{title}</h1>
-      </div>
-      <div className="actions">{children}</div>
-    </div>
-  );
-}
+export { PageHeader } from "@gitnapp/ui/components/ui/page-header";
 
 export function Updated({
   report,

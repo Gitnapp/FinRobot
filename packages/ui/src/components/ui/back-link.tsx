@@ -1,8 +1,8 @@
-import type { ComponentProps } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Slot } from "radix-ui";
-import { buttonVariants } from "./button";
+import type { ComponentProps } from "react";
 import { cn } from "../../lib/utils";
+import { buttonVariants } from "./button";
 
 /** A page-level return action; asChild preserves the host router's navigation. */
 export function BackLink({

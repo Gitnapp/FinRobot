@@ -40,12 +40,6 @@ h3,
 p {
   margin: 0;
 }
-button:focus-visible,
-a:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 3px;
-}
 h1 {
   font-size: 26px;
   line-height: 1.3;
@@ -87,7 +81,7 @@ select {
 .page {
   max-width: 1540px;
   margin: auto;
-  padding: 32px 36px 48px;
+  padding: var(--page-padding-block) var(--page-padding-inline) 48px;
   animation: appear 0.2s ease-out;
 }
 .page-heading {
@@ -95,7 +89,7 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin: 3px 0 30px;
+  margin: 0 0 var(--page-title-gap);
 }
 .page-heading h1 {
   display: flex;
@@ -380,12 +374,12 @@ select {
 .search-field input {
   padding-left: 33px;
   background: var(--card);
-  height: 33px;
+  height: var(--control-height);
   box-shadow: none;
-  font-size: 12px;
+  font-size: var(--control-font-size);
 }
 .table-search {
-  margin: 17px 0 12px;
+  margin: 0 0 var(--toolbar-gap);
 }
 .table-search > span {
   position: absolute;
@@ -540,15 +534,7 @@ select {
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
-.preview-link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--muted);
-  border-radius: 5px;
-  font-size: 11px;
-  padding: 9px 12px;
-}
+
 .recent-section {
   margin-top: 28px;
   padding-top: 22px;
@@ -736,7 +722,7 @@ select {
   margin-top: 5px;
 }
 .stock-page .page-heading {
-  margin-bottom: 22px;
+  margin-bottom: var(--page-title-gap);
 }
 .security-code {
   font-size: 14px;
@@ -1386,7 +1372,7 @@ select {
 }
 @media (max-width: 1200px) {
   .page {
-    padding: 28px 24px 40px;
+    padding: var(--page-padding-block) var(--page-padding-inline) 40px;
   }
   .market-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -1436,10 +1422,10 @@ select {
     height: calc(100dvh - 50px);
   }
   .page {
-    padding: 23px 18px 35px;
+    padding: var(--page-padding-block) var(--page-padding-inline) 35px;
   }
   .page-heading {
-    margin-bottom: 22px;
+    margin-bottom: var(--page-title-gap);
     align-items: flex-start;
     gap: 12px;
     flex-wrap: wrap;
@@ -1680,7 +1666,7 @@ select {
   display: none;
 }
 .page-heading {
-  margin-bottom: 26px;
+  margin-bottom: var(--page-title-gap);
 }
 .page-heading h1 {
   letter-spacing: -0.025em;
@@ -1715,6 +1701,7 @@ select {
   padding: 4px 0 8px;
 }
 .sparkline {
+  display: block;
   width: 100%;
   height: 66px;
   color: var(--foreground);
@@ -1762,18 +1749,8 @@ select {
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
-.financial-caption {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  color: var(--muted-foreground);
-  font-size: 11px;
-  padding-top: 4px;
-}
-.financial-caption + .coverage-metrics {
-  border-top: 0;
-  padding-top: 6px;
-}
+
+
 .coverage-thesis {
   display: flex;
   align-items: center;
@@ -1787,30 +1764,19 @@ select {
 .coverage-thesis b {
   font-weight: 500;
 }
-.coverage-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid var(--border);
-  padding-top: 13px;
-  margin-top: 5px;
-  font-size: 12px;
-}
-.coverage-card-footer .actions {
-  gap: 3px;
-}
+
+
 .coverage-detail-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
-  gap: 28px;
+  column-count: 2;
+  column-gap: 24px;
 }
-.insights-column {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.coverage-detail-grid > * {
+  width: 100%;
+  break-inside: avoid;
+  margin-bottom: 20px;
 }
-.insights-column > .chart-section {
+
+.coverage-detail-grid > .chart-section {
   border: 1px solid var(--border);
   padding: 18px;
   border-radius: 8px;
@@ -1929,11 +1895,7 @@ select {
   flex-shrink: 0;
   color: var(--muted-foreground);
 }
-.tracking-checklist {
-  padding-left: 18px;
-  font-size: 13px;
-  line-height: 2.4;
-}
+
 .stock-sector {
   color: var(--muted-foreground);
   font-size: 13px;
@@ -1984,7 +1946,7 @@ select {
 }
 @media (max-width: 950px) {
   .coverage-detail-grid {
-    grid-template-columns: 1fr;
+    column-count: 1;
   }
 }
 @media (max-width: 767px) {
@@ -2016,9 +1978,6 @@ select {
   .metric-grid dd {
     font-size: 16px;
   }
-  .coverage-card-footer .actions [data-slot="button"] {
-    font-size: 14px;
-  }
   .model-toolbar .actions {
     gap: 2px;
   }
@@ -2040,7 +1999,7 @@ select {
 }
 
 .market-page .page-heading {
-  margin-bottom: 20px;
+  margin-bottom: var(--page-title-gap);
 }
 .market-page .page-heading h1 {
   font-size: 24px;
@@ -2250,8 +2209,8 @@ select {
   background: color-mix(in srgb, var(--muted) 45%, transparent);
 }
 .watchlist-table tbody tr:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: -2px;
+  outline: var(--focus-ring-width) solid var(--ring);
+  outline-offset: var(--focus-ring-offset);
 }
 .watchlist-table .symbol-cell {
   display: block;
@@ -2327,8 +2286,8 @@ select {
   color: var(--foreground);
 }
 .watchlist-table .report-count:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .stock-page {
@@ -2537,7 +2496,7 @@ select {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  min-height: 420px;
+  min-height: 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -2561,10 +2520,7 @@ select {
   flex: 1 0 auto;
   min-height: auto;
 }
-.coverage-card .coverage-card-footer {
-  margin-top: auto;
-  min-height: 40px;
-}
+
 
 .context-grid {
   display: grid;
@@ -2696,13 +2652,6 @@ select {
 .assumptions-display td:last-child {
   width: auto;
 }
-.macro-chart-readout {
-  min-height: 28px;
-  font-size: 12px;
-  color: var(--muted-foreground);
-  font-variant-numeric: tabular-nums;
-}
-
 .macro-detail-values {
   display: flex;
   flex-wrap: wrap;
@@ -2751,19 +2700,14 @@ select {
   margin-left: 8px;
 }
 
-.macro-chart-readout {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-height: 48px;
-  font-variant-numeric: tabular-nums;
-}
-.macro-chart-changes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  font-size: 11px;
-}
+.macro-chart { position: relative; }
+ .macro-headline { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; margin-bottom: 8px; }
+.macro-headline .context-value { margin: 0; white-space: nowrap; }
+.macro-hover-changes { display: grid; gap: 3px; margin: 0; font-size: 10px; color: var(--muted-foreground); opacity: 0; transition: opacity 120ms ease; }
+.macro-hover-changes[data-visible="true"] { opacity: 1; }
+.macro-hover-changes > div { display: flex; justify-content: flex-end; gap: 4px; white-space: nowrap; }
+.macro-hover-changes dd { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .macro-hover-changes { transition: none; } }
 
 .peer-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .peer-heading h2 { margin-bottom: 0; }
@@ -2786,7 +2730,7 @@ select {
 
 .research-content { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .research-empty, .research-enroll { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.insights-column > [data-slot="card"] { flex: 0 0 auto; }
+.coverage-detail-grid > * { min-width: 0; }
 .research-lead > :last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .coverage-search { width: min(100%, 320px); }
@@ -2816,9 +2760,72 @@ header:has(> .app-breadcrumb), .mobile-header { padding-right: 64px; }
 .app-breadcrumb.rui-compact-path a,
 .app-breadcrumb.rui-compact-path a:hover,
 .app-breadcrumb.rui-compact-path a[aria-current="page"] { background: transparent; border-radius: 0; }
-.app-breadcrumb.rui-compact-path a:focus-visible { outline: 1px solid var(--ring); outline-offset: -2px; }
+.app-breadcrumb.rui-compact-path a:focus-visible { outline: var(--focus-ring-width) solid var(--ring); outline-offset: var(--focus-ring-offset); }
 
 .path-enter { animation: path-enter 160ms ease-out; }
 .path-pending { visibility: hidden; min-width: 90px; }
 @keyframes path-enter { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .path-enter { animation: none; } }
+
+.disclosure-calendar { gap: 12px; }
+.disclosure-tabs { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.disclosure-tabs button { position: relative; border-radius: 0; padding-inline: 0; min-height: 34px; font-size: 12px; color: var(--muted-foreground); background: transparent; }
+.disclosure-tabs button:hover { color: var(--foreground); background: transparent; }
+.disclosure-tabs button[aria-pressed="true"] { color: var(--foreground); font-weight: 600; }
+.disclosure-tabs button[aria-pressed="true"]::after { content: ""; position: absolute; inset-inline: 0; bottom: -1px; height: 2px; background: var(--foreground); }
+.disclosure-calendar .signal-event { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 0; }
+.disclosure-calendar .signal-event + .signal-event { border-top: 1px solid var(--border); }
+.disclosure-calendar .signal-event:last-child { padding-bottom: 0; }
+.disclosure-calendar .signal-event time { gap: 2px; }
+.disclosure-calendar .signal-event time strong { font-weight: 500; line-height: 22px; }
+.disclosure-calendar .signal-event > div > strong { font-size: 13px; line-height: 22px; font-weight: 500; }
+.disclosure-calendar .signal-event a { display: inline-flex; align-items: center; gap: 4px; }
+.disclosure-calendar .signal-event a svg { color: var(--muted-foreground); flex-shrink: 0; }
+.disclosure-calendar .signal-event a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.disclosure-calendar .signal-meta { margin-top: 4px; row-gap: 4px; }
+.disclosure-calendar .signal-meta:empty { display: none; }
+
+.calendar-month-picker { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+.calendar-month-picker input { width: 180px; }
+.calendar-month-section { margin-bottom: 28px; }
+.calendar-month-section h2 { font-size: 15px; font-weight: 600; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.calendar-month-section > p { padding: 16px 0; font-size: 13px; }
+.calendar-more { display: flex; justify-content: center; padding: 8px 0 24px; }
+
+.market-grid:not(.has-preview) { grid-template-columns: minmax(0, 1fr); }
+.market-side { position: relative; animation: path-enter 160ms ease-out; }
+.market-side .preview-close { position: absolute; right: 0; top: 0; }
+.market-side .preview-heading { padding-right: 40px; }
+.preview-data .dense-panel { border: 0; border-top: 1px solid var(--border); border-radius: 0; padding: 18px 0 0; margin-top: 18px; }
+.preview-data .dense-panel h2 { font-size: 13px; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .market-side { animation: none; } }
+
+.debug-toolbar { display:flex; flex-wrap:wrap; justify-content:space-between; gap:var(--toolbar-gap); margin-bottom:var(--section-gap); }
+.debug-toolbar input { max-width:280px; }
+.debug-table-wrap { overflow:auto; }
+.debug-table { width:100%; border-collapse:collapse; font-size:12px; }
+.debug-table th, .debug-table td { padding:10px 12px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
+.debug-table th { color:var(--muted-foreground); font-weight:500; }
+.debug-pagination { display:flex; justify-content:space-between; margin-top:var(--toolbar-gap); }
+.calendar-month-section .macro-event { padding:14px 12px; }
+.calendar-month-section .macro-event.is-past { background:var(--calendar-past-background); }
+.calendar-month-section .macro-event.future-start { position:relative; border-top:2px solid var(--foreground); margin-top:28px; }
+.calendar-boundary { position:absolute; top:-24px; left:12px; font-size:11px; font-weight:600; }
+.calendar-more:empty { display:block; height:1px; padding:0; }
+
+.coverage-company-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+.coverage-company-link > svg {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+.coverage-company-link:hover > svg {
+  color: var(--foreground);
+}
+.coverage-card > .metric-grid {
+  margin-top: 12px;
+}

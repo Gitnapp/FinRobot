@@ -151,7 +151,7 @@ importers:
   packages/web-shell:
     dependencies:
       '@gitnapp/ui':
-        specifier: workspace:*
+        specifier: 0.4.0
         version: link:../ui
     devDependencies:
       '@types/node':

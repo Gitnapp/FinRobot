@@ -20,6 +20,9 @@ class SnapshotCache:
             key TEXT PRIMARY KEY, payload TEXT, fetched REAL, expires REAL DEFAULT 0,
             retry_after REAL DEFAULT 0, failures INTEGER DEFAULT 0, error TEXT)""")
 
+        self.store.execute("""CREATE TABLE IF NOT EXISTS data_update_runs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, dataset TEXT NOT NULL,
+            status TEXT NOT NULL, started REAL NOT NULL, finished REAL, error TEXT)""")
         self.store.execute(
             "UPDATE intelligence_snapshots SET retry_after=0 WHERE error='configuration'"
         )
@@ -68,8 +71,24 @@ class SnapshotCache:
         }
 
     async def refresh(self, key, loader, ttl):
+        if not self.initialized:
+            self.init()
+        with self.store.connection() as db:
+            cursor = db.execute(
+                "INSERT INTO data_update_runs(dataset,status,started) VALUES (?,'queued',?)",
+                (key, time.time()),
+            )
+            run_id = cursor.lastrowid
+            db.execute(
+                "DELETE FROM data_update_runs WHERE id < ? AND status NOT IN ('queued','running')",
+                (run_id - 2000,),
+            )
         try:
             async with self.gate:
+                self.store.execute(
+                    "UPDATE data_update_runs SET status='running',started=? WHERE id=?",
+                    (time.time(), run_id),
+                )
                 async with asyncio.timeout(40):
                     payload = await loader()
             encoded = json.dumps(payload, ensure_ascii=False, allow_nan=False)
@@ -80,11 +99,23 @@ class SnapshotCache:
                 fetched=excluded.fetched,expires=excluded.expires,retry_after=0,failures=0,error=NULL""",
                 (key, encoded, now, now + ttl),
             )
+            self.store.execute(
+                "UPDATE data_update_runs SET status='completed',finished=? WHERE id=?",
+                (time.time(), run_id),
+            )
         except asyncio.CancelledError:
+            self.store.execute(
+                "UPDATE data_update_runs SET status='interrupted',finished=? WHERE id=?",
+                (time.time(), run_id),
+            )
             raise
         except Exception as exc:
             # Classify internally, never expose raw exception messages or provider bodies.
             code = "configuration" if isinstance(exc, MissingConfiguration) else "upstream"
+            self.store.execute(
+                "UPDATE data_update_runs SET status='failed',finished=?,error=? WHERE id=?",
+                (time.time(), code, run_id),
+            )
             self.store.execute(
                 """INSERT INTO intelligence_snapshots(key,retry_after,failures,error) VALUES (?,?,1,?)
                 ON CONFLICT(key) DO UPDATE SET retry_after=excluded.retry_after,

@@ -30,7 +30,9 @@ export function AppBreadcrumb({
     ? undefined
     : symbol
       ? detail.data?.quote.name || (symbol && market.data?.[symbol]?.data?.quote?.name) || listedName || directory.data?.find(r=>r.symbol === symbol)?.name
-      : section === "macro"
+      : section === "settings" && identifier === "debug"
+        ? "调试"
+        : section === "macro"
         ? macroLabels[identifier] || "指标详情"
         : section === "reports"
           ? report.data?.payload?.quote.name || "研究报告"
