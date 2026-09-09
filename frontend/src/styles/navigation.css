@@ -50,6 +50,10 @@ header:has(> .app-breadcrumb) {
   background: transparent;
   border-radius: 0;
 }
+/* The next link supplies the separator's leading inset; do not double it. */
+.app-breadcrumb.rui-compact-path .rui-path-ancestor > a {
+  padding-inline-end: 0;
+}
 .app-breadcrumb.rui-compact-path a:hover {
   background: transparent;
   border-radius: 0;
